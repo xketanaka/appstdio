@@ -1,0 +1,25 @@
+<ul class="page-nav">    
+  <li>
+    <%- if paginator.has_prev? -%>
+    <%= link_to page_url(form, paginator.page - 1) do %>&laquo; 前<% end %>
+    <%- else -%>
+    <span>&laquo; 前</span>
+    <%- end -%>
+  </li>
+  <% paginator.nearly_range.each do |i| %>
+  <li>
+    <%- if paginator.linkable?(i) -%>
+    <%= link_to page_url(form, i) do %><%= i %><% end %>
+    <%- else -%>
+    <span <% if i==paginator.page %>class="now"<% end %>><%= i %></span>
+    <%- end -%>
+  </li>
+  <% end %>
+  <li>
+    <%- if paginator.has_next? -%>
+    <%= link_to page_url(form, paginator.page + 1) do %>次 &raquo;<% end %>
+    <%- else -%>
+    <span>次 &raquo;</span>
+    <%- end -%>
+  </li>
+</ul>

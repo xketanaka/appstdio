@@ -1,0 +1,21 @@
+<%
+   def split_message(msg, &block)
+     if msg.respond_to?(:full_messages)
+       msg.full_messages.each(&block)
+     elsif msg.is_a?(Enumerable)
+       msg.each(&block)
+     else
+       msg.tap(&block)
+     end
+   end
+%>
+<%- [:notice, :warn, :alert].each do |type| -%>
+  <%- if flash[type] -%>
+  <div class="message <%= type.to_s %>" >
+    <i class="fa fa-close r-float"></i>
+    <% split_message flash[type] do |message| %>
+      <div><%= flash["#{type}_html_safe"] ? message.html_safe : message %></div>
+    <% end %>
+  </div>
+  <% end -%>
+<% end -%>

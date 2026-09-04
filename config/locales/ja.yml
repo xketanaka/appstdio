@@ -1,0 +1,59 @@
+ja:
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "バリデーションに失敗しました: %{errors}"
+        restrict_dependent_destroy:
+          has_one: "%{record}が存在しているため削除できません。"
+          has_many: "%{record}が存在しているため削除できません。"
+    models:
+      tenant: "テナント"
+      user: "ユーザ"
+      tenant_user: "テナントユーザ"
+    attributes:
+      tenant:
+        id: "テナントID"
+        name: "テナント名"
+        status: "状態"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+      user:
+        id: "ユーザID"
+        email: "メールアドレス"
+        password: "パスワード"
+        password_confirmation: "パスワード（確認）"
+        email_verified_at: "メールアドレス確認日時"
+        email_verification_token: "メールアドレス確認トークン"
+        email_verification_token_expires_at: "メールアドレス確認トークンの有効期限"
+        password_reset_token: "パスワード再設定トークン"
+        password_reset_token_expires_at: "パスワード再設定トークンの有効期限"
+        last_signed_in_at: "最終ログイン日時"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+      tenant_user:
+        id: "ID"
+        tenant: "テナント"
+        tenant_id: "テナント"
+        user: "ユーザ"
+        user_id: "ユーザ"
+        display_name: "表示名"
+        role: "権限"
+        status: "状態"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+  # enum の表示名。ビューでは I18n.t("enums.tenant_user.role.#{tenant_user.role}") のように参照する
+  enums:
+    tenant:
+      status:
+        active: "有効"
+        suspended: "停止中"
+    tenant_user:
+      role:
+        owner: "オーナー"
+        admin: "管理者"
+        member: "メンバー"
+      status:
+        invited: "招待中"
+        active: "有効"
+        suspended: "停止中"

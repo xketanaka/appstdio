@@ -1,0 +1,14 @@
+inherit_gem:
+  rubocop-shopify: rubocop.yml
+
+### カスタマイズ ####
+
+# 以下ファイルは対象外
+AllCops:
+  Exclude:
+    - 'lib/runners/**/*'
+    - 'bin/*'
+
+# スタイルはたくさんでるので適用しない
+Style:
+  Enabled: false

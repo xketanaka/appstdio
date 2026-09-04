@@ -1,0 +1,24 @@
+base: &base
+  system_title: AppStdio
+  paginator:
+    rows_per_page: 25
+    max_pagination: 20
+    page_link_count: 5
+  env_name: development
+  smtp:
+    address: 'localhost'
+    port: '25'
+    domain: 'localhost.localdomain'
+  mailer:
+    from_address: 'certs@example.com'
+  host_name: localhost:3000
+  protocol: https
+
+development:
+  <<: *base
+
+test:
+  <<: *base
+
+production:
+  <<: *base
