@@ -124,10 +124,12 @@ end
 
 `tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。
 書き方は `db/migrate/20260904220000_enable_row_level_security.rb` を参照。
-更新系のポリシーには `WITH CHECK` を必ず付けること（無いと他テナントの行を作れてしまう）。
 
-付け忘れは `test/models/rls_configuration_test.rb` の
-「tenant_id を持つテーブルは必ず RLS が有効になっている」で検出される。
+- 更新系のポリシーには `WITH CHECK` を必ず付ける（無いと他テナントの行を作れてしまう）
+- 適用先ロールを `TO appstdio_app` で明示する。省略すると `PUBLIC` 宛になり、
+  ポリシーは permissive（OR 結合）なので、後から追加したロールにも適用されてしまう
+
+どちらの付け忘れも `test/models/rls_configuration_test.rb` が検出する。
 
 なお `tenants` と `users` には RLS を掛けていない。
 どちらもテナントコンテキストを確定させる**前に**参照する必要があるテーブルのため

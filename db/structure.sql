@@ -253,28 +253,28 @@ ALTER TABLE public.tenant_users ENABLE ROW LEVEL SECURITY;
 -- Name: tenant_users tenant_users_delete; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tenant_users_delete ON public.tenant_users FOR DELETE USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+CREATE POLICY tenant_users_delete ON public.tenant_users FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
 
 
 --
 -- Name: tenant_users tenant_users_insert; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tenant_users_insert ON public.tenant_users FOR INSERT WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+CREATE POLICY tenant_users_insert ON public.tenant_users FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
 
 
 --
 -- Name: tenant_users tenant_users_select; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tenant_users_select ON public.tenant_users FOR SELECT USING (((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) OR (user_id = (NULLIF(current_setting('app.user_id'::text, true), ''::text))::bigint)));
+CREATE POLICY tenant_users_select ON public.tenant_users FOR SELECT TO appstdio_app USING (((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) OR (user_id = (NULLIF(current_setting('app.user_id'::text, true), ''::text))::bigint)));
 
 
 --
 -- Name: tenant_users tenant_users_update; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
 
 
 --
@@ -284,6 +284,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE USING ((tena
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260909120000'),
 ('20260904220000'),
 ('20260904210300'),
 ('20260904210200'),

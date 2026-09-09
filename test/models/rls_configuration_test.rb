@@ -26,6 +26,21 @@ class RlsConfigurationTest < ActiveSupport::TestCase
       "接続ロールが所有しているテーブルには RLS が適用されません: #{owned.join(", ")}"
   end
 
+  test "ポリシーの適用先が public のままになっていない" do
+    policies = ApplicationRecord.with_connection do |connection|
+      connection.select_values(<<~SQL)
+        SELECT tablename || '.' || policyname
+          FROM pg_policies
+         WHERE schemaname = 'public' AND 'public' = ANY(roles)
+         ORDER BY 1
+      SQL
+    end
+
+    assert_empty policies,
+      "ポリシーは permissive (OR 結合) なので、PUBLIC 宛だと後から追加した" \
+      "テナント束縛ロールにも適用され、束縛が効かなくなります: #{policies.join(", ")}"
+  end
+
   test "tenant_id を持つテーブルは必ず RLS が有効になっている" do
     unprotected = ApplicationRecord.with_connection do |connection|
       connection.select_values(<<~SQL)
