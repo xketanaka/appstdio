@@ -4,9 +4,9 @@ module SessionsHelper
   def current_user
     return @current_user if defined?(@current_user)
 
-    @current_user =
-      current_tenant_user&.user ||
-      (User.find_by(id: session[:current_user_id]) if session[:current_user_id].present?)
+    return if session[:current_user_id].blank?
+
+    @current_user = current_tenant_user&.user || User.find_by(id: session[:current_user_id])
   end
 
   # 現在操作中のテナントでの所属情報（表示名・権限）を返す（テナント未選択ならnil）
