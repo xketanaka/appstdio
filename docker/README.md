@@ -106,11 +106,15 @@ Web リクエストでは `TenantContextFilter`（`ApplicationController` に in
 
 | メソッド | 内容 |
 |---|---|
-| `current_user` | ログイン中の `User`（`users` は認証情報のみ） |
-| `current_tenant_user` | 現在のテナントでの所属情報（表示名・権限・状態） |
+| `current_tenant_user` | 現在のテナントでの所属情報（表示名・権限・状態）。リクエストごとに解決される |
 | `current_tenant` | 現在の `Tenant`（`current_tenant_user` から辿る） |
+| `current_user` | ログイン中の `User`。**参照されたときにだけ読み込む** |
 
 いずれもテナント未選択・未ログインなら `nil`。
+
+`users` は認証情報しか持たず、通常の画面で必要になることはほとんどないため、
+リクエストごとには読み込まない。所属情報はセッションの `current_user_id` と
+`current_tenant_id` から `tenant_users` を直接引いて解決している。
 
 ジョブ・コンソール・テストなど、リクエスト外から DB を触る場合は `TenantContext` を使う。
 

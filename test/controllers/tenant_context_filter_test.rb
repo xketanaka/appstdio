@@ -25,6 +25,17 @@ class TenantContextFilterTest < ActionController::TestCase
     TenantContext.clear
   end
 
+  def capture_sql
+    statements = []
+    subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+      statements << payload[:sql] unless payload[:name] == "SCHEMA"
+    end
+    yield
+    statements
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+  end
+
   test "未ログインなら何も設定されない" do
     get :new
 
@@ -59,6 +70,20 @@ class TenantContextFilterTest < ActionController::TestCase
 
     assert_equal @user, @controller.current_user
     assert_nil @controller.current_tenant_user
+  end
+
+  test "テナント選択済みのリクエストでは users を読まない" do
+    sql = capture_sql do
+      get :new, session: { current_user_id: @user.id, current_tenant_id: @tenant.id }
+    end
+
+    assert_predicate @controller.current_tenant_user, :present?
+    assert_no_match(
+      /FROM "users"/,
+      sql.join("\n"),
+      "users は認証情報しか持たないため、リクエストごとに読む必要はない",
+    )
+    assert_equal 4, sql.size, "実行された SQL:\n#{sql.join("\n")}"
   end
 
   test "リクエストを抜けたらDBのテナントコンテキストは解除される" do
