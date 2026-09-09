@@ -6,8 +6,7 @@ namespace :db do
     ActiveRecord::Base.with_connection do |connection|
       role = connection.quote_column_name(app_role)
 
-      # 既存のテーブル/シーケンスへの権限と、今後作られるものへの既定権限。
-      # 後者が無いと、マイグレーションで追加したテーブルにアプリがアクセスできない。
+      # ALTER DEFAULT PRIVILEGES が無いと、以後追加するテーブルに権限が付かない
       connection.execute(<<~SQL)
         GRANT USAGE ON SCHEMA public TO #{role};
         GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO #{role};
@@ -23,7 +22,6 @@ namespace :db do
   end
 end
 
-# マイグレーションで追加したテーブルに権限を付け忘れないようにする
 Rake::Task["db:migrate"].enhance do
   Rake::Task["db:grants"].invoke
 end

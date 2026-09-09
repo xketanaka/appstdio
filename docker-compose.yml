@@ -9,7 +9,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: postgres
-      # DB は UTF8、照合順序は ICU の ja-JP を使う
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=ja-JP --locale=C.UTF-8"
       TZ: 'Asia/Tokyo'
       PGTZ: 'Asia/Tokyo'
@@ -39,9 +38,9 @@ services:
       RUBYOPT: "-W:deprecated"
       DB_HOST: "db"
       DB_PORT: "5432"
-      # 通常の接続はアプリ用ロール。RLS が適用される
+      # アプリ用ロール。RLS が適用される
       DB_USER: "appstdio_app"
       DB_PASSWORD: "app_password"
-      # マイグレーションなどスキーマ変更を伴う操作用。bin/rails-as-owner が使う
+      # bin/rails-as-owner が使う
       DB_OWNER_USER: "appstdio_owner"
       DB_OWNER_PASSWORD: "owner_password"

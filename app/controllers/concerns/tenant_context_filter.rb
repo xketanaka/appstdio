@@ -1,10 +1,6 @@
-# リクエストの間だけ、DB のテナントコンテキストを設定する。
-#
-# ApplicationController に include されるため全てのリクエストで実行される。
-# コントローラ側で設定を書き忘れる余地を残さないための構成。
-#
-# 解決した結果はコントローラのインスタンス変数に持つ。参照は SessionsHelper の
-# current_user / current_tenant_user / current_tenant を使う。
+# リクエストの間だけ DB のテナントコンテキストを設定し、解決した結果を
+# @current_user / @current_tenant_user に置く。
+# 参照は SessionsHelper の current_user / current_tenant_user / current_tenant を使う。
 module TenantContextFilter
   extend ActiveSupport::Concern
 
@@ -15,24 +11,20 @@ module TenantContextFilter
   private
 
   def with_tenant_context
-    # users には RLS を掛けていないので、コンテキスト無しで参照できる
     @current_user = authenticated_user
 
-    # 先に user だけ設定する。tenant 側は空になるため、前のリクエストの値が
-    # コネクションに残っていてもここで消える。
-    # この時点で tenant_users から「自分が所属するテナント」を引けるようになる。
+    # 順序に依存している。tenant_users には RLS が掛かっているため、
+    # 先に app.user_id を設定しないと自分の所属行すら見えない
     TenantContext.apply(user: @current_user)
 
     @current_tenant_user = authenticated_tenant_user
     if @current_tenant_user
-      # tenant_id を直接渡す。tenants を引く必要はここでは無い
       TenantContext.apply(tenant: @current_tenant_user.tenant_id, user: @current_user)
     end
 
     yield
   ensure
-    # インスタンス変数はリクエストごとに捨てられるが、DBコネクションは使い回されるため
-    # こちらは明示的に解除する
+    # インスタンス変数と違い DB コネクションは使い回されるので明示的に解除する
     TenantContext.clear
   end
 
@@ -45,8 +37,6 @@ module TenantContextFilter
   def authenticated_tenant_user
     return if @current_user.nil? || session[:current_tenant_id].blank?
 
-    # 自分が有効な所属を持つテナントにしか切り替えられない。
-    # RLS により、ここで見えるのは自分自身の所属行だけ。
     @current_user.tenant_users.active.find_by(tenant_id: session[:current_tenant_id])
   end
 end

@@ -18,10 +18,8 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  # 通常の接続はアプリ用ロール (非スーパーユーザかつ非所有者) を使う。
-  # このロールに対してのみ RLS が適用される。
-  # マイグレーションなどスキーマ変更を伴う操作は bin/rails-as-owner 経由で
-  # 所有者ロールに切り替えて実行する。
+  # アプリ用ロール。RLS はこのロールにのみ適用される。
+  # スキーマ変更は bin/rails-as-owner で所有者ロールに切り替えて実行する。
   username: <%= ENV.fetch("DB_USER") { "appstdio_app" } %>
   password: <%= ENV.fetch("DB_PASSWORD") { "app_password" } %>
   host: <%= ENV.fetch("DB_HOST") { "127.0.0.1" } %>

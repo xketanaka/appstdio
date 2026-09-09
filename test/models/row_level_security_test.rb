@@ -1,8 +1,7 @@
 require "test_helper"
 
-# RLS がテナント間の参照・更新を実際に遮断していることを確認する。
-# このテストは appstdio_app ロール（非スーパーユーザ・非所有者）で接続している
-# ことが前提。前提そのものは RlsConfigurationTest で担保している。
+# appstdio_app ロールで接続していることが前提。前提そのものは
+# RlsConfigurationTest で担保している。
 class RowLevelSecurityTest < ActiveSupport::TestCase
   setup do
     @tenant_a = Tenant.create!(name: "テナントA")
