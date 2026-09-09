@@ -75,3 +75,165 @@
 .clearfix:after {
     clear: both;
 }
+
+/* ==========================================================================
+   Base layout
+   暫定のスタイル。デザインの方針は別途検討する
+   ========================================================================== */
+
+body {
+    margin: 0;
+    color: #1f2933;
+    background: #f5f7fa;
+    font-family: system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    line-height: 1.6;
+}
+
+.content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Header
+   ========================================================================== */
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 1.5rem;
+    background: #1f2933;
+    color: #fff;
+}
+
+.app-header__brand { font-weight: 700; }
+
+.app-header__account {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+}
+
+.app-header__tenant {
+    padding: 0.125rem 0.625rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.app-header__link { color: #9fb3c8; }
+
+/* Card
+   ========================================================================== */
+
+.card {
+    padding: 1.5rem 2rem 2rem;
+    background: #fff;
+    border: 1px solid #e4e7eb;
+    border-radius: 8px;
+}
+
+.card--narrow {
+    max-width: 26rem;
+    margin: 3rem auto;
+}
+
+.card__title {
+    margin: 0 0 1.5rem;
+    font-size: 1.25rem;
+}
+
+.card__empty { color: #616e7c; }
+
+/* Form
+   ========================================================================== */
+
+.form__row { margin-bottom: 1.25rem; }
+
+.form__label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.form__input {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd2d9;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form__input:focus {
+    border-color: #2f80ed;
+    outline: 2px solid rgba(47, 128, 237, 0.25);
+}
+
+/* Button
+   ========================================================================== */
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: #e4e7eb;
+    color: #1f2933;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.btn--primary { background: #2f80ed; color: #fff; }
+.btn--plain { background: transparent; border-color: #52606d; color: #fff; }
+.btn--block { width: 100%; }
+
+/* button_to は form を生成するため、レイアウトが崩れないようにする */
+.app-header__account form,
+.tenant-list__item form { margin: 0; }
+
+/* Tenant list
+   ========================================================================== */
+
+.tenant-list { margin: 0; padding: 0; list-style: none; }
+
+.tenant-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid #e4e7eb;
+}
+
+.tenant-list__item:first-child { border-top: none; }
+.tenant-list__name { font-weight: 600; }
+.tenant-list__note { font-size: 0.875rem; color: #616e7c; }
+
+/* Definition list
+   ========================================================================== */
+
+.detail { display: grid; grid-template-columns: 10rem 1fr; gap: 0.5rem 1rem; margin: 0; }
+.detail dt { color: #616e7c; font-size: 0.875rem; }
+.detail dd { margin: 0; }
+
+/* Flash / errors
+   ========================================================================== */
+
+.message {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.message ul { margin: 0; padding-left: 1.25rem; }
+.message .r-float { float: right; cursor: pointer; }
+
+.notice { background: #e3f9e5; border-color: #a3d9a5; color: #207227; }
+.warn   { background: #fffbea; border-color: #f7d070; color: #8d2b0b; }
+.alert  { background: #ffeeee; border-color: #f29b9b; color: #911111; }
