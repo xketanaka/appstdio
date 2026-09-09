@@ -27,6 +27,10 @@ module HpciOffice
     # Don't generate system test files.
     config.generators.system_tests = nil
 
+    # RLS のポリシーは schema.rb (Ruby形式) では表現できないため structure.sql を使う。
+    # これが無いと db:schema:load / db:test:prepare でポリシーが失われる。
+    config.active_record.schema_format = :sql
+
     config.i18n.default_locale = :ja
     config.time_zone = "Tokyo"
     config.active_record.default_timezone = :local
