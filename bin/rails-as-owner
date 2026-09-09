@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# 所有者ロールで bin/rails を実行する。
+#
+# 通常の接続 (DB_USER) はアプリ用ロールで、スキーマ変更の権限を持たない。
+# マイグレーションや db:create / db:test:prepare はこのラッパー経由で実行する。
+#
+#   bin/rails-as-owner db:migrate
+#
+set -e
+exec env \
+  DB_USER="${DB_OWNER_USER:?DB_OWNER_USER が設定されていません}" \
+  DB_PASSWORD="${DB_OWNER_PASSWORD}" \
+  "$(dirname "$0")/rails" "$@"

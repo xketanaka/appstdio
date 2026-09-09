@@ -3,6 +3,8 @@ services:
     image: postgres:18
     volumes:
       - "./docker/volumes/postgres:/var/lib/postgresql"
+      # ロール定義。ボリュームが空の初回起動時にのみ実行される
+      - "./docker/files/db/initdb:/docker-entrypoint-initdb.d"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -37,5 +39,9 @@ services:
       RUBYOPT: "-W:deprecated"
       DB_HOST: "db"
       DB_PORT: "5432"
-      DB_USER: "postgres"
-      DB_PASSWORD: "password"
+      # 通常の接続はアプリ用ロール。RLS が適用される
+      DB_USER: "appstdio_app"
+      DB_PASSWORD: "app_password"
+      # マイグレーションなどスキーマ変更を伴う操作用。bin/rails-as-owner が使う
+      DB_OWNER_USER: "appstdio_owner"
+      DB_OWNER_PASSWORD: "owner_password"
