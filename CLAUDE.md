@@ -59,4 +59,4 @@ DB は PostgreSQL で、テナント分離に Row Level Security を使ってい
 
 `tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を、適用先には `TO appstdio_app` を付けること。書き方と理由は `docker/README.md` の「RLS について」を参照。
 
-付け忘れは `test/models/rls_configuration_test.rb` が検出する。
+付け忘れは `test/models/rls/rls_configuration_test.rb` が検出する。

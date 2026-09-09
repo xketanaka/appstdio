@@ -80,7 +80,7 @@ PostgreSQL は **スーパーユーザとテーブルの所有者には RLS を�
 | `appstdio_app` | アプリが接続する（`database.yml` の既定値） | **適用される** |
 
 `appstdio_app` は非スーパーユーザかつ非所有者で、`BYPASSRLS` も持たない。
-この前提が崩れると RLS は黙って素通りするため、`test/models/rls_configuration_test.rb`
+この前提が崩れると RLS は黙って素通りするため、`test/models/rls/rls_configuration_test.rb`
 でロールの属性そのものをテストしている。
 
 ロールは postgres コンテナの初回起動時（ボリュームが空のとき）に自動で作られる。
@@ -129,7 +129,7 @@ end
 - 適用先ロールを `TO appstdio_app` で明示する。省略すると `PUBLIC` 宛になり、
   ポリシーは permissive（OR 結合）なので、後から追加したロールにも適用されてしまう
 
-どちらの付け忘れも `test/models/rls_configuration_test.rb` が検出する。
+どちらの付け忘れも `test/models/rls/rls_configuration_test.rb` が検出する。
 
 なお `tenants` と `users` には RLS を掛けていない。
 どちらもテナントコンテキストを確定させる**前に**参照する必要があるテーブルのため
