@@ -4,23 +4,37 @@
 
 if Rails.env.local?
   password = "password1234"
-  user = User.find_or_initialize_by(email: "admin@example.com")
-  user.password = password if user.new_record?
-  user.save!
 
-  # テナント選択画面を確認できるように2件用意する
-  ["サンプル株式会社", "テスト工業"].each_with_index do |name, index|
-    tenant = Tenant.find_or_create_by!(name: name)
+  def upsert_user(email, password)
+    User.find_or_initialize_by(email: email).tap do |user|
+      user.password = password if user.new_record?
+      user.save!
+    end
+  end
 
-    # tenant_users は RLS の対象なので、テナントのコンテキストを設定してから操作する
+  # tenant_users は RLS の対象なので、テナントのコンテキストを設定してから操作する
+  def join(tenant, user, display_name, role)
     TenantContext.switch(tenant: tenant) do
       membership = TenantUser.find_or_initialize_by(tenant_id: tenant.id, user_id: user.id)
-      membership.display_name = "管理者"
-      membership.role = index.zero? ? :owner : :member
+      membership.display_name = display_name
+      membership.role = role
       membership.status = :active
       membership.save!
     end
   end
 
-  puts "ログイン: #{user.email} / #{password}"
+  sample = Tenant.find_or_create_by!(name: "サンプル株式会社")
+  test = Tenant.find_or_create_by!(name: "テスト工業")
+
+  # 所属が複数あるユーザ。ログイン後にテナント選択画面が出る
+  admin = upsert_user("admin@example.com", password)
+  join(sample, admin, "管理者", :owner)
+  join(test, admin, "管理者", :member)
+
+  # 所属が1件のユーザ。テナント選択画面はスキップされる
+  member = upsert_user("member@example.com", password)
+  join(sample, member, "一般ユーザ", :member)
+
+  puts "ログイン (所属2件、選択画面あり): #{admin.email} / #{password}"
+  puts "ログイン (所属1件、選択画面なし): #{member.email} / #{password}"
 end

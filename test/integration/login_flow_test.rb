@@ -7,39 +7,54 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     @tenant = Tenant.create!(name: "テナントA")
     @other_tenant = Tenant.create!(name: "テナントB")
     @user = User.create!(email: "a@example.com", password: PASSWORD)
-    @membership = TenantContext.switch(tenant: @tenant) do
-      TenantUser.create!(
-        tenant: @tenant, user: @user, display_name: "Aさん", role: :owner, status: :active,
-      )
-    end
+    @membership = join(@tenant, display_name: "Aさん", role: :owner)
   end
 
   teardown do
     TenantContext.clear
   end
 
-  test "ログインからテナント選択を経てホームに入れる" do
+  test "所属が1件ならテナント選択を挟まずにホームへ入る" do
     get top_page_path
     assert_redirected_to login_path
 
     post login_path, params: { email: @user.email, password: PASSWORD }
     assert_redirected_to select_tenant_path
 
-    get select_tenant_path
-    assert_response :success
-    # 所属しているテナントだけが並ぶ
-    assert_select ".tenant-list__name", 1
-    assert_select ".tenant-list__name", text: "テナントA"
-
-    post select_tenant_path, params: { tenant_id: @tenant.id }
+    follow_redirect!
     assert_redirected_to top_page_path
 
-    get top_page_path
+    follow_redirect!
     assert_response :success
     assert_select ".detail dd", text: "Aさん"
   end
 
+  test "所属が複数ならテナント選択画面が出る" do
+    join(@other_tenant, display_name: "Bさん")
+
+    post login_path, params: { email: @user.email, password: PASSWORD }
+    follow_redirect!
+
+    assert_response :success
+    assert_select ".tenant-list__name", 2
+
+    post select_tenant_path, params: { tenant_id: @other_tenant.id }
+    assert_redirected_to top_page_path
+
+    follow_redirect!
+    assert_select ".detail dd", text: "Bさん"
+  end
+
+  test "選択済みなら所属が1件でも一覧を出す（切り替えの導線）" do
+    login_and_select
+
+    get select_tenant_path
+    assert_response :success
+    assert_select ".tenant-list__name", 1
+  end
+
   test "テナントを選ぶまでは業務画面に入れない" do
+    join(@other_tenant, display_name: "Bさん")
     post login_path, params: { email: @user.email, password: PASSWORD }
 
     get top_page_path
@@ -79,7 +94,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     TenantContext.switch(tenant: @tenant) { @membership.update!(status: :suspended) }
 
     post login_path, params: { email: @user.email, password: PASSWORD }
-    get select_tenant_path
+    follow_redirect!
 
     assert_response :success
     assert_select ".tenant-list__name", 0
@@ -87,18 +102,18 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "ログイン前に見ようとしたページへ戻る" do
+    join(@other_tenant, display_name: "Bさん")
+
     get top_page_path
     assert_redirected_to login_path
 
     post login_path, params: { email: @user.email, password: PASSWORD }
     post select_tenant_path, params: { tenant_id: @tenant.id }
-
     assert_redirected_to top_page_path
   end
 
   test "ログアウトするとセッションが破棄される" do
-    post login_path, params: { email: @user.email, password: PASSWORD }
-    post select_tenant_path, params: { tenant_id: @tenant.id }
+    login_and_select
     assert_equal @user.id, session[:current_user_id]
 
     delete logout_path
@@ -125,5 +140,22 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @user.email, password: PASSWORD }
 
     assert_not_nil @user.reload.last_signed_in_at
+  end
+
+  private
+
+  def join(tenant, display_name:, role: :member)
+    TenantContext.switch(tenant: tenant) do
+      TenantUser.create!(
+        tenant: tenant, user: @user, display_name: display_name, role: role, status: :active,
+      )
+    end
+  end
+
+  # 所属1件なので、ログインすると自動でテナントが選択される
+  def login_and_select
+    post login_path, params: { email: @user.email, password: PASSWORD }
+    follow_redirect!
+    follow_redirect!
   end
 end
