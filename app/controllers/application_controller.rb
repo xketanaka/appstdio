@@ -1,6 +1,9 @@
 class ApplicationController < ActionController::Base
   include FormatUtils
   include SessionsHelper
+  # login_required より先に include すること。
+  # around_action が後続のコールバックとアクションを包む必要がある。
+  include TenantContextFilter
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
