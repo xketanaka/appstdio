@@ -1,0 +1,18 @@
+<% content_for :title do %>ホーム<% end -%>
+<div class="card">
+  <h1 class="card__title">ログインしています</h1>
+
+  <dl class="detail">
+    <dt><%= Tenant.model_name.human %></dt>
+    <dd><%= current_tenant.name %></dd>
+
+    <dt><%= TenantUser.human_attribute_name(:display_name) %></dt>
+    <dd><%= current_tenant_user.display_name %></dd>
+
+    <dt><%= TenantUser.human_attribute_name(:role) %></dt>
+    <dd><%= t("enums.tenant_user.role.#{current_tenant_user.role}") %></dd>
+
+    <dt><%= User.human_attribute_name(:email) %></dt>
+    <dd><%= current_user.email %></dd>
+  </dl>
+</div>

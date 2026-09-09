@@ -22,7 +22,22 @@
     <%= javascript_importmap_tags %>
   </head>
   <body>
+    <header class="app-header">
+      <div class="app-header__brand"><%= Settings.system_title %></div>
+      <% if logged_in? %>
+        <div class="app-header__account">
+          <% if current_tenant %>
+            <span class="app-header__tenant"><%= current_tenant.name %></span>
+            <%= link_to t("actions.switch_tenant"), select_tenant_path, class: "app-header__link" %>
+          <% end %>
+          <span class="app-header__name"><%= current_tenant_user&.display_name || current_user&.email %></span>
+          <%= button_to t("actions.logout"), logout_path, method: :delete, class: "btn btn--plain" %>
+        </div>
+      <% end %>
+    </header>
+
     <div class="content">
+      <%= render "partial/messages" %>
       <%= yield %>
     </div>
   </body>

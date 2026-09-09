@@ -1,32 +1,19 @@
 <% content_for :title do %>ログイン<% end -%>
-<style type="text/css">
-.btn {
-  text-align: center;
-  margin: 5px 0 !important;
-}
-table.no-grid td table td { padding: 0 !important; }
-</style>
-<section>
-  <div class="center-box round-border" style="margin-left: -320px; padding-bottom: 4rem">
-    <h3 class="width-550-fix">こちらは HPCI SAMLメタデータ登録システムです</h3>
+<div class="card card--narrow">
+  <h1 class="card__title">ログイン</h1>
 
-    <table class="no-grid" style="margin-left: 50px; margin-top: 60px">
-      <tr>
-        <td>
-          <div class="wizard-text">▼学認フェデレーションに参加しているIdPでのログインはこちら</div>
-          <div>
-            <a href="/sessions/prepare" class="btn primary ib width-400-fix" >学認IdPでログイン</a>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding-top: 1rem">
-          <div class="wizard-text" >▼HPCI アカウントでのログインはこちら</div>
-          <div>
-            <a href="#" class="btn alt ib width-400-fix" >HPCIアカウントでログイン</a>
-          </div>
-        </td>
-      </tr>
-    </table>
-  </div>
-</section>
+  <%= form_with url: login_path, method: :post, class: "form" do |f| %>
+    <div class="form__row">
+      <%= f.label :email, User.human_attribute_name(:email), class: "form__label" %>
+      <%= f.email_field :email, value: params[:email], autofocus: true,
+            autocomplete: "username", class: "form__input" %>
+    </div>
+
+    <div class="form__row">
+      <%= f.label :password, User.human_attribute_name(:password), class: "form__label" %>
+      <%= f.password_field :password, autocomplete: "current-password", class: "form__input" %>
+    </div>
+
+    <%= f.submit t("actions.login"), class: "btn btn--primary btn--block" %>
+  <% end %>
+</div>

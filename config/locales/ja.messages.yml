@@ -1,5 +1,15 @@
 ja:
+  actions:
+    login: "ログイン"
+    logout: "ログアウト"
+    select: "選択"
+    switch_tenant: "テナントを切り替える"
   messages:
+    logged_in: "ログインしました。"
+    logged_out: "ログアウトしました。"
+    login_failure: "メールアドレスまたはパスワードが違います。"
+    no_tenant: "所属しているテナントがありません。管理者にお問い合わせください。"
+    tenant_not_available: "選択されたテナントは利用できません。"
     created: "登録しました。"
     updated: "更新しました。"
     deleted: "削除しました。"

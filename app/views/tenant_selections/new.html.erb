@@ -1,0 +1,23 @@
+<% content_for :title do %>テナントの選択<% end -%>
+<div class="card">
+  <h1 class="card__title">テナントの選択</h1>
+
+  <% if @tenant_users.empty? %>
+    <p class="card__empty"><%= t("messages.no_tenant") %></p>
+  <% else %>
+    <ul class="tenant-list">
+      <% @tenant_users.each do |tenant_user| %>
+        <li class="tenant-list__item">
+          <div>
+            <div class="tenant-list__name"><%= tenant_user.tenant.name %></div>
+            <div class="tenant-list__note">
+              <%= t("enums.tenant_user.role.#{tenant_user.role}") %> / <%= tenant_user.display_name %>
+            </div>
+          </div>
+          <%= button_to t("actions.select"), select_tenant_path,
+                params: { tenant_id: tenant_user.tenant_id }, class: "btn btn--primary" %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>
