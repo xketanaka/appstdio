@@ -1,6 +1,5 @@
 class CreateUsers < ActiveRecord::Migration[8.1]
   def change
-    # 認証主体としての情報のみを保持する。プロフィール情報は tenant_users 側に持つ。
     create_table :users do |t|
       t.citext :email, null: false
       t.string :password_digest, null: false

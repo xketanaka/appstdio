@@ -1,6 +1,5 @@
 class CreateTenantUsers < ActiveRecord::Migration[8.1]
   def change
-    # テナント内でのユーザのプロフィール情報。同一ユーザが複数テナントに所属できる。
     create_table :tenant_users do |t|
       # 単独の tenant_id インデックスは下の複合ユニークが兼ねるため作らない
       t.references :tenant,

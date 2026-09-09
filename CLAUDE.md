@@ -42,4 +42,21 @@ Docker コンテナ内で実行する。セットアップ・DB接続・テス�
 
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
-新しくテナントスコープのテーブルを追加する際の決まりごとも `docker/README.md` の「RLS について」にまとめてある。
+
+## テーブルを追加するとき
+
+### 主キーの型
+
+- `tenants` のみ **UUID v7**（`DEFAULT uuidv7()`）
+- それ以外の自作テーブルは **bigint**（Rails の既定）
+- gem 由来のテーブル（solid_queue / solid_cache など）は触らず bigint のまま
+
+`tenants` だけ UUID にしているのは、`tenant_id` が RLS の判定キーであり外部に最も露出する識別子だから。bigint だと他の ID を取り違えて渡したときにポリシーが静かに別テナントの行を返すが、uuid ならキャストで落ちる。
+
+この使い分けの帰結として、**ポリモーフィック関連の参照先に `tenants` を含められない**（uuid と bigint が同居できないため）。
+
+### テナントスコープのテーブル
+
+`tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を付けること。書き方と理由は `docker/README.md` の「RLS について」を参照。
+
+付け忘れは `test/models/rls_configuration_test.rb` が検出する。
