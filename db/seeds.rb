@@ -1,6 +1,10 @@
 # This file should ensure the existence of records required to run the application in every environment (production,
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+#
+# RLS があるため、所有者ロールで実行すること。
+#
+#   bin/rails-as-owner db:seed
 
 if Rails.env.local?
   password = "password1234"
@@ -12,15 +16,12 @@ if Rails.env.local?
     end
   end
 
-  # tenant_users は RLS の対象なので、テナントのコンテキストを設定してから操作する
   def join(tenant, user, display_name, role)
-    TenantContext.switch(tenant: tenant) do
-      membership = TenantUser.find_or_initialize_by(tenant_id: tenant.id, user_id: user.id)
-      membership.display_name = display_name
-      membership.role = role
-      membership.status = :active
-      membership.save!
-    end
+    membership = TenantUser.find_or_initialize_by(tenant_id: tenant.id, user_id: user.id)
+    membership.display_name = display_name
+    membership.role = role
+    membership.status = :active
+    membership.save!
   end
 
   sample = Tenant.find_or_create_by!(name: "サンプル株式会社")
@@ -35,6 +36,14 @@ if Rails.env.local?
   member = upsert_user("member@example.com", password)
   join(sample, member, "一般ユーザ", :member)
 
+  # システム管理者。利用テナントには所属させない
+  operator = upsert_user("operator@example.com", password)
+  account = AdminUser.find_or_initialize_by(user_id: operator.id)
+  account.display_name = "運用担当"
+  account.status = :active
+  account.save!
+
   puts "ログイン (所属2件、選択画面あり): #{admin.email} / #{password}"
   puts "ログイン (所属1件、選択画面なし): #{member.email} / #{password}"
+  puts "管理画面 /admin/login              : #{operator.email} / #{password}"
 end
