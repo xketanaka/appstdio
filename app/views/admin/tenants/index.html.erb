@@ -1,0 +1,29 @@
+<% content_for :title do %>テナント一覧<% end -%>
+<div class="card">
+  <h1 class="card__title">テナント一覧</h1>
+
+  <% if @tenants.empty? %>
+    <p class="card__empty"><%= t("messages.not_search_result") %></p>
+  <% else %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th><%= Tenant.human_attribute_name(:name) %></th>
+          <th><%= Tenant.human_attribute_name(:status) %></th>
+          <th class="table__number"><%= t("admin.tenants.members_count") %></th>
+          <th><%= Tenant.human_attribute_name(:created_at) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @tenants.each do |tenant| %>
+          <tr>
+            <td><%= tenant.name %></td>
+            <td><%= t("enums.tenant.status.#{tenant.status}") %></td>
+            <td class="table__number"><%= tenant.members_count %></td>
+            <td><%= time_to_s(tenant.created_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
