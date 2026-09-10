@@ -38,6 +38,7 @@ services:
       RUBYOPT: "-W:deprecated"
       DB_HOST: "db"
       DB_PORT: "5432"
+      RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       # アプリ用ロール。RLS が適用される
       DB_USER: "appstdio_app"
       DB_PASSWORD: "app_password"

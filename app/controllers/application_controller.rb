@@ -14,6 +14,7 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
   before_action :login_required
+  before_action :tenant_required
 
   class BaseForm
     include ActiveModel::Model
@@ -48,9 +49,18 @@ class ApplicationController < ActionController::Base
   end
 
   def login_required
-    unless logged_in?
-      return redirect_to(request.get? ? top_page_path(visited_url: request.url) : top_page_path)
-    end
+    return if logged_in?
+
+    # fullpath は必ず自サイト内のパスなので、オープンリダイレクトにならない
+    session[:return_to] = request.fullpath if request.get?
+    redirect_to login_path
+  end
+
+  # ログイン済みでもテナントを選ぶまでは業務画面に入れない
+  def tenant_required
+    return if current_tenant_user.present?
+
+    redirect_to select_tenant_path
   end
 
   rescue_from ActiveRecord::RecordNotFound do |e|
@@ -61,7 +71,7 @@ class ApplicationController < ActionController::Base
   rescue_from ActiveRecord::RecordNotUnique do |e|
     Utils.error_log(e, logger)
     flash[:error] = I18n.t("messages.record_dupplicated")
-    redirect_to top_path
+    redirect_to top_page_path
   end
 
   def render_error(status, e)

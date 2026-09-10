@@ -7,7 +7,12 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  resources :sessions, only: [:index, :new]
+  get    "login"  => "sessions#new",     as: :login
+  post   "login"  => "sessions#create"
+  delete "logout" => "sessions#destroy", as: :logout
+
+  get  "select_tenant" => "tenant_selections#new", as: :select_tenant
+  post "select_tenant" => "tenant_selections#create"
 
   get '/', controller: :sessions, action: :index, as: :top_page
 end

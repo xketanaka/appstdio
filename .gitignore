@@ -21,6 +21,10 @@
 !/tmp/pids/
 !/tmp/pids/.keep
 
+# Ignore precompiled assets. マニフェストが残っていると propshaft がそちらを優先し、
+# 変更したアセットが 404 になる
+/public/assets
+
 # Ignore storage (uploaded files in development and any SQLite databases).
 /storage/*
 !/storage/.keep
