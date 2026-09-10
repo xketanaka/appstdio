@@ -14,7 +14,12 @@ class SessionsController < ApplicationController
     user = User.find_by(email: params[:email].to_s.strip)&.authenticate(params[:password].to_s)
 
     if user
-      start_session(user)
+      return_to = session[:return_to]
+      reset_session # セッション固定化攻撃への対策
+      session[:current_user_id] = user.id
+      session[:return_to] = return_to if return_to.present?
+      user.update_column(:last_signed_in_at, Time.current)
+
       redirect_to select_tenant_path, notice: t("messages.logged_in")
     else
       # どちらが誤りかは知らせない
@@ -26,16 +31,5 @@ class SessionsController < ApplicationController
   def destroy
     reset_session
     redirect_to login_path, notice: t("messages.logged_out")
-  end
-
-  private
-
-  def start_session(user)
-    return_to = session[:return_to]
-    reset_session # セッション固定化攻撃への対策
-    session[:current_user_id] = user.id
-    session[:return_to] = return_to if return_to.present?
-
-    user.update_column(:last_signed_in_at, Time.current)
   end
 end
