@@ -1,7 +1,7 @@
 -- RLS のためのロール構成。詳細は docker/README.md を参照。
 --
---   appstdio_owner : テーブルを所有しマイグレーションを実行する
---   appstdio_app   : アプリが接続する。RLS が適用される
+--   appstdio_owner : テーブルを所有する。マイグレーションとシステム管理画面が使う
+--   appstdio_app   : 利用テナント側のアプリが接続する。RLS が適用される
 --
 -- postgres コンテナの初回起動時 (/docker-entrypoint-initdb.d) に実行される。
 -- 既存ボリュームへ手で流す場合を想定して冪等に書いている。

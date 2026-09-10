@@ -4,6 +4,8 @@ class User < ApplicationRecord
 
   has_many :tenant_users, dependent: :destroy
   has_many :tenants, through: :tenant_users
+  # admin_users は RLS により、利用テナント側の接続からは参照できない（常に nil になる）
+  has_one :admin_user, dependent: :destroy
 
   # email は citext なので大文字小文字は区別されない。前後の空白のみ落とす。
   normalizes :email, with: ->(email) { email.to_s.strip }
