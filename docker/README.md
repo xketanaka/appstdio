@@ -203,6 +203,20 @@ docker compose exec app bin/rails tailwindcss:build
 **チェックアウト直後は出力ファイルが存在しない。** `docker compose up` すれば `css`
 サービスが生成する。本番では `assets:precompile` に組み込まれている。
 
+### Vue.js を導入する際は Vite に移す想定
+
+`.vue`（単一ファイルコンポーネント）を使う場合はバンドラが必要になる。その際は
+Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つにまとめる想定。
+
+- `tailwindcss-rails` gem と `css` サービスを削除
+- `app/assets/tailwind/application.css` を Vite のエントリへ移動
+- `@tailwindcss/vite` を追加
+
+現時点で `tailwindcss-rails` のままにしているのは、Vue の導入時期と SFC を使うかが
+未定のため。Vite を先に入れても Vue が無いうちは構成を抱えるだけになる。
+なお standalone バイナリでは**第三者製の Tailwind プラグインが使えない**
+（第一者の typography / forms は使える）。これが必要になった時点でも移行の理由になる。
+
 ### preflight を読み込んでいない
 
 `app/assets/tailwind/application.css` では Tailwind の preflight（ブラウザ既定値の
