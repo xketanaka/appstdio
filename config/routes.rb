@@ -7,12 +7,27 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  get    "login"  => "sessions#new",     as: :login
-  post   "login"  => "sessions#create"
-  delete "logout" => "sessions#destroy", as: :logout
+  # 管理画面のプロセスでは利用テナント側の画面を出さない。
+  # appstdio_admin で接続しているため、テナントを跨いだ遮断が効かなくなるのを防ぐ
+  if Rails.configuration.x.admin_console
+    namespace :admin do
+      get    "login"  => "sessions#new",     as: :login
+      post   "login"  => "sessions#create"
+      delete "logout" => "sessions#destroy", as: :logout
 
-  get  "select_tenant" => "tenant_selections#new", as: :select_tenant
-  post "select_tenant" => "tenant_selections#create"
+      resources :tenants, only: [:index]
+      root "tenants#index"
+    end
 
-  get '/', controller: :sessions, action: :index, as: :top_page
+    root to: redirect("/admin")
+  else
+    get    "login"  => "sessions#new",     as: :login
+    post   "login"  => "sessions#create"
+    delete "logout" => "sessions#destroy", as: :logout
+
+    get  "select_tenant" => "tenant_selections#new", as: :select_tenant
+    post "select_tenant" => "tenant_selections#create"
+
+    get '/', controller: :sessions, action: :index, as: :top_page
+  end
 end

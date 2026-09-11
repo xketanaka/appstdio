@@ -5,8 +5,7 @@
 docker-compose.override.yml を配置する。必要であればホスト側のポート設定を変更する
 
 ```bash
-cd docker/
-cp files/docker-compose.override.yml.example docker-compose.override.yml
+cp docker/files/docker-compose.override.yml.example docker-compose.override.yml
 ```
 
 ## セットアップ
@@ -33,7 +32,7 @@ docker compose exec app bash
 
 bin/rails-as-owner db:create
 bin/rails-as-owner db:migrate
-bin/rails db:seed
+bin/rails-as-owner db:seed
 bin/rails-as-owner db:test:prepare
 ```
 
@@ -76,10 +75,14 @@ PostgreSQL は **スーパーユーザとテーブルの所有者には RLS を�
 
 | ロール | 用途 | RLS |
 |---|---|---|
-| `appstdio_owner` | テーブルを所有し、マイグレーションを実行する | 適用されない |
-| `appstdio_app` | アプリが接続する（`database.yml` の既定値） | **適用される** |
+| `appstdio_owner` | テーブルを所有する。マイグレーションとシステム管理画面が使う | 適用されない |
+| `appstdio_app` | 利用テナント側のアプリが接続する（`DB_USER` の既定値） | **適用される** |
 
 `appstdio_app` は非スーパーユーザかつ非所有者で、`BYPASSRLS` も持たない。
+
+管理画面用に3つ目のロールを用意する案もあったが、採用しなかった。管理画面は全テナントを
+扱うのが役割なので、専用ロールを作っても結局すべてを許可するポリシーを張ることになり、
+所有者との差は DDL 権限の有無だけになる。ロールを1つ減らすほうが構成として単純。
 この前提が崩れると RLS は黙って素通りするため、`test/models/rls/rls_configuration_test.rb`
 でロールの属性そのものをテストしている。
 
@@ -124,6 +127,31 @@ TenantContext.switch(tenant: tenant, user: user) do
 end
 ```
 
+### システム管理画面（別プロセス）
+
+管理画面は**同じコードベースを別プロセスとしてデプロイする**。プロセスが接続する
+ロールと、配信するルーティングを環境変数で切り替える。
+
+| | 公開側 | 管理側 |
+|---|---|---|
+| `DB_USER` | `appstdio_app` | `appstdio_owner` |
+| `ADMIN_CONSOLE` | 未設定 | `1` |
+| 配信する画面 | 利用テナント側のみ（`/admin` は 404） | `/admin` のみ（`/login` などは 404） |
+
+開発環境では `docker-compose.yml` の `app` と `admin` の2サービスが対応する。
+
+**ルーティングを分けているのは必須の対策。** 管理側のプロセスで利用テナント側の画面を
+配信すると、全クエリが所有者ロールで実行され、テナントを跨いだ遮断が効かなくなる。
+逆に公開側で `/admin` を配信しても RLS で 0 件になり fail-closed だが、こちらも塞いでいる。
+
+接続の切り替えはコードでは行わない。プロセスが持つ資格情報がそのままロールになるので、
+`rails console` や `rails runner` で「どの接続か」を意識する必要はない。
+開発環境で管理側のデータを触るときは所有者ロールで実行する。
+
+```bash
+docker compose exec app bin/rails-as-owner console
+```
+
 ### 新しくテナントスコープのテーブルを追加するとき
 
 `tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。
@@ -134,6 +162,10 @@ end
   ポリシーは permissive（OR 結合）なので、後から追加したロールにも適用されてしまう
 
 どちらの付け忘れも `test/models/rls/rls_configuration_test.rb` が検出する。
+
+`admin_users` は RLS を有効にしたうえで**ポリシーを1つも張っていない**。利用テナント側の
+接続からは 0 件になり、所有者ロール（管理画面）は RLS を素通りするので参照できる。
+`FORCE ROW LEVEL SECURITY` を付けると所有者にも適用されてしまうので付けないこと。
 
 なお `tenants` と `users` には RLS を掛けていない。
 どちらもテナントコンテキストを確定させる**前に**参照する必要があるテーブルのため
@@ -160,6 +192,14 @@ RLS が防げるのは **アプリケーションのバグ**（`where tenant_id 
 
 ```bash
 docker compose exec app sh -c "bin/rails test"
+```
+
+管理画面のテストは別ロール・別ルーティングのため、独立したプロセスで実行する。
+`bin/rails test` では skip される。
+
+```bash
+docker compose exec app sh -c "bin/rails test:admin"   # 管理画面のみ
+docker compose exec app sh -c "bin/rails test:all"     # 両方
 ```
 
 コンテナが起動してない場合

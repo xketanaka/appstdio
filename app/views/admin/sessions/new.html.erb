@@ -1,0 +1,19 @@
+<% content_for :title do %>管理者ログイン<% end -%>
+<div class="card card--narrow">
+  <h1 class="card__title">管理者ログイン</h1>
+
+  <%= form_with url: admin_login_path, method: :post, class: "form" do |f| %>
+    <div class="form__row">
+      <%= f.label :email, User.human_attribute_name(:email), class: "form__label" %>
+      <%= f.email_field :email, value: params[:email], autofocus: true,
+            autocomplete: "username", class: "form__input" %>
+    </div>
+
+    <div class="form__row">
+      <%= f.label :password, User.human_attribute_name(:password), class: "form__label" %>
+      <%= f.password_field :password, autocomplete: "current-password", class: "form__input" %>
+    </div>
+
+    <%= f.submit t("actions.login"), class: "btn btn--primary btn--block" %>
+  <% end %>
+</div>

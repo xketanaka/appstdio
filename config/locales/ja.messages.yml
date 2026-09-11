@@ -1,4 +1,7 @@
 ja:
+  admin:
+    tenants:
+      members_count: "所属ユーザ数"
   actions:
     login: "ログイン"
     logout: "ログアウト"

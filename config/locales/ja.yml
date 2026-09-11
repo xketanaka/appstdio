@@ -8,6 +8,7 @@ ja:
           has_many: "%{record}が存在しているため削除できません。"
     models:
       tenant: "テナント"
+      admin_user: "管理者"
       user: "ユーザ"
       tenant_user: "テナントユーザ"
     attributes:
@@ -30,6 +31,14 @@ ja:
         last_signed_in_at: "最終ログイン日時"
         created_at: "作成日時"
         updated_at: "更新日時"
+      admin_user:
+        id: "ID"
+        user: "ユーザ"
+        user_id: "ユーザ"
+        display_name: "表示名"
+        status: "状態"
+        created_at: "作成日時"
+        updated_at: "更新日時"
       tenant_user:
         id: "ID"
         tenant: "テナント"
@@ -44,6 +53,10 @@ ja:
 
   # enum の表示名。ビューでは I18n.t("enums.tenant_user.role.#{tenant_user.role}") のように参照する
   enums:
+    admin_user:
+      status:
+        active: "有効"
+        suspended: "停止中"
     tenant:
       status:
         active: "有効"

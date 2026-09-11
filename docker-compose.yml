@@ -45,3 +45,32 @@ services:
       # bin/rails-as-owner が使う
       DB_OWNER_USER: "appstdio_owner"
       DB_OWNER_PASSWORD: "owner_password"
+
+  admin:
+    build:
+      context: ./docker/
+    privileged: true
+    volumes:
+      - ".:/opt/app-root/appstdio"
+      - "./docker/volumes/bundle:/usr/local/bundle"
+    working_dir: /opt/app-root/appstdio
+    command: sh -c "bundle install; bin/rails ${COMMAND:-server}"
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOME: ''
+      LANGUAGE: "ja_JP:ja"
+      LC_ALL: "ja_JP.UTF-8"
+      BINDING: "0.0.0.0"
+      RUBYOPT: "-W:deprecated"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      # 管理画面は所有者ロールで接続する。RLS を素通りするのでテナントを跨いで扱える
+      ADMIN_CONSOLE: "1"
+      DB_USER: "appstdio_owner"
+      DB_PASSWORD: "owner_password"
+      # bin/rails-as-owner が使う
+      DB_OWNER_USER: "appstdio_owner"
+      DB_OWNER_PASSWORD: "owner_password"

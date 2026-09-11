@@ -56,6 +56,8 @@ Docker コンテナ内で実行する。セットアップ・DB接続・テス�
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
 
+システム管理画面（`/admin`）は同じコードベースを別プロセスとしてデプロイする。所有者ロールで接続し（`DB_USER=appstdio_owner`）、`ADMIN_CONSOLE=1` でルーティングが切り替わる。テストも分かれるので、両方を走らせるときは `bin/rails test:all` を使う。
+
 ## テーブルを追加するとき
 
 ### 主キーの型

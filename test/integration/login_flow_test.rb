@@ -61,6 +61,12 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to select_tenant_path
   end
 
+  test "管理画面は配信しない" do
+    # 管理画面は ADMIN_CONSOLE=1 の別プロセスで動かす
+    get "/admin"
+    assert_response :not_found
+  end
+
   test "パスワードが違うとログインできない" do
     post login_path, params: { email: @user.email, password: "wrong-password" }
 
