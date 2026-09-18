@@ -15,27 +15,24 @@
 
     <link rel="icon" href="/favicon.ico" >
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-    <%= stylesheet_link_tag "font-awesome.min" %>
-    <%= stylesheet_link_tag "normalize" %>
-    <%= stylesheet_link_tag "application" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="admin">
-    <header class="app-header app-header--admin">
-      <div class="app-header__brand">
-        <%= link_to "#{Settings.system_title} 管理", admin_root_path, class: "app-header__link" %>
+  <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
+    <header class="flex flex-wrap items-center justify-between gap-4 bg-slate-700 px-6 py-3 text-white">
+      <div class="font-bold">
+        <%= link_to "#{Settings.system_title} 管理", admin_root_path, class: "hover:underline" %>
       </div>
       <% if current_admin_user %>
-        <div class="app-header__account">
-          <span class="app-header__name"><%= current_admin_user.display_name %></span>
-          <%= button_to t("actions.logout"), admin_logout_path, method: :delete, class: "btn btn--plain" %>
+        <div class="flex items-center gap-4 text-sm">
+          <span><%= current_admin_user.display_name %></span>
+          <%= button_to t("actions.logout"), admin_logout_path, method: :delete,
+                class: "cursor-pointer rounded border border-slate-400 px-3 py-1 hover:bg-slate-600" %>
         </div>
       <% end %>
     </header>
 
-    <div class="content">
+    <div class="mx-auto max-w-5xl px-4 py-8">
       <%= render "partial/messages" %>
       <%= yield %>
     </div>

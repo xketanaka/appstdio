@@ -1,18 +1,18 @@
 <% content_for :title do %>ホーム<% end -%>
-<div class="card">
-  <h1 class="card__title">ログインしています</h1>
+<div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+  <h1 class="mb-6 text-xl font-bold">ログインしています</h1>
 
-  <dl class="detail">
-    <dt><%= Tenant.model_name.human %></dt>
+  <dl class="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2">
+    <dt class="text-sm text-slate-500"><%= Tenant.model_name.human %></dt>
     <dd><%= current_tenant.name %></dd>
 
-    <dt><%= TenantUser.human_attribute_name(:display_name) %></dt>
+    <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:display_name) %></dt>
     <dd><%= current_tenant_user.display_name %></dd>
 
-    <dt><%= TenantUser.human_attribute_name(:role) %></dt>
+    <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:role) %></dt>
     <dd><%= t("enums.tenant_user.role.#{current_tenant_user.role}") %></dd>
 
-    <dt><%= User.human_attribute_name(:email) %></dt>
+    <dt class="text-sm text-slate-500"><%= User.human_attribute_name(:email) %></dt>
     <dd><%= current_user.email %></dd>
   </dl>
 </div>

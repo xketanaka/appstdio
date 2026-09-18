@@ -1,21 +1,22 @@
 <% content_for :title do %>テナントの選択<% end -%>
-<div class="card">
-  <h1 class="card__title">テナントの選択</h1>
+<div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+  <h1 class="mb-6 text-xl font-bold">テナントの選択</h1>
 
   <% if @tenant_users.empty? %>
-    <p class="card__empty"><%= t("messages.no_tenant") %></p>
+    <p class="text-slate-500"><%= t("messages.no_tenant") %></p>
   <% else %>
-    <ul class="tenant-list">
+    <ul id="tenant-list" class="divide-y divide-slate-200">
       <% @tenant_users.each do |tenant_user| %>
-        <li class="tenant-list__item">
+        <li class="flex items-center justify-between gap-4 py-4">
           <div>
-            <div class="tenant-list__name"><%= tenant_user.tenant.name %></div>
-            <div class="tenant-list__note">
+            <div class="font-semibold"><%= tenant_user.tenant.name %></div>
+            <div class="text-sm text-slate-500">
               <%= t("enums.tenant_user.role.#{tenant_user.role}") %> / <%= tenant_user.display_name %>
             </div>
           </div>
           <%= button_to t("actions.select"), select_tenant_path,
-                params: { tenant_id: tenant_user.tenant_id }, class: "btn btn--primary" %>
+                params: { tenant_id: tenant_user.tenant_id },
+                class: "cursor-pointer rounded bg-blue-600 px-5 py-2 text-white hover:bg-blue-700" %>
         </li>
       <% end %>
     </ul>

@@ -217,20 +217,22 @@ Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つに�
 なお standalone バイナリでは**第三者製の Tailwind プラグインが使えない**
 （第一者の typography / forms は使える）。これが必要になった時点でも移行の理由になる。
 
-### preflight を読み込んでいない
+### スタイルはすべて Tailwind のユーティリティで書く
 
-`app/assets/tailwind/application.css` では Tailwind の preflight（ブラウザ既定値の
-リセット）を読み込んでいない。既存の `normalize.css` と二重になり、現行画面の
-見た目が変わるため。既存 CSS を Tailwind へ置き換える際に、コメントアウトしてある
-1行を有効化して `normalize.css` を外す。
+独自の CSS ファイルは持たない。`app/assets/stylesheets/` は空で、スタイルはビューの
+`class` 属性に直接書く。`@apply` でクラスを作るのは、Tailwind 側が推奨していないので
+避ける。同じ組み合わせが増えてきたら、CSS ではなく partial かヘルパーにまとめる。
 
-### 既存 CSS との優先順位
+`@theme` で変更しているのはフォントスタックのみ（既定のスタックに日本語フォントが
+含まれないため）。色は Tailwind 既定のパレット（slate / blue / green / amber / red）を
+そのまま使っている。
 
-Tailwind のユーティリティは `@layer utilities` に入る。CSS のカスケードレイヤーは
-レイヤー無しの CSS より優先度が低いため、**`application.css` の既存クラスが常に勝つ**。
+### テストはスタイルのクラスを参照しない
 
-つまり `.card` が付いた要素に `p-8` を足しても、`.card` の padding が優先される。
-置き換えの際は、既存クラスを外してから Tailwind のクラスを付ける必要がある。
+`assert_select` は `id`、要素の構造、`role` 属性、テキストで書く。ユーティリティクラスは
+見た目を変えるたびに変わるので、テストから参照すると壊れやすくなる。
+
+flash の領域には `role="alert"` / `role="status"` が付いているので、そこを使う。
 
 ## テスト(Minitest)実行
 
