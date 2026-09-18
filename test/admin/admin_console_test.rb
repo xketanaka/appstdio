@@ -31,17 +31,17 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_select ".table tbody tr", 2
-    assert_select ".table td", text: "テナントA"
-    assert_select ".table td", text: "テナントB"
+    assert_select "#tenant-table tbody tr", 2
+    assert_select "td", text: "テナントA"
+    assert_select "td", text: "テナントB"
   end
 
   test "所属ユーザ数はテナントを跨いで数えられる" do
     login_as_admin
     get admin_root_path
 
-    assert_select ".table tbody tr:first-child .table__number", text: "1"
-    assert_select ".table tbody tr:last-child .table__number", text: "0"
+    assert_select "#tenant-table tbody tr:first-child td:nth-child(3)", text: "1"
+    assert_select "#tenant-table tbody tr:last-child td:nth-child(3)", text: "0"
   end
 
   test "テナントコンテキストを設定しなくても所属情報が見える" do
@@ -54,7 +54,7 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
     post admin_login_path, params: { email: @tenant_member.email, password: PASSWORD }
 
     assert_response :unprocessable_entity
-    assert_select ".alert", text: /メールアドレスまたはパスワードが違います/
+    assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
     assert_nil session[:current_admin_user_id]
   end
 

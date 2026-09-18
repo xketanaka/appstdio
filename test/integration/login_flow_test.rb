@@ -26,7 +26,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_select ".detail dd", text: "Aさん"
+    assert_select "dd", text: "Aさん"
   end
 
   test "所属が複数ならテナント選択画面が出る" do
@@ -36,13 +36,13 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
 
     assert_response :success
-    assert_select ".tenant-list__name", 2
+    assert_select "#tenant-list li", 2
 
     post select_tenant_path, params: { tenant_id: @other_tenant.id }
     assert_redirected_to top_page_path
 
     follow_redirect!
-    assert_select ".detail dd", text: "Bさん"
+    assert_select "dd", text: "Bさん"
   end
 
   test "選択済みなら所属が1件でも一覧を出す（切り替えの導線）" do
@@ -50,7 +50,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
 
     get select_tenant_path
     assert_response :success
-    assert_select ".tenant-list__name", 1
+    assert_select "#tenant-list li", 1
   end
 
   test "テナントを選ぶまでは業務画面に入れない" do
@@ -71,7 +71,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @user.email, password: "wrong-password" }
 
     assert_response :unprocessable_entity
-    assert_select ".alert", text: /メールアドレスまたはパスワードが違います/
+    assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
     assert_nil session[:current_user_id]
   end
 
@@ -79,7 +79,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "nobody@example.com", password: PASSWORD }
 
     assert_response :unprocessable_entity
-    assert_select ".alert", text: /メールアドレスまたはパスワードが違います/
+    assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
   end
 
   test "メールアドレスの大文字小文字は区別されない" do
@@ -103,8 +103,8 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
 
     assert_response :success
-    assert_select ".tenant-list__name", 0
-    assert_select ".card__empty"
+    assert_select "#tenant-list li", 0
+    assert_select "p", text: /所属しているテナントがありません/
   end
 
   test "ログイン前に見ようとしたページへ戻る" do
