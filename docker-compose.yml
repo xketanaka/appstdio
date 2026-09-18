@@ -74,3 +74,19 @@ services:
       # bin/rails-as-owner が使う
       DB_OWNER_USER: "appstdio_owner"
       DB_OWNER_PASSWORD: "owner_password"
+
+  css:
+    build:
+      context: ./docker/
+    volumes:
+      - ".:/opt/app-root/appstdio"
+      - "./docker/volumes/bundle:/usr/local/bundle"
+    working_dir: /opt/app-root/appstdio
+    # always を付けないと、tty の無いコンテナでは監視が始まらずに終了する
+    command: sh -c "bundle install; bin/rails 'tailwindcss:watch[always]'"
+    restart: always
+    environment:
+      HOME: ''
+      LANGUAGE: "ja_JP:ja"
+      LC_ALL: "ja_JP.UTF-8"
+      RUBYOPT: "-W:deprecated"

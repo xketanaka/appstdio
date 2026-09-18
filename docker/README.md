@@ -186,6 +186,52 @@ RLS が防げるのは **アプリケーションのバグ**（`where tenant_id 
 攻撃者自身が `set_config('app.tenant_id', ...)` を呼べてしまうため。
 そちらは通常どおりアプリケーション側で防ぐ必要がある。
 
+## CSS (Tailwind CSS)
+
+`tailwindcss-rails` を使う。Node は不要で、スタンドアロンのバイナリでビルドする。
+
+- 入力: `app/assets/tailwind/application.css`
+- 出力: `app/assets/builds/tailwind.css`（git 管理外）
+
+開発環境では `css` サービスがファイルを監視して自動でビルドする。`docker compose up` に
+含まれているので通常は意識しなくてよい。手で実行する場合は以下。
+
+```bash
+docker compose exec app bin/rails tailwindcss:build
+```
+
+**チェックアウト直後は出力ファイルが存在しない。** `docker compose up` すれば `css`
+サービスが生成する。本番では `assets:precompile` に組み込まれている。
+
+### Vue.js を導入する際は Vite に移す想定
+
+`.vue`（単一ファイルコンポーネント）を使う場合はバンドラが必要になる。その際は
+Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つにまとめる想定。
+
+- `tailwindcss-rails` gem と `css` サービスを削除
+- `app/assets/tailwind/application.css` を Vite のエントリへ移動
+- `@tailwindcss/vite` を追加
+
+現時点で `tailwindcss-rails` のままにしているのは、Vue の導入時期と SFC を使うかが
+未定のため。Vite を先に入れても Vue が無いうちは構成を抱えるだけになる。
+なお standalone バイナリでは**第三者製の Tailwind プラグインが使えない**
+（第一者の typography / forms は使える）。これが必要になった時点でも移行の理由になる。
+
+### preflight を読み込んでいない
+
+`app/assets/tailwind/application.css` では Tailwind の preflight（ブラウザ既定値の
+リセット）を読み込んでいない。既存の `normalize.css` と二重になり、現行画面の
+見た目が変わるため。既存 CSS を Tailwind へ置き換える際に、コメントアウトしてある
+1行を有効化して `normalize.css` を外す。
+
+### 既存 CSS との優先順位
+
+Tailwind のユーティリティは `@layer utilities` に入る。CSS のカスケードレイヤーは
+レイヤー無しの CSS より優先度が低いため、**`application.css` の既存クラスが常に勝つ**。
+
+つまり `.card` が付いた要素に `p-8` を足しても、`.card` の padding が優先される。
+置き換えの際は、既存クラスを外してから Tailwind のクラスを付ける必要がある。
+
 ## テスト(Minitest)実行
 
 すでにコンテナが起動している場合はアタッチして実行

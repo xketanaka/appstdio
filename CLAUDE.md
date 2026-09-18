@@ -56,6 +56,8 @@ Docker コンテナ内で実行する。セットアップ・DB接続・テス�
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
 
+CSS は Tailwind CSS。`css` サービスが監視してビルドする（出力の `app/assets/builds/tailwind.css` は git 管理外）。既存の独自 CSS を置き換えている途中で、preflight の扱いと優先順位に注意が要る。詳細は `docker/README.md` の「CSS (Tailwind CSS)」を参照。
+
 システム管理画面（`/admin`）は同じコードベースを別プロセスとしてデプロイする。所有者ロールで接続し（`DB_USER=appstdio_owner`）、`ADMIN_CONSOLE=1` でルーティングが切り替わる。テストも分かれるので、両方を走らせるときは `bin/rails test:all` を使う。
 
 ## テーブルを追加するとき
