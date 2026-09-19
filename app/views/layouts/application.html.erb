@@ -15,29 +15,27 @@
 
     <link rel="icon" href="/favicon.ico" >
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-    <%= stylesheet_link_tag "font-awesome.min" %>
-    <%= stylesheet_link_tag "normalize" %>
-    <%= stylesheet_link_tag "application" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body>
-    <header class="app-header">
-      <div class="app-header__brand"><%= Settings.system_title %></div>
+  <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
+    <header class="flex flex-wrap items-center justify-between gap-4 bg-slate-800 px-6 py-3 text-white">
+      <div class="font-bold"><%= Settings.system_title %></div>
       <% if logged_in? %>
-        <div class="app-header__account">
+        <div class="flex items-center gap-4 text-sm">
           <% if current_tenant %>
-            <span class="app-header__tenant"><%= current_tenant.name %></span>
-            <%= link_to t("actions.switch_tenant"), select_tenant_path, class: "app-header__link" %>
+            <span class="rounded-full bg-white/15 px-2.5 py-0.5"><%= current_tenant.name %></span>
+            <%= link_to t("actions.switch_tenant"), select_tenant_path,
+                  class: "text-slate-300 underline-offset-2 hover:underline" %>
           <% end %>
-          <span class="app-header__name"><%= current_tenant_user&.display_name || current_user&.email %></span>
-          <%= button_to t("actions.logout"), logout_path, method: :delete, class: "btn btn--plain" %>
+          <span><%= current_tenant_user&.display_name || current_user&.email %></span>
+          <%= button_to t("actions.logout"), logout_path, method: :delete,
+                class: "cursor-pointer rounded border border-slate-500 px-3 py-1 hover:bg-slate-700" %>
         </div>
       <% end %>
     </header>
 
-    <div class="content">
+    <div class="mx-auto max-w-5xl px-4 py-8">
       <%= render "partial/messages" %>
       <%= yield %>
     </div>

@@ -1,26 +1,26 @@
 <% content_for :title do %>テナント一覧<% end -%>
-<div class="card">
-  <h1 class="card__title">テナント一覧</h1>
+<div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+  <h1 class="mb-6 text-xl font-bold">テナント一覧</h1>
 
   <% if @tenants.empty? %>
-    <p class="card__empty"><%= t("messages.not_search_result") %></p>
+    <p class="text-slate-500"><%= t("messages.not_search_result") %></p>
   <% else %>
-    <table class="table">
+    <table id="tenant-table" class="w-full">
       <thead>
-        <tr>
-          <th><%= Tenant.human_attribute_name(:name) %></th>
-          <th><%= Tenant.human_attribute_name(:status) %></th>
-          <th class="table__number"><%= t("admin.tenants.members_count") %></th>
-          <th><%= Tenant.human_attribute_name(:created_at) %></th>
+        <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
+          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:name) %></th>
+          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:status) %></th>
+          <th class="px-3 py-2.5 text-right"><%= t("admin.tenants.members_count") %></th>
+          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:created_at) %></th>
         </tr>
       </thead>
       <tbody>
         <% @tenants.each do |tenant| %>
-          <tr>
-            <td><%= tenant.name %></td>
-            <td><%= t("enums.tenant.status.#{tenant.status}") %></td>
-            <td class="table__number"><%= tenant.members_count %></td>
-            <td><%= time_to_s(tenant.created_at) %></td>
+          <tr class="border-b border-slate-200">
+            <td class="px-3 py-2.5"><%= tenant.name %></td>
+            <td class="px-3 py-2.5"><%= t("enums.tenant.status.#{tenant.status}") %></td>
+            <td class="px-3 py-2.5 text-right"><%= tenant.members_count %></td>
+            <td class="px-3 py-2.5"><%= time_to_s(tenant.created_at) %></td>
           </tr>
         <% end %>
       </tbody>

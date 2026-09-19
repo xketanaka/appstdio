@@ -8,11 +8,16 @@
        msg.tap(&block)
      end
    end
+
+   styles = {
+     notice: "border-green-300 bg-green-50 text-green-800",
+     warn: "border-amber-300 bg-amber-50 text-amber-800",
+     alert: "border-red-300 bg-red-50 text-red-800",
+   }
 %>
-<%- [:notice, :warn, :alert].each do |type| -%>
+<%- styles.each do |type, style| -%>
   <%- if flash[type] -%>
-  <div class="message <%= type.to_s %>" >
-    <i class="fa fa-close r-float"></i>
+  <div class="mb-6 rounded border px-4 py-3 <%= style %>" role="<%= type == :notice ? "status" : "alert" %>">
     <% split_message flash[type] do |message| %>
       <div><%= flash["#{type}_html_safe"] ? message.html_safe : message %></div>
     <% end %>
