@@ -53,10 +53,12 @@
 
 Docker コンテナ内で実行する。セットアップ・DB接続・テスト実行の手順は `docker/README.md` を参照。
 
+**設計と実装方針は `doc/architecture.md` にまとめてある。**
+
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
 
-CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。`css` サービスが監視してビルドする（出力の `app/assets/builds/tailwind.css` は git 管理外）。詳細は `docker/README.md` の「CSS (Tailwind CSS)」を参照。
+CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。`css` サービスが監視してビルドする（出力の `app/assets/builds/tailwind.css` は git 管理外）。詳細は `doc/architecture.md` の「CSS」を参照。
 
 テストの `assert_select` にユーティリティクラスを書かないこと。`id` / 要素の構造 / `role` 属性 / テキストで書く。
 
@@ -76,6 +78,6 @@ CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルは�
 
 ### テナントスコープのテーブル
 
-`tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を、適用先には `TO appstdio_app` を付けること。書き方と理由は `docker/README.md` の「RLS について」を参照。
+`tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を、適用先には `TO appstdio_app` を付けること。書き方と理由は `doc/architecture.md` の「テナント分離」を参照。
 
 付け忘れは `test/models/rls/rls_configuration_test.rb` が検出する。
