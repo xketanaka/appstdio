@@ -69,6 +69,7 @@ services:
       DB_PORT: "5432"
       # 管理画面は所有者ロールで接続する。RLS を素通りするのでテナントを跨いで扱える
       ADMIN_CONSOLE: "1"
+      RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       DB_USER: "appstdio_owner"
       DB_PASSWORD: "owner_password"
       # bin/rails-as-owner が使う
