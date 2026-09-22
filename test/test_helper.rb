@@ -5,9 +5,9 @@ SimpleCov.start "rails" do
   enable_coverage :branch
 
   # Exclude unnecessary files from coverage
-  add_filter "/test/"
-  add_filter "/config/"
-  add_filter "/vendor/"
+  skip "/test/"
+  skip "/config/"
+  skip "/vendor/"
 
   # Coverage thresholds (optional)
   # minimum_coverage line: 80, branch: 70
