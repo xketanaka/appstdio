@@ -21,7 +21,7 @@
   <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
     <header class="flex flex-wrap items-center justify-between gap-4 bg-slate-700 px-6 py-3 text-white">
       <div class="font-bold">
-        <%= link_to "#{Settings.system_title} 管理", admin_root_path, class: "hover:underline" %>
+        <%= link_to t(".brand", system_title: Settings.system_title), admin_root_path, class: "hover:underline" %>
       </div>
       <% if current_admin_user %>
         <div class="flex items-center gap-4 text-sm">

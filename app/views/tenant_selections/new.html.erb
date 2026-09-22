@@ -1,6 +1,6 @@
-<% content_for :title do %>テナントの選択<% end -%>
+<% content_for :title do %><%= t(".title") %><% end -%>
 <div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
-  <h1 class="mb-6 text-xl font-bold">テナントの選択</h1>
+  <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
   <% if @tenant_users.empty? %>
     <p class="text-slate-500"><%= t("messages.no_tenant") %></p>
