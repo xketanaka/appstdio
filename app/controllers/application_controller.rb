@@ -64,12 +64,12 @@ class ApplicationController < ActionController::Base
   end
 
   rescue_from ActiveRecord::RecordNotFound do |e|
-    Utils.error_log(e, logger)
+    error_log(e, logger)
     render_error(403, e)
   end
 
   rescue_from ActiveRecord::RecordNotUnique do |e|
-    Utils.error_log(e, logger)
+    error_log(e, logger)
     flash[:error] = I18n.t("messages.record_dupplicated")
     redirect_to top_page_path
   end
@@ -79,6 +79,17 @@ class ApplicationController < ActionController::Base
       render js: "alert('#{I18n.t("messages.http.errors.js.#{status}")}')", status: status
     else
       render file: Rails.root.join("public/#{status}.html"), status: status, layout: false
+    end
+  end
+
+  def error_log(e, logger)
+    logger.error e.class
+    logger.error e.message
+    logger.error e.backtrace.slice(0, 15).join("\n")
+    if Rails.env.development?
+      puts e.class
+      puts e.message
+      puts e.backtrace.slice(0, 15).join("\n")
     end
   end
 end
