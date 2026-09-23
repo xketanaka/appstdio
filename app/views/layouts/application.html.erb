@@ -20,7 +20,18 @@
   </head>
   <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
     <header class="flex items-center justify-between gap-4 bg-slate-800 px-6 py-3 text-white">
-      <div class="font-bold"><%= Settings.system_title %></div>
+      <div class="flex items-center gap-3">
+        <% if logged_in? %>
+          <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
+                  class="-ml-2 cursor-pointer rounded p-2 hover:bg-slate-700">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 class="size-5" aria-hidden="true">
+              <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        <% end %>
+        <div class="font-bold"><%= Settings.system_title %></div>
+      </div>
       <% if logged_in? %>
         <div class="flex items-center gap-3 text-sm">
           <% if current_tenant %>
@@ -42,6 +53,14 @@
         </div>
       <% end %>
     </header>
+
+    <% if logged_in? %>
+      <%= render layout: "partial/drawer" do %>
+        <%= render "partial/drawer_item", label: t("menus.files"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
+      <% end %>
+    <% end %>
 
     <div class="mx-auto max-w-5xl px-4 py-8">
       <%= render "partial/messages" %>

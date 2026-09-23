@@ -3,8 +3,10 @@ ja:
   layouts:
     application:
       account_menu: "アカウントメニュー"
+      main_menu: "メニューを開く"
     admin:
       account_menu: "アカウントメニュー"
+      main_menu: "メニューを開く"
       brand: "%{system_title} 管理"
 
   sessions:
@@ -37,6 +39,19 @@ ja:
         members_count: "所属ユーザ数"
 
   partial:
+    drawer:
+      title: "メニュー"
+      close: "メニューを閉じる"
+    drawer_item:
+      coming_soon: "準備中"
     paginate:
       previous: "« 前"
       next: "次 »"
+
+# スライドメニューの項目名。公開側と管理側で共通の語彙として扱う
+  menus:
+    files: "ファイル"
+    pages: "ページ"
+    chats: "チャット"
+    tenants: "テナント"
+    admin_users: "管理者"

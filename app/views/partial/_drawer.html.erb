@@ -1,0 +1,23 @@
+<%# 左から出るスライドメニューの外枠。項目はレイアウトから partial/drawer_item を
+    並べて渡す。
+    dialog の showModal を使うと backdrop・Esc での終了・フォーカスの閉じ込めが
+    標準で付く。開閉と backdrop クリックだけ app/javascript/application.js が担う %>
+<dialog id="main-menu" data-drawer
+        class="m-0 h-dvh max-h-dvh w-72 -translate-x-full bg-white text-slate-800 shadow-xl
+               transition-[translate,overlay,display] transition-discrete
+               open:translate-x-0 starting:open:-translate-x-full
+               backdrop:bg-slate-900/40 backdrop:transition-[opacity,overlay,display]
+               backdrop:transition-discrete starting:open:backdrop:opacity-0">
+  <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <span class="font-bold"><%= t(".title") %></span>
+    <button type="button" data-drawer-close aria-label="<%= t(".close") %>"
+            class="cursor-pointer rounded p-1 text-slate-500 hover:bg-slate-100">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           class="size-5" aria-hidden="true">
+        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+  </div>
+
+  <nav class="py-2"><%= yield %></nav>
+</dialog>

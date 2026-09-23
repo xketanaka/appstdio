@@ -20,8 +20,19 @@
   </head>
   <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
     <header class="flex items-center justify-between gap-4 bg-slate-700 px-6 py-3 text-white">
-      <div class="font-bold">
-        <%= link_to t(".brand", system_title: Settings.system_title), admin_root_path, class: "hover:underline" %>
+      <div class="flex items-center gap-3">
+        <% if current_admin_user %>
+          <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
+                  class="-ml-2 cursor-pointer rounded p-2 hover:bg-slate-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 class="size-5" aria-hidden="true">
+              <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        <% end %>
+        <div class="font-bold">
+          <%= link_to t(".brand", system_title: Settings.system_title), admin_root_path, class: "hover:underline" %>
+        </div>
       </div>
       <% if current_admin_user %>
         <div class="flex items-center gap-3 text-sm">
@@ -35,6 +46,13 @@
         </div>
       <% end %>
     </header>
+
+    <% if current_admin_user %>
+      <%= render layout: "partial/drawer" do %>
+        <%= render "partial/drawer_item", label: t("menus.tenants"), path: admin_tenants_path %>
+        <%= render "partial/drawer_item", label: t("menus.admin_users"), path: nil %>
+      <% end %>
+    <% end %>
 
     <div class="mx-auto max-w-5xl px-4 py-8">
       <%= render "partial/messages" %>
