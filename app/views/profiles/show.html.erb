@@ -1,0 +1,29 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+  <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
+
+  <%= render "partial/errors", object: @tenant_user %>
+
+  <%= form_with model: @tenant_user, url: profile_path, method: :patch do |f| %>
+    <div class="mb-5">
+      <%= f.label :display_name, TenantUser.human_attribute_name(:display_name),
+            class: "mb-1.5 block text-sm font-semibold" %>
+      <%= f.text_field :display_name,
+            class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+    </div>
+
+    <%= f.submit t("actions.save"),
+          class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
+  <% end %>
+
+  <dl class="mt-8 grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2 border-t border-slate-200 pt-6">
+    <dt class="text-sm text-slate-500"><%= Tenant.model_name.human %></dt>
+    <dd><%= current_tenant.name %></dd>
+
+    <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:role) %></dt>
+    <dd><%= t("enums.tenant_user.role.#{@tenant_user.role}") %></dd>
+
+    <dt class="text-sm text-slate-500"><%= User.human_attribute_name(:email) %></dt>
+    <dd><%= current_user.email %></dd>
+  </dl>
+</div>

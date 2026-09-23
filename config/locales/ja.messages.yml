@@ -2,6 +2,8 @@ ja:
   actions:
     login: "ログイン"
     logout: "ログアウト"
+    profile: "個人設定"
+    save: "保存する"
     select: "選択"
     switch_tenant: "テナントを切り替える"
   messages:

@@ -28,6 +28,8 @@ Rails.application.routes.draw do
     get  "select_tenant" => "tenant_selections#new", as: :select_tenant
     post "select_tenant" => "tenant_selections#create"
 
+    resource :profile, only: [:show, :update]
+
     get '/', controller: :sessions, action: :index, as: :top_page
   end
 end
