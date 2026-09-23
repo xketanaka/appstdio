@@ -17,6 +17,27 @@ ja:
       title: "ホーム"
       heading: "ログインしています"
 
+  files:
+    index:
+      title: "ファイル"
+      heading: "組織共有ドライブ"
+      create: "作成"
+      row_menu: "この項目の操作"
+      sections:
+        shared_drive: "組織共有ドライブ"
+        shared_with_me: "共有されたアイテム"
+        my_drive: "マイドライブ"
+        trash: "ゴミ箱"
+      columns:
+        name: "名前"
+        owner: "オーナー"
+        updated_at: "更新日時"
+        size: "サイズ"
+      row_actions:
+        download: "ダウンロード"
+        rename: "名前を変更"
+        destroy: "削除"
+
   profiles:
     show:
       title: "個人設定"

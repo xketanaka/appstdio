@@ -56,7 +56,7 @@
 
     <% if logged_in? %>
       <%= render layout: "partial/drawer" do %>
-        <%= render "partial/drawer_item", label: t("menus.files"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.files"), path: files_path %>
         <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
         <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
       <% end %>
