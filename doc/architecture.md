@@ -166,6 +166,30 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 含まれないため）。色は Tailwind 既定のパレット（slate / blue / green / amber / red）を
 そのまま使っている。
 
+### 開閉する UI は標準の要素で作る
+
+JavaScript のフレームワークを入れていないため、開閉を伴う UI は HTML の標準要素で
+組み立てる。`app/javascript/application.js` が補うのは、標準では付いてこない動作だけ。
+
+| UI | 要素 | JavaScript で補っている分 |
+|---|---|---|
+| アカウントのプルダウン | `details` / `summary` | 外側クリックと Esc で閉じる |
+| 左のスライドメニュー | `dialog` (`showModal`) | 開閉と backdrop クリックで閉じる |
+
+`dialog` の `showModal` を使うと backdrop、Esc での終了、フォーカスの閉じ込めが
+標準で付く。プルダウンに `dialog` を使わないのは、top layer に上がるため CSS anchor
+positioning 無しではボタンの位置に合わせられないため。
+
+`dialog` にスライドのアニメーションを付ける際、修飾子の順序を間違えると**壊れた
+セレクタが黙って生成される**。
+
+```
+backdrop:starting:open:opacity-0  ->  ::backdrop:is()   何にも一致しない
+starting:open:backdrop:opacity-0  ->  :is([open])::backdrop
+```
+
+`open:` は `dialog` 自身の状態なので、`backdrop:` より先に書く。
+
 ### テストはスタイルのクラスを参照しない
 
 `assert_select` は `id`、要素の構造、`role` 属性、テキストで書く。ユーティリティクラスは
