@@ -1,0 +1,34 @@
+# ビューごとの文言。キーはビューのパスに対応させ、lazy lookup (t(".title")) で引く
+ja:
+  layouts:
+    admin:
+      brand: "%{system_title} 管理"
+
+  sessions:
+    new:
+      title: "ログイン"
+      heading: "ログイン"
+    index:
+      title: "ホーム"
+      heading: "ログインしています"
+
+  tenant_selections:
+    new:
+      title: "テナントの選択"
+      heading: "テナントの選択"
+
+  admin:
+    sessions:
+      new:
+        title: "管理者ログイン"
+        heading: "管理者ログイン"
+    tenants:
+      index:
+        title: "テナント一覧"
+        heading: "テナント一覧"
+        members_count: "所属ユーザ数"
+
+  partial:
+    paginate:
+      previous: "« 前"
+      next: "次 »"

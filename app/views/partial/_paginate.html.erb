@@ -1,9 +1,9 @@
 <ul class="flex items-center gap-1 text-sm">
   <li>
     <%- if paginator.has_prev? -%>
-    <%= link_to page_url(form, paginator.page - 1), class: "block rounded px-3 py-1.5 hover:bg-slate-200" do %>&laquo; 前<% end %>
+    <%= link_to page_url(form, paginator.page - 1), class: "block rounded px-3 py-1.5 hover:bg-slate-200" do %><%= t(".previous") %><% end %>
     <%- else -%>
-    <span class="block px-3 py-1.5 text-slate-400">&laquo; 前</span>
+    <span class="block px-3 py-1.5 text-slate-400"><%= t(".previous") %></span>
     <%- end -%>
   </li>
   <% paginator.nearly_range.each do |i| %>
@@ -17,9 +17,9 @@
   <% end %>
   <li>
     <%- if paginator.has_next? -%>
-    <%= link_to page_url(form, paginator.page + 1), class: "block rounded px-3 py-1.5 hover:bg-slate-200" do %>次 &raquo;<% end %>
+    <%= link_to page_url(form, paginator.page + 1), class: "block rounded px-3 py-1.5 hover:bg-slate-200" do %><%= t(".next") %><% end %>
     <%- else -%>
-    <span class="block px-3 py-1.5 text-slate-400">次 &raquo;</span>
+    <span class="block px-3 py-1.5 text-slate-400"><%= t(".next") %></span>
     <%- end -%>
   </li>
 </ul>

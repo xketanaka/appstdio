@@ -119,6 +119,38 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 「いまどの接続か」を意識する必要が出る。しかも切り替え忘れの症状が例外ではなく
 静かな 0 件で、最も気付きにくい形になる。
 
+## 国際化 (I18n)
+
+将来の多言語対応に備えて、**文言はソースコードに直接書かない**。現時点の対応言語は
+日本語のみ。
+
+### 文言の置き場所
+
+| ファイル | 内容 |
+|---|---|
+| `config/locales/ja.yml` | モデル名・属性名・enum の表示名 |
+| `config/locales/ja.messages.yml` | flash や共通のメッセージ、ボタンのラベル (`actions`) |
+| `config/locales/ja.views.yml` | ビューごとの文言。キーはビューのパスに対応 |
+
+ビューでは lazy lookup を使う。`app/views/sessions/new.html.erb` の `t(".title")` は
+`ja.sessions.new.title` を引く。レイアウトや partial でも同じで、
+`app/views/partial/_paginate.html.erb` の `t(".next")` は `ja.partial.paginate.next`。
+
+キーがビューのパスと1対1で対応するので、ビューを移動・削除したときに対応する
+文言を見つけやすい。
+
+各ビューには `title`（ブラウザのタイトル）と `heading`（`h1`）を必ず置く。同じ文字列に
+なることが多いが、片方だけ変えたくなる場合に備えて分けている。
+
+### 漏れを検出する仕組み
+
+- `config.i18n.raise_on_missing_translations` を development / test で有効にしている。
+  キーの指定漏れやタイポは「Translation missing」の表示ではなく例外になる
+- `test/views/hardcoded_text_test.rb` が `app/views/**/*.erb` を走査し、日本語の文字が
+  残っていないことを検査する（ERB のコメントは対象外）
+
+なお rake タスクの `desc` や `db/seeds.rb` は開発者向けで画面に出ないため、対象外。
+
 ## CSS (Tailwind CSS)
 
 `tailwindcss-rails` を使う。Node は不要で、スタンドアロンのバイナリでビルドする。

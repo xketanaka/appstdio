@@ -60,6 +60,8 @@ DB は PostgreSQL で、テナント分離に Row Level Security を使ってい
 
 CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。`css` サービスが監視してビルドする（出力の `app/assets/builds/tailwind.css` は git 管理外）。詳細は `doc/architecture.md` の「CSS」を参照。
 
+**文言はソースコードに直接書かず、`config/locales` に置くこと。** ビューでは lazy lookup（`t(".title")`）を使う。詳細は `doc/architecture.md` の「国際化」を参照。
+
 テストの `assert_select` にユーティリティクラスを書かないこと。`id` / 要素の構造 / `role` 属性 / テキストで書く。
 
 システム管理画面（`/admin`）は同じコードベースを別プロセスとしてデプロイする。所有者ロールで接続し（`DB_USER=appstdio_owner`）、`ADMIN_CONSOLE=1` でルーティングが切り替わる。テストも分かれるので、両方を走らせるときは `bin/rails test:all` を使う。

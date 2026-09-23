@@ -1,6 +1,6 @@
-<% content_for :title do %>テナント一覧<% end -%>
+<% content_for :title do %><%= t(".title") %><% end -%>
 <div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
-  <h1 class="mb-6 text-xl font-bold">テナント一覧</h1>
+  <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
   <% if @tenants.empty? %>
     <p class="text-slate-500"><%= t("messages.not_search_result") %></p>
@@ -10,7 +10,7 @@
         <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
           <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:name) %></th>
           <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:status) %></th>
-          <th class="px-3 py-2.5 text-right"><%= t("admin.tenants.members_count") %></th>
+          <th class="px-3 py-2.5 text-right"><%= t(".members_count") %></th>
           <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:created_at) %></th>
         </tr>
       </thead>
