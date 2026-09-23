@@ -1,4 +1,5 @@
-<%# 左から出るスライドメニュー。
+<%# 左から出るスライドメニューの外枠。項目はレイアウトから partial/drawer_item を
+    並べて渡す。
     dialog の showModal を使うと backdrop・Esc での終了・フォーカスの閉じ込めが
     標準で付く。開閉と backdrop クリックだけ app/javascript/application.js が担う %>
 <dialog id="main-menu" data-drawer
@@ -18,13 +19,5 @@
     </button>
   </div>
 
-  <nav class="py-2">
-    <%# 機能が未実装のため、項目は表示のみ。実装時に link_to へ差し替える %>
-    <% %i[files pages chats].each do |item| %>
-      <span class="flex items-center justify-between px-4 py-2 text-slate-400" aria-disabled="true">
-        <%= t(".items.#{item}") %>
-        <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs"><%= t(".coming_soon") %></span>
-      </span>
-    <% end %>
-  </nav>
+  <nav class="py-2"><%= yield %></nav>
 </dialog>

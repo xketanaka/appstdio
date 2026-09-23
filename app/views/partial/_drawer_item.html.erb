@@ -1,0 +1,9 @@
+<%# path が nil の項目は機能が未実装。実装したら path を渡すだけでリンクになる %>
+<% if path %>
+  <%= link_to label, path, class: "block px-4 py-2 hover:bg-slate-100" %>
+<% else %>
+  <span class="flex items-center justify-between px-4 py-2 text-slate-400" aria-disabled="true">
+    <%= label %>
+    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs"><%= t(".coming_soon") %></span>
+  </span>
+<% end %>

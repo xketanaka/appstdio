@@ -85,6 +85,26 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_login_path
   end
 
+  test "メニューからテナント一覧へ行ける" do
+    login_as_admin
+    get admin_root_path
+
+    assert_select "button[data-drawer-open]"
+    assert_select "dialog[data-drawer]" do
+      assert_select "a[href=?]", admin_tenants_path
+      # 管理者の管理はまだ無いので表示のみ
+      assert_select "span[aria-disabled=true]", 1
+    end
+  end
+
+  test "ログイン前の画面にはメニューを出さない" do
+    get admin_login_path
+
+    assert_response :success
+    assert_select "button[data-drawer-open]", 0
+    assert_select "dialog[data-drawer]", 0
+  end
+
   test "利用テナント側の画面は配信しない" do
     # appstdio_admin で接続しているため、利用テナント側を動かすとテナントの遮断が効かない
     get "/login"

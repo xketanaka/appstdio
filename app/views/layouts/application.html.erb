@@ -55,7 +55,11 @@
     </header>
 
     <% if logged_in? %>
-      <%= render "partial/drawer" %>
+      <%= render layout: "partial/drawer" do %>
+        <%= render "partial/drawer_item", label: t("menus.files"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
+      <% end %>
     <% end %>
 
     <div class="mx-auto max-w-5xl px-4 py-8">
