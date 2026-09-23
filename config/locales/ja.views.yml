@@ -3,6 +3,7 @@ ja:
   layouts:
     application:
       account_menu: "アカウントメニュー"
+      main_menu: "メニューを開く"
     admin:
       account_menu: "アカウントメニュー"
       brand: "%{system_title} 管理"
@@ -37,6 +38,14 @@ ja:
         members_count: "所属ユーザ数"
 
   partial:
+    drawer:
+      title: "メニュー"
+      close: "メニューを閉じる"
+      coming_soon: "準備中"
+      items:
+        files: "ファイル"
+        pages: "ページ"
+        chats: "チャット"
     paginate:
       previous: "« 前"
       next: "次 »"
