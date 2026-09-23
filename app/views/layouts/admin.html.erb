@@ -19,15 +19,19 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
-    <header class="flex flex-wrap items-center justify-between gap-4 bg-slate-700 px-6 py-3 text-white">
+    <header class="flex items-center justify-between gap-4 bg-slate-700 px-6 py-3 text-white">
       <div class="font-bold">
         <%= link_to t(".brand", system_title: Settings.system_title), admin_root_path, class: "hover:underline" %>
       </div>
       <% if current_admin_user %>
-        <div class="flex items-center gap-4 text-sm">
-          <span><%= current_admin_user.display_name %></span>
-          <%= button_to t("actions.logout"), admin_logout_path, method: :delete,
-                class: "cursor-pointer rounded border border-slate-400 px-3 py-1 hover:bg-slate-600" %>
+        <div class="flex items-center gap-3 text-sm">
+          <%= render layout: "partial/account_menu",
+                locals: { label: t(".account_menu"),
+                          name: current_admin_user.display_name,
+                          email: current_admin_user.user.email } do %>
+            <%= button_to t("actions.logout"), admin_logout_path, method: :delete,
+                  class: "block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100" %>
+          <% end %>
         </div>
       <% end %>
     </header>

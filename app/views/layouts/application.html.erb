@@ -19,18 +19,26 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
-    <header class="flex flex-wrap items-center justify-between gap-4 bg-slate-800 px-6 py-3 text-white">
+    <header class="flex items-center justify-between gap-4 bg-slate-800 px-6 py-3 text-white">
       <div class="font-bold"><%= Settings.system_title %></div>
       <% if logged_in? %>
-        <div class="flex items-center gap-4 text-sm">
+        <div class="flex items-center gap-3 text-sm">
           <% if current_tenant %>
             <span class="rounded-full bg-white/15 px-2.5 py-0.5"><%= current_tenant.name %></span>
-            <%= link_to t("actions.switch_tenant"), select_tenant_path,
-                  class: "text-slate-300 underline-offset-2 hover:underline" %>
           <% end %>
-          <span><%= current_tenant_user&.display_name || current_user&.email %></span>
-          <%= button_to t("actions.logout"), logout_path, method: :delete,
-                class: "cursor-pointer rounded border border-slate-500 px-3 py-1 hover:bg-slate-700" %>
+          <%= render layout: "partial/account_menu",
+                locals: { label: t(".account_menu"),
+                          name: current_tenant_user&.display_name || current_user&.email,
+                          email: current_user&.email } do %>
+            <%= link_to t("actions.profile"), profile_path,
+                  class: "block px-4 py-2 hover:bg-slate-100" %>
+            <% if current_tenant %>
+              <%= link_to t("actions.switch_tenant"), select_tenant_path,
+                    class: "block px-4 py-2 hover:bg-slate-100" %>
+            <% end %>
+            <%= button_to t("actions.logout"), logout_path, method: :delete,
+                  class: "block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100" %>
+          <% end %>
         </div>
       <% end %>
     </header>
