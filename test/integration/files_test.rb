@@ -21,7 +21,7 @@ class FilesTest < ActionDispatch::IntegrationTest
   end
 
   test "ドライブの一覧を表示する" do
-    get files_path
+    get files_root_path
     assert_response :success
 
     # 左のツリー。組織共有ドライブだけ開いた状態
@@ -37,7 +37,7 @@ class FilesTest < ActionDispatch::IntegrationTest
 
   test "メニューの「ファイル」から開ける" do
     get top_page_path
-    assert_select "dialog[data-drawer] a[href=?]", files_path
+    assert_select "dialog[data-drawer] a[href=?]", files_root_path
   end
 
   test "テナント未選択でアクセスすると、選択後に元のページへ戻る" do
@@ -49,17 +49,17 @@ class FilesTest < ActionDispatch::IntegrationTest
     delete logout_path
     post login_path, params: { email: @user.email, password: PASSWORD }
 
-    get files_path
+    get files_root_path
     assert_redirected_to select_tenant_path
 
     post select_tenant_path, params: { tenant_id: @tenant.id }
-    assert_redirected_to files_path
+    assert_redirected_to files_root_path
   end
 
   test "未ログインでは開けない" do
     delete logout_path
 
-    get files_path
+    get files_root_path
     assert_redirected_to login_path
   end
 end

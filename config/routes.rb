@@ -30,7 +30,9 @@ Rails.application.routes.draw do
 
     resource :profile, only: [:show, :update]
 
-    resources :files, only: [:index]
+    namespace :files do
+      root "folders#show"
+    end
 
     get '/', controller: :sessions, action: :index, as: :top_page
   end
