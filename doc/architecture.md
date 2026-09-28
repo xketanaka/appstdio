@@ -62,6 +62,17 @@ TenantContext.switch(tenant: tenant, user: user) do
 end
 ```
 
+### 所属の有効性は入口でだけ判定する
+
+`tenant_users.status` を見るのは `TenantContextFilter` とテナント選択の2箇所だけ。
+`current_tenant_user` が存在する時点でその所属は `active` なので、**個別機能の中で
+status を再確認しない**。
+
+この前提は `test/integration/login_flow_test.rb` と
+`test/controllers/tenant_context_filter_test.rb` で担保している。
+
+将来ジョブなどで「ユーザの代理で動く」処理を追加するときは、そこにも同じ判定が要る。
+
 ### 新しくテナントスコープのテーブルを追加するとき
 
 `tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。
