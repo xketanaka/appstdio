@@ -30,8 +30,8 @@ module HpciOffice
     # schema.rb では RLS のポリシーを表現できず、db:test:prepare で失われる
     config.active_record.schema_format = :sql
 
-    # このプロセスがシステム管理画面かどうか。接続する DB ロール (DB_USER) と対で
-    # 指定する。利用テナント側と管理画面は同じコードベースを別々にデプロイする
+    # このプロセスが運営者画面かどうか。接続する DB ロール (DB_USER) と対で
+    # 指定する。利用テナント側と運営者画面は同じコードベースを別々にデプロイする
     config.x.ops_console = ENV["OPS_CONSOLE"] == "1"
 
     config.i18n.default_locale = :ja

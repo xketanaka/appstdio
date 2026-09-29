@@ -7,7 +7,7 @@ ja:
     ops:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
-      brand: "%{system_title} 管理"
+      brand: "%{system_title} 運営者画面"
 
   sessions:
     new:
@@ -74,8 +74,8 @@ ja:
   ops:
     sessions:
       new:
-        title: "管理者ログイン"
-        heading: "管理者ログイン"
+        title: "運営者ログイン"
+        heading: "運営者ログイン"
     tenants:
       index:
         title: "テナント一覧"
@@ -98,4 +98,4 @@ ja:
     chats: "チャット"
     management: "管理"
     tenants: "テナント"
-    operators: "システム管理者"
+    operators: "運営者"

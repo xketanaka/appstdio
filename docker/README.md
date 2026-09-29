@@ -5,12 +5,12 @@
 | サービス | 役割 | 主な環境変数 | 備考 |
 |---|---|---|---|
 | `app` | 利用テナント側のアプリ | `DB_USER=appstdio_app` | `/ops` は 404 |
-| `ops` | システム管理画面 | `DB_USER=appstdio_owner`、`OPS_CONSOLE=1` | 利用テナント側の画面は 404 |
+| `ops` | 運営者画面 | `DB_USER=appstdio_owner`、`OPS_CONSOLE=1` | 利用テナント側の画面は 404 |
 | `css` | Tailwind のビルド（ファイル監視） | - | `app` / `ops` とコードのボリュームを共有 |
 | `db` | PostgreSQL 18 | - | 初回起動時に `docker/files/db/initdb/` を実行 |
 
 `app` と `ops` は同じイメージ・同じコードで、環境変数だけが違う。なぜ分けているかは
-`doc/architecture.md` の「システム管理画面」を参照。
+`doc/architecture.md` の「運営者画面」を参照。
 
 ## アクセスするためのポート設定
 
@@ -64,7 +64,7 @@ RLS を迂回する必要がある操作（`db:seed`）は必ずこちらを使�
 # アプリと同じ条件（RLS が適用される）で確認したいとき
 docker compose exec db psql -U appstdio_app -d appstdio_development
 
-# スキーマを確認・変更したいとき、管理画面と同じ条件で見たいとき
+# スキーマを確認・変更したいとき、運営者画面と同じ条件で見たいとき
 docker compose exec db psql -U appstdio_owner -d appstdio_development
 ```
 
@@ -74,7 +74,7 @@ app コンテナにも psql / pg_dump (18系) が入っているので、そち�
 docker compose exec app psql -h db -U appstdio_app -d appstdio_development
 ```
 
-rails console から管理側のデータを触る場合は所有者ロールで実行する
+rails console から運営者画面と同じ条件でデータを触る場合は所有者ロールで実行する
 
 ```bash
 docker compose exec app bin/rails-as-owner console
@@ -107,11 +107,11 @@ docker compose exec app bin/rails tailwindcss:build
 docker compose exec app sh -c "bin/rails test"
 ```
 
-管理画面のテストは別ロール・別ルーティングのため、独立したプロセスで実行する。
+運営者画面のテストは別ロール・別ルーティングのため、独立したプロセスで実行する。
 `bin/rails test` では skip される。
 
 ```bash
-docker compose exec app sh -c "bin/rails test:ops"   # 管理画面のみ
+docker compose exec app sh -c "bin/rails test:ops"   # 運営者画面のみ
 docker compose exec app sh -c "bin/rails test:full"  # 両方
 ```
 

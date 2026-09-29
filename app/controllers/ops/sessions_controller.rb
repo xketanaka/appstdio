@@ -17,7 +17,7 @@ module Ops
 
         redirect_to(return_to.presence || ops_root_path, notice: t("messages.logged_in"))
       else
-        # 停止中のシステム管理者が正しいパスワードを入れた場合も同じ応答にする
+        # 停止中の運営者が正しいパスワードを入れた場合も同じ応答にする
         flash.now[:alert] = t("messages.login_failure")
         render :new, status: :unprocessable_entity
       end

@@ -61,7 +61,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to select_tenant_path
   end
 
-  test "管理画面は配信しない" do
+  test "運営者画面は配信しない" do
     get "/ops"
     assert_response :not_found
   end

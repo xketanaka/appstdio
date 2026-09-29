@@ -26,11 +26,11 @@ class RlsConfigurationTest < ActiveSupport::TestCase
 
     assert_equal true, rls, "operators の RLS が無効になっている"
     assert_not_includes roles, ENV.fetch("DB_USER", "appstdio_app"),
-      "利用テナント側のロール向けのポリシーがあると、システム管理者のパスワードハッシュが参照できてしまう"
+      "利用テナント側のロール向けのポリシーがあると、運営者のパスワードハッシュが参照できてしまう"
     assert_not_includes roles, "public"
     assert_equal false, ApplicationRecord.with_connection { |c|
       c.select_value("SELECT relforcerowsecurity FROM pg_class WHERE relname = 'operators'")
-    }, "FORCE を付けると所有者にも RLS が適用され、管理画面から参照できなくなる"
+    }, "FORCE を付けると所有者にも RLS が適用され、運営者画面から参照できなくなる"
   end
 
   test "接続ロールはテーブルの所有者ではない" do

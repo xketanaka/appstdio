@@ -8,7 +8,7 @@ ja:
           has_many: "%{record}が存在しているため削除できません。"
     models:
       tenant: "テナント"
-      operator: "システム管理者"
+      operator: "運営者"
       user: "ユーザ"
       tenant_user: "テナントユーザ"
     attributes:

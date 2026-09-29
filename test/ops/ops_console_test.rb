@@ -6,7 +6,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
 
   setup do
     unless Rails.configuration.x.ops_console
-      skip("管理画面のテストは bin/rails test:ops で実行する")
+      skip("運営者画面のテストは bin/rails test:ops で実行する")
     end
 
     @tenant_a = Tenant.create!(name: "テナントA")
@@ -22,7 +22,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "管理者としてログインしテナント一覧を見る" do
+  test "運営者としてログインしテナント一覧を見る" do
     get ops_root_path
     assert_redirected_to ops_login_path
 
@@ -57,7 +57,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     assert_nil session[:current_operator_id]
   end
 
-  test "同じメールアドレスの利用者がいても、システム管理者のパスワードでしか入れない" do
+  test "同じメールアドレスの利用者がいても、運営者のパスワードでしか入れない" do
     User.create!(email: @operator.email, password: "user-password")
 
     post ops_login_path, params: { email: @operator.email, password: "user-password" }
@@ -67,7 +67,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     assert_redirected_to ops_root_path
   end
 
-  test "停止中のシステム管理者はログインできない" do
+  test "停止中の運営者はログインできない" do
     @operator.update!(status: :suspended)
 
     post ops_login_path, params: { email: @operator.email, password: PASSWORD }
@@ -83,7 +83,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     assert_redirected_to ops_tenants_path
   end
 
-  test "ログアウトすると管理画面に入れなくなる" do
+  test "ログアウトすると運営者画面に入れなくなる" do
     login_as_operator
 
     delete ops_logout_path
