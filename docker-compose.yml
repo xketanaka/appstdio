@@ -21,6 +21,8 @@ services:
     build:
       context: ./docker/
     privileged: true
+    ports:
+      - "${APP_LISTEN_PORT:-6000}:3000"
     volumes:
       - ".:/opt/app-root/appstdio"
       - "./docker/volumes/bundle:/usr/local/bundle"
@@ -49,6 +51,8 @@ services:
     build:
       context: ./docker/
     privileged: true
+    ports:
+      - "${ADMIN_LISTEN_PORT:-6001}:3000"
     volumes:
       - ".:/opt/app-root/appstdio"
       - "./docker/volumes/bundle:/usr/local/bundle"
