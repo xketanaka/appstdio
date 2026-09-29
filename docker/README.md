@@ -112,7 +112,7 @@ docker compose exec app sh -c "bin/rails test"
 
 ```bash
 docker compose exec app sh -c "bin/rails test:ops"   # 管理画面のみ
-docker compose exec app sh -c "bin/rails test:all"     # 両方
+docker compose exec app sh -c "bin/rails test:full"  # 両方
 ```
 
 コンテナが起動してない場合
