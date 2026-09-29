@@ -1,5 +1,5 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+<div class="rounded-lg border border-slate-200 bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
   <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
   <% if @tenants.empty? %>
@@ -11,16 +11,16 @@
           <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:name) %></th>
           <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:status) %></th>
           <th class="px-3 py-2.5 text-right"><%= t(".members_count") %></th>
-          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:created_at) %></th>
+          <th class="hidden px-3 py-2.5 text-left sm:table-cell"><%= Tenant.human_attribute_name(:created_at) %></th>
         </tr>
       </thead>
       <tbody>
         <% @tenants.each do |tenant| %>
           <tr class="border-b border-slate-200">
-            <td class="px-3 py-2.5"><%= tenant.name %></td>
+            <td class="px-3 py-2.5"><span class="block truncate"><%= tenant.name %></span></td>
             <td class="px-3 py-2.5"><%= t("enums.tenant.status.#{tenant.status}") %></td>
             <td class="px-3 py-2.5 text-right"><%= tenant.members_count %></td>
-            <td class="px-3 py-2.5"><%= time_to_s(tenant.created_at) %></td>
+            <td class="hidden px-3 py-2.5 sm:table-cell"><%= time_to_s(tenant.created_at) %></td>
           </tr>
         <% end %>
       </tbody>
