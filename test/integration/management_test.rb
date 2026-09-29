@@ -48,7 +48,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select "#management-menu a", 3
-    assert_select "#management-menu", text: /利用者管理.*グループ管理.*組織管理/m
+    assert_select "#management-menu", text: /\A管理\s*利用者管理.*グループ管理.*組織管理/m
     assert_select "#management-menu a[aria-current=page]", text: "利用者管理"
     assert_select "h1", text: "利用者管理"
 
