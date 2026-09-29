@@ -59,11 +59,14 @@
         <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>
         <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
         <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
+        <% if current_tenant_user&.manager? %>
+          <%= render "partial/drawer_item", label: t("menus.management"), path: management_root_path %>
+        <% end %>
       <% end %>
     <% end %>
 
     <div class="shrink-0"><%= render "partial/messages" %></div>
 
-    <div class="flex min-h-0 flex-1"><%= yield %></div>
+    <div class="flex min-h-0 flex-1"><%= content_for?(:content) ? yield(:content) : yield %></div>
   </body>
 </html>

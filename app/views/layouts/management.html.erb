@@ -1,0 +1,23 @@
+<%# 管理画面の2ペインの外枠。application レイアウトの中に入れ子にする。
+    各ビューで render layout: を使って包むと、ブロック内の lazy lookup が
+    partial 側のキーを引いてしまうため、レイアウトとして持つ %>
+<% content_for :content do %>
+  <div class="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <aside class="w-56 shrink-0 border-r border-slate-200 py-3">
+      <nav id="management-menu" aria-label="<%= t(".menu") %>">
+        <% { users: management_users_path,
+             groups: management_groups_path,
+             organizations: management_organizations_path }.each do |key, path| %>
+          <% current = controller_name == key.to_s %>
+          <%= link_to t(".items.#{key}"), path,
+                "aria-current": (current ? "page" : nil),
+                class: class_names("block px-4 py-2 text-sm hover:bg-slate-100",
+                                   "bg-slate-100 font-semibold": current) %>
+        <% end %>
+      </nav>
+    </aside>
+
+    <section class="min-w-0 flex-1 px-6 py-5"><%= yield %></section>
+  </div>
+<% end %>
+<%= render template: "layouts/application" %>

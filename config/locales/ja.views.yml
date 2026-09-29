@@ -4,6 +4,12 @@ ja:
     application:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
+    management:
+      menu: "管理メニュー"
+      items:
+        users: "利用者管理"
+        groups: "グループ管理"
+        organizations: "組織管理"
     admin:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
@@ -50,6 +56,22 @@ ja:
       title: "テナントの選択"
       heading: "テナントの選択"
 
+  management:
+    users:
+      index:
+        title: "利用者管理"
+        heading: "利用者管理"
+    groups:
+      index:
+        title: "グループ管理"
+        heading: "グループ管理"
+        coming_soon: "この画面は準備中です。"
+    organizations:
+      index:
+        title: "組織管理"
+        heading: "組織管理"
+        coming_soon: "この画面は準備中です。"
+
   admin:
     sessions:
       new:
@@ -75,5 +97,6 @@ ja:
     files: "ファイル"
     pages: "ページ"
     chats: "チャット"
+    management: "管理"
     tenants: "テナント"
     admin_users: "管理者"
