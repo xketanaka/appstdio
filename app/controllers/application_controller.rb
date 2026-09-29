@@ -60,6 +60,7 @@ class ApplicationController < ActionController::Base
   def tenant_required
     return if current_tenant_user.present?
 
+    session[:return_to] = request.fullpath if request.get?
     redirect_to select_tenant_path
   end
 

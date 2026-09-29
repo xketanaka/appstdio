@@ -23,8 +23,9 @@ class MainMenuTest < ActionDispatch::IntegrationTest
 
     assert_select "button[data-drawer-open]"
     assert_select "dialog[data-drawer]" do
-      assert_select "nav span[aria-disabled=true]", 3
-      assert_select "nav", text: /ファイル/
+      # ファイルは画面ができているのでリンク、残りは表示のみ
+      assert_select "nav a[href=?]", files_root_path
+      assert_select "nav span[aria-disabled=true]", 2
       assert_select "nav", text: /ページ/
       assert_select "nav", text: /チャット/
     end
