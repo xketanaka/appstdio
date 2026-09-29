@@ -26,7 +26,7 @@ class FilesTest < ActionDispatch::IntegrationTest
 
     assert_select "aside details", 4
     assert_select "aside details[open]", 1
-    assert_select "aside", text: /組織共有ドライブ.*共有されたアイテム.*マイドライブ.*ゴミ箱/m
+    assert_select "aside", text: /\Aファイル\s*組織共有ドライブ.*共有されたアイテム.*マイドライブ.*ゴミ箱/m
 
     assert_select "#file-list thead th", 5
     assert_select "#file-list tbody tr", 3

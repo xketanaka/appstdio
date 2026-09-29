@@ -7,4 +7,8 @@ class TenantUser < ApplicationRecord
 
   validates :display_name, presence: true, length: { maximum: 255 }
   validates :user_id, uniqueness: { scope: :tenant_id }
+
+  def manager?
+    owner? || admin?
+  end
 end

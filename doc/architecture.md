@@ -287,7 +287,7 @@ PC では常に開く」を実現できない。`summary` を `md:hidden` で隠
 ### 画面全体を使うレイアウト
 
 ヘッダより下は画面いっぱいに使う。カード（角丸・枠線・影で浮かせた箱）は使わず、
-左右の余白も持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
+本文の器は左右の余白を持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
 
 ```
 body      flex h-dvh flex-col overflow-hidden
@@ -305,8 +305,8 @@ header    shrink-0
 ```erb
 <%# 一覧など画面を埋めるもの。見出しは固定し、中身だけスクロールさせる %>
 <div class="flex min-h-0 flex-1 flex-col">
-  <div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">見出し</div>
-  <div class="min-h-0 flex-1 overflow-auto">一覧</div>
+  <div class="shrink-0 px-4 py-3">見出し</div>
+  <div class="min-h-0 flex-1 overflow-auto px-4">一覧</div>
 </div>
 
 <%# フォームや詳細。読みやすさのため最大幅を設ける %>
@@ -314,6 +314,51 @@ header    shrink-0
   <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">本文</div>
 </div>
 ```
+
+一覧の表は左右に 16px（`px-4`）の余白を取り、ペインの端まで広げない。端まで届くと
+表が枠に貼り付いて見えるため（GitHub のファイル一覧程度の余白）。見出しの行も
+同じ `px-4` にして、見出しと表の左端をそろえる。
+
+見出しの行には下線を引かない。区切りは表の見出し行の線だけにする（Google ドライブと同じ）。
+見出しの行に左右いっぱいの線を引くと、その直下にある内側に寄せた表の線と長さが食い違う。
+
+表の絞り込み（キーワード・状態など）を置くときは、見出しの行には入れず、見出しと表の間に
+専用の行を設ける。見出しの行は「今いる場所と、そこへの操作（作成など）」、絞り込みの行は
+「表の見え方を変える操作」と役割を分ける。この行もスクロールさせず（`shrink-0`）、
+左右は `px-4`。
+
+### 2ペインの画面
+
+左ペインを持つ画面は `layouts/two_pane` を使う。枠（PC の左ペイン、スマホの折りたたみ、
+右ペイン）はこのレイアウトにだけ書き、機能ごとに違うものを `content_for` で渡す。
+
+| `content_for` | 内容 | 例 |
+|---|---|---|
+| `:pane_title` | 左ペインの先頭に出す機能名。スライドメニューの項目名 `menus.*` を使う | ファイル / 管理 |
+| `:pane_summary` | スマホ幅の折りたたみの見出し | ドライブ / 今いる画面名 |
+| `:pane` | 左ペインの中身。PC とスマホの2箇所に出るので、中に id を置かない | ツリー / 管理メニュー |
+
+右ペインの見出しは開いている場所（「組織共有ドライブ」「利用者管理」）なので、
+どの機能にいるかは左ペインの機能名で示す。
+
+渡し方は、左ペインが複数の画面で共通かどうかで分ける。
+
+- **1画面だけの機能**（ファイル）はビューで `content_for` を書き、コントローラで
+  `layout "two_pane"` を指定する
+- **複数のコントローラで左ペインが共通の機能**（管理）は、`content_for` だけを書いた
+  機能別のレイアウトを作り、最後に `render template: "layouts/two_pane"` する。
+  レイアウトは `management → two_pane → application` と入れ子になる
+
+```erb
+<%# layouts/management.html.erb %>
+<% content_for :pane_title, t("menus.management") %>
+<% content_for :pane_summary, t("management.menu.items.#{controller_name}") %>
+<% content_for :pane do %><%= render "management/menu" %><% end %>
+<%= render template: "layouts/two_pane" %>
+```
+
+共通の partial を各ビューで `render layout:` として包む形は使わない。ブロックの中の
+lazy lookup（`t(".heading")`）がビューではなく partial のキーを引いてしまう。
 
 ログイン画面だけは中央寄せのカードのまま。未ログインの画面で、業務画面とは性質が違う。
 

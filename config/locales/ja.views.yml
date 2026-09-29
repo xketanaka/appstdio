@@ -50,6 +50,27 @@ ja:
       title: "テナントの選択"
       heading: "テナントの選択"
 
+  management:
+    menu:
+      label: "管理メニュー"
+      items:
+        users: "利用者管理"
+        groups: "グループ管理"
+        tenants: "組織管理"
+    users:
+      index:
+        title: "利用者管理"
+        heading: "利用者管理"
+    groups:
+      index:
+        title: "グループ管理"
+        heading: "グループ管理"
+        coming_soon: "この画面は準備中です。"
+    tenants:
+      index:
+        title: "組織管理"
+        heading: "組織管理"
+
   admin:
     sessions:
       new:
@@ -75,5 +96,6 @@ ja:
     files: "ファイル"
     pages: "ページ"
     chats: "チャット"
+    management: "管理"
     tenants: "テナント"
     admin_users: "管理者"

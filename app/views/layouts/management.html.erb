@@ -1,0 +1,4 @@
+<% content_for :pane_title, t("menus.management") %>
+<% content_for :pane_summary, t("management.menu.items.#{controller_name}") %>
+<% content_for :pane do %><%= render "management/menu" %><% end %>
+<%= render template: "layouts/two_pane" %>

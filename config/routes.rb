@@ -33,6 +33,13 @@ Rails.application.routes.draw do
       root "folders#show"
     end
 
+    namespace :management do
+      resources :users, only: [:index]
+      resources :groups, only: [:index]
+      resources :tenants, only: [:index]
+      root to: redirect("/management/users")
+    end
+
     get '/', controller: :sessions, action: :index, as: :top_page
   end
 end
