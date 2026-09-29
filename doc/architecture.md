@@ -256,6 +256,34 @@ starting:open:backdrop:opacity-0  ->  :is([open])::backdrop
 
 `open:` は `dialog` 自身の状態なので、`backdrop:` より先に書く。
 
+### PC とスマホの両対応
+
+Tailwind の既定のブレークポイントをそのまま使う（`sm` 40rem / `md` 48rem / `lg` 64rem）。
+スマホを基準に書き、広い画面向けを修飾子で足す。
+
+情報量が多い画面では、狭い幅で**列を隠して主要な列の下にまとめる**。消すのではなく
+場所を変える。
+
+```erb
+<th class="hidden px-3 py-2.5 md:table-cell">更新日時</th>
+...
+<td class="px-3 py-2.5">
+  <span>名前</span>
+  <span class="mt-0.5 block text-xs text-slate-500 md:hidden">更新日時</span>
+</td>
+```
+
+左ペインのように**配置ごと変わるもの**は、partial に切り出して2箇所から描画する。
+
+```erb
+<details class="md:hidden">...<%= render "tree" %></details>
+<aside class="hidden md:block"><%= render "tree" %></aside>
+```
+
+`details` の `open` を CSS で制御できないため、1つの要素で「スマホでは折りたたみ、
+PC では常に開く」を実現できない。`summary` を `md:hidden` で隠す手もあるが、
+スマホ幅で閉じたままウィンドウを広げると開けなくなる。
+
 ### テストはスタイルのクラスを参照しない
 
 `assert_select` は `id`、要素の構造、`role` 属性、テキストで書く。ユーティリティクラスは
