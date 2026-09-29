@@ -132,8 +132,8 @@ varchar にしている理由は2つ。
 | SQL から読める | ○ | ○ |
 
 とくに**段階に意味がある列**（`files_permissions.role` など）で、権限の解決を SQL 側に
-寄せる場合は `MAX(role)` がそのまま書ける利点がある。現状 `Files::Permission.strongest`
-は Ruby 側で配列の添字を見ており、この利点を使っていない。
+寄せる場合は `MAX(role)` がそのまま書ける利点がある。現状の `Files::Access` は
+varchar のまま、`array_position` で順位に置き換えてから `max` を取っている。
 
 移すときに知っておくこと（実測で確認済み）。
 
