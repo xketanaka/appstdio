@@ -62,6 +62,17 @@ TenantContext.switch(tenant: tenant, user: user) do
 end
 ```
 
+### 所属の有効性は入口でだけ判定する
+
+`tenant_users.status` を見るのは `TenantContextFilter` とテナント選択の2箇所だけ。
+`current_tenant_user` が存在する時点でその所属は `active` なので、**個別機能の中で
+status を再確認しない**。
+
+この前提は `test/integration/login_flow_test.rb` と
+`test/controllers/tenant_context_filter_test.rb` で担保している。
+
+将来ジョブなどで「ユーザの代理で動く」処理を追加するときは、そこにも同じ判定が要る。
+
 ### 新しくテナントスコープのテーブルを追加するとき
 
 `tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。
@@ -95,6 +106,61 @@ RLS が防げるのは **アプリケーションのバグ**（`where tenant_id 
 一方、任意の SQL を実行できる状態（SQLインジェクションなど）に対しては防御にならない。
 攻撃者自身が `set_config('app.tenant_id', ...)` を呼べてしまうため。
 そちらは通常どおりアプリケーション側で防ぐ必要がある。
+
+## enum を持つ列の型
+
+`status` / `role` / `kind` / `action` のような列は、**varchar + CHECK 制約**で持っている。
+Rails の `enum` は列の型を選ばないので、integer でも varchar でも動く。
+
+varchar にしている理由は2つ。
+
+* **CHECK 制約で値の集合ごと縛れる。** `CHECK (role IN ('viewer','editor','manager','none'))`
+  は意味まで書かれるが、integer の `CHECK (role IN (0,1,2,3))` は個数しか縛れない。
+  `structure.sql` をリポジトリに入れており、RLS のポリシーも SQL で書くため、
+  スキーマが自己記述であることの価値が大きい
+* **integer は並べ替えが静かに事故る。** `enum :status, [:active, :suspended]` の順序を
+  入れ替えると、マイグレーションも警告も無く既存レコードの意味が反転する
+
+### PostgreSQL の ENUM 型に移す選択肢
+
+性能を詰めたくなったときの選択肢として有効で、**大きな欠点は無い**。
+
+| | varchar + CHECK | PG ENUM |
+|---|---|---|
+| 容量 | 値の長さ分 | 4バイト |
+| 順序比較 | `CASE` が必要 | 宣言順でそのまま比較できる |
+| SQL から読める | ○ | ○ |
+
+とくに**段階に意味がある列**（`files_permissions.role` など）で、権限の解決を SQL 側に
+寄せる場合は `MAX(role)` がそのまま書ける利点がある。現状 `Files::Permission.strongest`
+は Ruby 側で配列の添字を見ており、この利点を使っていない。
+
+移すときに知っておくこと（実測で確認済み）。
+
+* **値の追加・改名はできる。** `ALTER TYPE ... ADD VALUE 'x' BEFORE 'y'`（並び順も指定可）、
+  `ALTER TYPE ... RENAME VALUE 'a' TO 'b'`
+* **値の削除だけコマンドが無い。** 型を作り直して `ALTER COLUMN ... TYPE` で移す。
+  これは**テーブル全体の書き換え**になり、その間 `ACCESS EXCLUSIVE` ロックを取る。
+  20万行で 177ms だったので、行数に比例して見積もればよい。`DEFAULT` を先に外さないと
+  `default for column cannot be cast automatically` で落ちる
+* **追加した値を同じトランザクション内で使えない**（`unsafe use of new value`）。
+  Rails のマイグレーションは既定でトランザクションなので、値の追加と既存データの移行を
+  1本のマイグレーションに書けない。`disable_ddl_transaction!` を付けるか2本に分ける
+
+列ごとに性質で選べばよく、全列を揃える必要はない。値が安定していて順序に意味がある列は
+PG ENUM 向き、値が増減しそうで行数が伸びる列（`files_activities.action` など）は
+varchar 向き。
+
+実際に PG ENUM にしているのは `files_nodes.kind`（`folder` / `file`）。値を削除する場面が
+来ないため、PG ENUM の唯一の欠点が当たらない。なお容量は理由にならない。実測では
+30万行で varchar との差は 1% で、行が uuid・bigint・timestamp 中心だと
+アラインメントの詰め物に吸収される。
+
+`kind` を `boolean` にしなかったのは、ショートカットのような3つ目の種別が来る可能性が
+あるため。boolean だと列の追加だけでなく既存のクエリをすべて書き換えることになる。
+
+`enum ..., validate: true` を付けている列は、未知の値を**代入時には弾かない**。
+バリデーションで不正にする仕様なので、DB 側の型や CHECK と二段構えになる。
 
 ## システム管理画面
 
