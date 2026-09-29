@@ -327,9 +327,38 @@ header    shrink-0
 「表の見え方を変える操作」と役割を分ける。この行もスクロールさせず（`shrink-0`）、
 左右は `px-4`。
 
-2ペインの画面では、左ペインの先頭に機能名（スライドメニューの項目名 `menus.*`）を出す。
+### 2ペインの画面
+
+左ペインを持つ画面は `layouts/two_pane` を使う。枠（PC の左ペイン、スマホの折りたたみ、
+右ペイン）はこのレイアウトにだけ書き、機能ごとに違うものを `content_for` で渡す。
+
+| `content_for` | 内容 | 例 |
+|---|---|---|
+| `:pane_title` | 左ペインの先頭に出す機能名。スライドメニューの項目名 `menus.*` を使う | ファイル / 管理 |
+| `:pane_summary` | スマホ幅の折りたたみの見出し | ドライブ / 今いる画面名 |
+| `:pane` | 左ペインの中身。PC とスマホの2箇所に出るので、中に id を置かない | ツリー / 管理メニュー |
+
 右ペインの見出しは開いている場所（「組織共有ドライブ」「利用者管理」）なので、
-どの機能にいるかは左ペインで示す。スマホ幅の折りたたみには出さない。
+どの機能にいるかは左ペインの機能名で示す。
+
+渡し方は、左ペインが複数の画面で共通かどうかで分ける。
+
+- **1画面だけの機能**（ファイル）はビューで `content_for` を書き、コントローラで
+  `layout "two_pane"` を指定する
+- **複数のコントローラで左ペインが共通の機能**（管理）は、`content_for` だけを書いた
+  機能別のレイアウトを作り、最後に `render template: "layouts/two_pane"` する。
+  レイアウトは `management → two_pane → application` と入れ子になる
+
+```erb
+<%# layouts/management.html.erb %>
+<% content_for :pane_title, t("menus.management") %>
+<% content_for :pane_summary, t("management.menu.items.#{controller_name}") %>
+<% content_for :pane do %><%= render "management/menu" %><% end %>
+<%= render template: "layouts/two_pane" %>
+```
+
+共通の partial を各ビューで `render layout:` として包む形は使わない。ブロックの中の
+lazy lookup（`t(".heading")`）がビューではなく partial のキーを引いてしまう。
 
 ログイン画面だけは中央寄せのカードのまま。未ログインの画面で、業務画面とは性質が違う。
 
