@@ -1,3 +1,13 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
 <h1 class="mb-6 text-lg font-bold"><%= t(".heading") %></h1>
-<p class="text-sm text-slate-500"><%= t(".coming_soon") %></p>
+
+<dl id="organization" class="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2">
+  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:name) %></dt>
+  <dd><%= current_tenant.name %></dd>
+
+  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:id) %></dt>
+  <dd class="font-mono text-sm"><%= current_tenant.id %></dd>
+
+  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:created_at) %></dt>
+  <dd><%= time_to_s(current_tenant.created_at) %></dd>
+</dl>

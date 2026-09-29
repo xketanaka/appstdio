@@ -69,6 +69,16 @@ class ManagementTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "組織管理には自分のテナントの情報を出す" do
+    Tenant.create!(name: "テナントB")
+    login(@admin)
+    get management_organizations_path
+
+    assert_select "#organization dd", text: "テナントA"
+    assert_select "#organization dd", text: @tenant.id
+    assert_select "#organization", text: /テナントB/, count: 0
+  end
+
   test "未ログインでは開けない" do
     get management_users_path
     assert_redirected_to login_path
