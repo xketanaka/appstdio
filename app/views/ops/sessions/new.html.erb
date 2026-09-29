@@ -3,7 +3,7 @@
   <div class="mx-auto max-w-md rounded-lg border border-slate-200 bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
   <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
-  <%= form_with url: admin_login_path, method: :post do |f| %>
+  <%= form_with url: ops_login_path, method: :post do |f| %>
     <div class="mb-5">
       <%= f.label :email, Operator.human_attribute_name(:email), class: "mb-1.5 block text-sm font-semibold" %>
       <%= f.email_field :email, value: params[:email], autofocus: true,

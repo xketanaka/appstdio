@@ -47,12 +47,12 @@ services:
       DB_OWNER_USER: "appstdio_owner"
       DB_OWNER_PASSWORD: "owner_password"
 
-  admin:
+  ops:
     build:
       context: ./docker/
     privileged: true
     ports:
-      - "${ADMIN_LISTEN_PORT:-6001}:3000"
+      - "${OPS_LISTEN_PORT:-6001}:3000"
     volumes:
       - ".:/opt/app-root/appstdio"
       - "./docker/volumes/bundle:/usr/local/bundle"
@@ -70,7 +70,7 @@ services:
       RUBYOPT: "-W:deprecated"
       DB_HOST: "db"
       DB_PORT: "5432"
-      ADMIN_CONSOLE: "1"
+      OPS_CONSOLE: "1"
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       DB_USER: "appstdio_owner"
       DB_PASSWORD: "owner_password"

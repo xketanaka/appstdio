@@ -4,7 +4,7 @@ ja:
     application:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
-    admin:
+    ops:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
       brand: "%{system_title} 管理"
@@ -71,7 +71,7 @@ ja:
         title: "組織管理"
         heading: "組織管理"
 
-  admin:
+  ops:
     sessions:
       new:
         title: "管理者ログイン"

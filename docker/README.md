@@ -4,12 +4,12 @@
 
 | サービス | 役割 | 主な環境変数 | 備考 |
 |---|---|---|---|
-| `app` | 利用テナント側のアプリ | `DB_USER=appstdio_app` | `/admin` は 404 |
-| `admin` | システム管理画面 | `DB_USER=appstdio_owner`、`ADMIN_CONSOLE=1` | 利用テナント側の画面は 404 |
-| `css` | Tailwind のビルド（ファイル監視） | - | `app` / `admin` とコードのボリュームを共有 |
+| `app` | 利用テナント側のアプリ | `DB_USER=appstdio_app` | `/ops` は 404 |
+| `ops` | システム管理画面 | `DB_USER=appstdio_owner`、`OPS_CONSOLE=1` | 利用テナント側の画面は 404 |
+| `css` | Tailwind のビルド（ファイル監視） | - | `app` / `ops` とコードのボリュームを共有 |
 | `db` | PostgreSQL 18 | - | 初回起動時に `docker/files/db/initdb/` を実行 |
 
-`app` と `admin` は同じイメージ・同じコードで、環境変数だけが違う。なぜ分けているかは
+`app` と `ops` は同じイメージ・同じコードで、環境変数だけが違う。なぜ分けているかは
 `doc/architecture.md` の「システム管理画面」を参照。
 
 ## アクセスするためのポート設定
@@ -111,7 +111,7 @@ docker compose exec app sh -c "bin/rails test"
 `bin/rails test` では skip される。
 
 ```bash
-docker compose exec app sh -c "bin/rails test:admin"   # 管理画面のみ
+docker compose exec app sh -c "bin/rails test:ops"   # 管理画面のみ
 docker compose exec app sh -c "bin/rails test:all"     # 両方
 ```
 

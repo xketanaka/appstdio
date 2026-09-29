@@ -42,5 +42,5 @@ if Rails.env.local?
 
   puts "ログイン (所属2件、選択画面あり): #{admin.email} / #{password}"
   puts "ログイン (所属1件、選択画面なし): #{member.email} / #{password}"
-  puts "管理画面 /admin/login              : #{operator.email} / #{password}"
+  puts "管理画面 /ops/login                : #{operator.email} / #{password}"
 end

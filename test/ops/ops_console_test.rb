@@ -1,12 +1,12 @@
 require "test_helper"
 
-# 通常の bin/rails test では動かない。bin/rails test:admin で実行する
-class AdminConsoleTest < ActionDispatch::IntegrationTest
+# 通常の bin/rails test では動かない。bin/rails test:ops で実行する
+class OpsConsoleTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
   setup do
-    unless Rails.configuration.x.admin_console
-      skip("管理画面のテストは bin/rails test:admin で実行する")
+    unless Rails.configuration.x.ops_console
+      skip("管理画面のテストは bin/rails test:ops で実行する")
     end
 
     @tenant_a = Tenant.create!(name: "テナントA")
@@ -23,11 +23,11 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   end
 
   test "管理者としてログインしテナント一覧を見る" do
-    get admin_root_path
-    assert_redirected_to admin_login_path
+    get ops_root_path
+    assert_redirected_to ops_login_path
 
-    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
-    assert_redirected_to admin_root_path
+    post ops_login_path, params: { email: @operator.email, password: PASSWORD }
+    assert_redirected_to ops_root_path
 
     follow_redirect!
     assert_response :success
@@ -37,8 +37,8 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   end
 
   test "所属ユーザ数はテナントを跨いで数えられる" do
-    login_as_admin
-    get admin_root_path
+    login_as_operator
+    get ops_root_path
 
     assert_select "#tenant-table tbody tr:first-child td:nth-child(3)", text: "1"
     assert_select "#tenant-table tbody tr:last-child td:nth-child(3)", text: "0"
@@ -50,7 +50,7 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   end
 
   test "利用者のアカウントでは正しいパスワードでも入れない" do
-    post admin_login_path, params: { email: @tenant_member.email, password: PASSWORD }
+    post ops_login_path, params: { email: @tenant_member.email, password: PASSWORD }
 
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
@@ -60,53 +60,53 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   test "同じメールアドレスの利用者がいても、システム管理者のパスワードでしか入れない" do
     User.create!(email: @operator.email, password: "user-password")
 
-    post admin_login_path, params: { email: @operator.email, password: "user-password" }
+    post ops_login_path, params: { email: @operator.email, password: "user-password" }
     assert_response :unprocessable_entity
 
-    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
-    assert_redirected_to admin_root_path
+    post ops_login_path, params: { email: @operator.email, password: PASSWORD }
+    assert_redirected_to ops_root_path
   end
 
   test "停止中のシステム管理者はログインできない" do
     @operator.update!(status: :suspended)
 
-    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
+    post ops_login_path, params: { email: @operator.email, password: PASSWORD }
     assert_response :unprocessable_entity
     assert_nil session[:current_operator_id]
   end
 
   test "ログイン前に見ようとしたページへ戻る" do
-    get admin_tenants_path
-    assert_redirected_to admin_login_path
+    get ops_tenants_path
+    assert_redirected_to ops_login_path
 
-    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
-    assert_redirected_to admin_tenants_path
+    post ops_login_path, params: { email: @operator.email, password: PASSWORD }
+    assert_redirected_to ops_tenants_path
   end
 
   test "ログアウトすると管理画面に入れなくなる" do
-    login_as_admin
+    login_as_operator
 
-    delete admin_logout_path
-    assert_redirected_to admin_login_path
+    delete ops_logout_path
+    assert_redirected_to ops_login_path
     assert_nil session[:current_operator_id]
 
-    get admin_root_path
-    assert_redirected_to admin_login_path
+    get ops_root_path
+    assert_redirected_to ops_login_path
   end
 
   test "メニューからテナント一覧へ行ける" do
-    login_as_admin
-    get admin_root_path
+    login_as_operator
+    get ops_root_path
 
     assert_select "button[data-drawer-open]"
     assert_select "dialog[data-drawer]" do
-      assert_select "a[href=?]", admin_tenants_path
+      assert_select "a[href=?]", ops_tenants_path
       assert_select "span[aria-disabled=true]", 1
     end
   end
 
   test "ログイン前の画面にはメニューを出さない" do
-    get admin_login_path
+    get ops_login_path
 
     assert_response :success
     assert_select "button[data-drawer-open]", 0
@@ -123,7 +123,7 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
 
   private
 
-  def login_as_admin
-    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
+  def login_as_operator
+    post ops_login_path, params: { email: @operator.email, password: PASSWORD }
   end
 end

@@ -62,7 +62,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "管理画面は配信しない" do
-    get "/admin"
+    get "/ops"
     assert_response :not_found
   end
 

@@ -32,7 +32,7 @@ module HpciOffice
 
     # このプロセスがシステム管理画面かどうか。接続する DB ロール (DB_USER) と対で
     # 指定する。利用テナント側と管理画面は同じコードベースを別々にデプロイする
-    config.x.admin_console = ENV["ADMIN_CONSOLE"] == "1"
+    config.x.ops_console = ENV["OPS_CONSOLE"] == "1"
 
     config.i18n.default_locale = :ja
     config.time_zone = "Tokyo"
