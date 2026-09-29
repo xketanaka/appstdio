@@ -1,5 +1,5 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="overflow-hidden rounded-lg border border-slate-200 bg-white md:flex">
+<div class="flex flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white md:flex-row">
   <%# スマホではドライブ一覧を折りたたむ。常に開いていると一覧が下に押し出される %>
   <details class="border-b border-slate-200 md:hidden">
     <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">

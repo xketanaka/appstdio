@@ -18,8 +18,8 @@
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="min-h-screen bg-slate-50 leading-relaxed text-slate-800">
-    <header class="flex items-center justify-between gap-2 bg-slate-800 px-3 py-3 text-white sm:gap-4 sm:px-6">
+  <body class="flex min-h-dvh flex-col bg-slate-50 leading-relaxed text-slate-800">
+    <header class="flex shrink-0 items-center justify-between gap-2 bg-slate-800 px-3 py-3 text-white sm:gap-4 sm:px-6">
       <div class="flex min-w-0 items-center gap-2 sm:gap-3">
         <% if logged_in? %>
           <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
@@ -62,7 +62,7 @@
       <% end %>
     <% end %>
 
-    <div class="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8">
+    <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 py-5 sm:px-4 sm:py-8">
       <%= render "partial/messages" %>
       <%= yield %>
     </div>
