@@ -1,5 +1,5 @@
 module Management
-  class OrganizationsController < BaseController
+  class TenantsController < BaseController
     def index
     end
   end

@@ -2,7 +2,7 @@
 <nav aria-label="<%= t(".label") %>">
   <% { users: management_users_path,
        groups: management_groups_path,
-       organizations: management_organizations_path }.each do |key, path| %>
+       tenants: management_tenants_path }.each do |key, path| %>
     <% current = controller_name == key.to_s %>
     <%= link_to t(".items.#{key}"), path,
           "aria-current": (current ? "page" : nil),
