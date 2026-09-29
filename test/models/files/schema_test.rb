@@ -100,6 +100,31 @@ class Files::SchemaTest < ActiveSupport::TestCase
     end
   end
 
+  test "フォルダは版を持てない" do
+    version = Files::Version.create!(
+      tenant: @tenant, node: @root, number: 1, byte_size: 10,
+    )
+    @root.current_version_id = version.id
+    assert_raises(ActiveRecord::StatementInvalid) { @root.save!(validate: false) }
+  end
+
+  test "フォルダはサイズを持てない" do
+    @root.byte_size = 100
+    assert_raises(ActiveRecord::StatementInvalid) { @root.save!(validate: false) }
+  end
+
+  test "kind は型で値域が縛られる" do
+    # 生の SQL が失敗するとトランザクションごと中断されるので、セーブポイントで囲む
+    assert_raises(ActiveRecord::StatementInvalid) do
+      Files::Node.transaction(requires_new: true) do
+        Files::Node.connection.execute(<<~SQL)
+          INSERT INTO files_nodes (tenant_id, drive_id, kind, name, byte_size, created_at, updated_at)
+          VALUES ('#{@tenant.id}', #{@drive.id}, 'shortcut', 'x', 0, now(), now())
+        SQL
+      end
+    end
+  end
+
   test "版は番号で一意" do
     node = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :file, name: "a.txt")
     Files::Version.create!(tenant: @tenant, node: node, number: 1, byte_size: 10)
