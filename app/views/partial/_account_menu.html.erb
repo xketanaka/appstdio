@@ -1,6 +1,4 @@
-<%# アイコンをクリックすると開くプルダウン。
-    details/summary を使っているので JavaScript が無くても開閉できる。
-    外側クリックと Esc での閉じる動作だけ app/javascript/application.js が補う %>
+<%# data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.js が拾っている） %>
 <details class="relative" data-dropdown>
   <summary class="flex cursor-pointer list-none items-center rounded-full focus-visible:outline-2 focus-visible:outline-white [&::-webkit-details-marker]:hidden"
            aria-label="<%= label %>">
