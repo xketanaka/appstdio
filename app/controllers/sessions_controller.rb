@@ -2,7 +2,6 @@ class SessionsController < ApplicationController
   skip_before_action :login_required, only: [:new, :create]
   skip_before_action :tenant_required, only: [:new, :create, :destroy]
 
-  # ホーム（ログイン済みかつテナント選択済み）
   def index
   end
 

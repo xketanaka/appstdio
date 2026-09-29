@@ -27,16 +27,13 @@ if Rails.env.local?
   sample = Tenant.find_or_create_by!(name: "サンプル株式会社")
   test = Tenant.find_or_create_by!(name: "テスト工業")
 
-  # 所属が複数あるユーザ。ログイン後にテナント選択画面が出る
   admin = upsert_user("admin@example.com", password)
   join(sample, admin, "管理者", :owner)
   join(test, admin, "管理者", :member)
 
-  # 所属が1件のユーザ。テナント選択画面はスキップされる
   member = upsert_user("member@example.com", password)
   join(sample, member, "一般ユーザ", :member)
 
-  # システム管理者。利用テナントには所属させない
   operator = upsert_user("operator@example.com", password)
   account = AdminUser.find_or_initialize_by(user_id: operator.id)
   account.display_name = "運用担当"

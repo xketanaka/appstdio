@@ -1,4 +1,4 @@
-<%# ドライブの一覧。PC では左ペイン、スマホでは折りたたみとして同じものを描画する %>
+<%# PC とスマホの2箇所から描画される。id を持つ要素を置かないこと %>
 <% sections.each do |section| %>
   <details class="group" <%= "open" if section[:open] %>>
     <summary class="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden">

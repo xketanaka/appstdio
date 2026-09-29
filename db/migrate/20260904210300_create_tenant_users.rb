@@ -1,7 +1,6 @@
 class CreateTenantUsers < ActiveRecord::Migration[8.1]
   def change
     create_table :tenant_users do |t|
-      # 単独の tenant_id インデックスは下の複合ユニークが兼ねるため作らない
       t.references :tenant,
         type: :uuid,
         null: false,

@@ -1,7 +1,6 @@
 require "test_helper"
 
-# DB 側の制約が効いていることを確認する。モデルのバリデーションを迂回しても
-# 壊れたデータが入らないことが目的なので、insert_all や update_column を使う
+# バリデーションを迂回するため insert_all や update_column で書き込んでいる
 class Files::SchemaTest < ActiveSupport::TestCase
   setup do
     @tenant = Tenant.create!(name: "テナントA")

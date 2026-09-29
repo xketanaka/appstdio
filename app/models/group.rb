@@ -12,7 +12,6 @@ class Group < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   validate :parent_must_not_be_self_or_descendant
 
-  # 祖先を含めた自身の系列。上位グループへの共有は下位のメンバーにも届く
   def self_and_ancestors
     chain = [self]
     node = parent

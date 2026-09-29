@@ -2,7 +2,6 @@ module Admin
   class BaseController < ApplicationController
     layout "admin"
 
-    # 利用テナント側のフィルタは使わない
     skip_around_action :with_tenant_context
     skip_before_action :login_required
     skip_before_action :tenant_required

@@ -62,7 +62,6 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "管理画面は配信しない" do
-    # 管理画面は ADMIN_CONSOLE=1 の別プロセスで動かす
     get "/admin"
     assert_response :not_found
   end

@@ -10,8 +10,6 @@ class EnableRowLevelSecurityOnFilesTables < ActiveRecord::Migration[8.1]
     files_activities
   ].freeze
 
-  # テナント内の権限（マイドライブの非公開、共有の可否）は RLS の範囲外で、
-  # アプリ層が担う。ここで担保するのはテナントを跨いだ遮断だけ
   def up
     TABLES.each do |table|
       execute <<~SQL

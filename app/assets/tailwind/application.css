@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
 @theme {
-  /* 既定のスタックには日本語フォントが含まれないため差し替える */
   --font-sans: system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }

@@ -39,7 +39,6 @@ class RowLevelSecurityTest < ActiveSupport::TestCase
   end
 
   test "ユーザコンテキストだけでも自分自身の所属は参照できる" do
-    # ログイン直後、テナントを選ぶ前に所属テナント一覧を出すための経路
     TenantContext.switch(user: @user_a) do
       assert_equal [@tenant_a.id], TenantUser.pluck(:tenant_id)
     end

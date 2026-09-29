@@ -4,8 +4,6 @@ class TenantSelectionsController < ApplicationController
   def new
     @tenant_users = sorted_memberships
 
-    # ログイン直後に所属が1件しかなければ選ばせる意味がない。
-    # 選択済み（ヘッダの切り替えから来た場合）は1件でも一覧を出す。
     select(@tenant_users.first) if session[:current_tenant_id].blank? && @tenant_users.one?
   end
 

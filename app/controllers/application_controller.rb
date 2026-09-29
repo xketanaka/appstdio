@@ -56,7 +56,6 @@ class ApplicationController < ActionController::Base
     redirect_to login_path
   end
 
-  # ログイン済みでもテナントを選ぶまでは業務画面に入れない
   def tenant_required
     return if current_tenant_user.present?
 

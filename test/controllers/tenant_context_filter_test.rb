@@ -1,7 +1,5 @@
 require "test_helper"
 
-# セッション -> コントローラのインスタンス変数 -> DBのテナントコンテキスト
-# という受け渡しが繋がっていることを確認する。
 class TenantContextFilterTest < ActionController::TestCase
   tests SessionsController
 

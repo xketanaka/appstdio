@@ -1,11 +1,4 @@
-# RLS のポリシーが参照する PostgreSQL のセッション変数を設定する。
-#
-# Web リクエストでは TenantContextFilter が自動で設定・解除する。
-# リクエスト外（ジョブ・コンソール・テスト）からは switch を使う。
-#
-#   TenantContext.switch(tenant: tenant, user: user) do
-#     TenantUser.count
-#   end
+# リクエスト外（ジョブ・コンソール・テスト）では switch で囲まないと RLS で 0 件になる
 class TenantContext
   TENANT_KEY = "app.tenant_id"
   USER_KEY = "app.user_id"

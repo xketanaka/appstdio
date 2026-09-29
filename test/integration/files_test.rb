@@ -24,12 +24,10 @@ class FilesTest < ActionDispatch::IntegrationTest
     get files_root_path
     assert_response :success
 
-    # 左のツリー。組織共有ドライブだけ開いた状態
     assert_select "aside details", 4
     assert_select "aside details[open]", 1
     assert_select "aside", text: /組織共有ドライブ.*共有されたアイテム.*マイドライブ.*ゴミ箱/m
 
-    # 右の一覧
     assert_select "#file-list thead th", 5
     assert_select "#file-list tbody tr", 3
     assert_select "#file-list tbody tr:first-child td", text: "-"   # フォルダはサイズなし
@@ -41,7 +39,6 @@ class FilesTest < ActionDispatch::IntegrationTest
   end
 
   test "テナント未選択でアクセスすると、選択後に元のページへ戻る" do
-    # 所属を2件にして選択画面が出る状態にする
     other = Tenant.create!(name: "テナントB")
     TenantContext.switch(tenant: other) do
       TenantUser.create!(tenant: other, user: @user, display_name: "Aさん", status: :active)

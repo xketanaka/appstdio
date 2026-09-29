@@ -3,8 +3,6 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[8.1]
     execute <<~SQL
       ALTER TABLE tenant_users ENABLE ROW LEVEL SECURITY;
 
-      -- NULLIF は、空文字にリセットされた状態で ''::uuid のキャストがエラーになるのを避けるため。
-      -- user_id の条件は、テナント未確定のログイン直後に自分の所属を引くために必要。
       CREATE POLICY tenant_users_select ON tenant_users
         FOR SELECT
         USING (
@@ -12,7 +10,6 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[8.1]
           OR user_id = NULLIF(current_setting('app.user_id', true), '')::bigint
         );
 
-      -- WITH CHECK が無いと他テナントの行を作成できてしまう
       CREATE POLICY tenant_users_insert ON tenant_users
         FOR INSERT
         WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);

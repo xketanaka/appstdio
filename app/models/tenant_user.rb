@@ -1,5 +1,4 @@
 class TenantUser < ApplicationRecord
-  # テナント内でのユーザのプロフィール情報。同一ユーザが複数テナントに所属できる。
   belongs_to :tenant
   belongs_to :user
 
