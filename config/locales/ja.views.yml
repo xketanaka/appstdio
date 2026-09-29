@@ -23,6 +23,7 @@ ja:
         title: "ファイル"
         heading: "組織共有ドライブ"
         create: "作成"
+        drives: "ドライブ"
         row_menu: "この項目の操作"
         sections:
           shared_drive: "組織共有ドライブ"

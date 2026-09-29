@@ -1,0 +1,19 @@
+<%# ドライブの一覧。PC では左ペイン、スマホでは折りたたみとして同じものを描画する %>
+<% sections.each do |section| %>
+  <details class="group" <%= "open" if section[:open] %>>
+    <summary class="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+           class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
+        <path d="M8 4l10 8-10 8V4Z" />
+      </svg>
+      <span class="truncate"><%= t("files.folders.show.sections.#{section[:key]}") %></span>
+    </summary>
+
+    <% section[:children].each do |child| %>
+      <div class="flex items-center gap-2 py-1.5 pr-3 pl-8 text-sm hover:bg-slate-100">
+        <%= render "partial/file_icon", folder: true %>
+        <span class="truncate"><%= child %></span>
+      </div>
+    <% end %>
+  </details>
+<% end %>

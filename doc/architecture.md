@@ -256,6 +256,70 @@ starting:open:backdrop:opacity-0  ->  :is([open])::backdrop
 
 `open:` は `dialog` 自身の状態なので、`backdrop:` より先に書く。
 
+### PC とスマホの両対応
+
+Tailwind の既定のブレークポイントをそのまま使う（`sm` 40rem / `md` 48rem / `lg` 64rem）。
+スマホを基準に書き、広い画面向けを修飾子で足す。
+
+情報量が多い画面では、狭い幅で**列を隠して主要な列の下にまとめる**。消すのではなく
+場所を変える。
+
+```erb
+<th class="hidden px-3 py-2.5 md:table-cell">更新日時</th>
+...
+<td class="px-3 py-2.5">
+  <span>名前</span>
+  <span class="mt-0.5 block text-xs text-slate-500 md:hidden">更新日時</span>
+</td>
+```
+
+左ペインのように**配置ごと変わるもの**は、partial に切り出して2箇所から描画する。
+
+```erb
+<details class="md:hidden">...<%= render "tree" %></details>
+<aside class="hidden md:block"><%= render "tree" %></aside>
+```
+
+`details` の `open` を CSS で制御できないため、1つの要素で「スマホでは折りたたみ、
+PC では常に開く」を実現できない。`summary` を `md:hidden` で隠す手もあるが、
+スマホ幅で閉じたままウィンドウを広げると開けなくなる。
+
+### 画面全体を使うレイアウト
+
+ヘッダより下は画面いっぱいに使う。カード（角丸・枠線・影で浮かせた箱）は使わず、
+左右の余白も持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
+
+```
+body      flex h-dvh flex-col overflow-hidden
+header    shrink-0
+本文の器   flex min-h-0 flex-1          余白も最大幅も持たない
+ビュー     ここを自分で埋める
+```
+
+**ページ全体はスクロールしない。** `body` が `overflow-hidden` なので、
+**各ビューが自分でスクロール領域を作る**。`min-h-0` を付け忘れると、flex の子が
+内容の高さまで伸びてスクロールせずにはみ出すので注意。
+
+ビューの書き方は2通り。
+
+```erb
+<%# 一覧など画面を埋めるもの。見出しは固定し、中身だけスクロールさせる %>
+<div class="flex min-h-0 flex-1 flex-col">
+  <div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">見出し</div>
+  <div class="min-h-0 flex-1 overflow-auto">一覧</div>
+</div>
+
+<%# フォームや詳細。読みやすさのため最大幅を設ける %>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">本文</div>
+</div>
+```
+
+ログイン画面だけは中央寄せのカードのまま。未ログインの画面で、業務画面とは性質が違う。
+
+`h-screen` ではなく `h-dvh` を使っている。スマホでアドレスバーの分だけ `100vh` が
+画面からはみ出すため。
+
 ### テストはスタイルのクラスを参照しない
 
 `assert_select` は `id`、要素の構造、`role` 属性、テキストで書く。ユーティリティクラスは

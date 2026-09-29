@@ -1,80 +1,84 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
-  <aside class="w-56 shrink-0 border-r border-slate-200 py-3">
-    <% @sections.each do |section| %>
-      <details class="group" <%= "open" if section[:open] %>>
-        <summary class="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-               class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
-            <path d="M8 4l10 8-10 8V4Z" />
-          </svg>
-          <span class="truncate"><%= t(".sections.#{section[:key]}") %></span>
-        </summary>
+<div class="flex min-h-0 flex-1 flex-col md:flex-row">
+  <details class="shrink-0 border-b border-slate-200 bg-slate-50 md:hidden">
+    <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+      <%= t(".drives") %>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           class="size-4 text-slate-400" aria-hidden="true">
+        <path stroke-linecap="round" d="M6 9l6 6 6-6" />
+      </svg>
+    </summary>
+    <div class="pb-2"><%= render "tree", sections: @sections %></div>
+  </details>
 
-        <% section[:children].each do |child| %>
-          <div class="flex items-center gap-2 py-1.5 pr-3 pl-8 text-sm hover:bg-slate-100">
-            <%= render "partial/file_icon", folder: true %>
-            <span class="truncate"><%= child %></span>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
+  <aside class="hidden w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-slate-50 py-3 md:block">
+    <%= render "tree", sections: @sections %>
   </aside>
 
-  <section class="min-w-0 flex-1 px-6 py-5">
-    <div class="mb-6 flex items-center justify-between gap-4">
-      <h1 class="text-lg font-bold"><%= t(".heading") %></h1>
-      <button type="button"
-              class="flex cursor-pointer items-center gap-1.5 rounded border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">
+  <section class="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 px-4 py-3 sm:px-6">
+      <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+      <%= button_tag type: "button",
+            class: "flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 sm:px-4" do %>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
           <path stroke-linecap="round" d="M12 5v14M5 12h14" />
         </svg>
         <%= t(".create") %>
-      </button>
+      <% end %>
     </div>
 
-    <table id="file-list" class="w-full">
-      <thead>
-        <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
-          <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.name") %></th>
-          <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.owner") %></th>
-          <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.updated_at") %></th>
-          <th class="px-3 py-2.5 text-right font-normal"><%= t(".columns.size") %></th>
-          <th class="w-10"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @entries.each do |entry| %>
-          <tr class="border-b border-slate-200 hover:bg-slate-50">
-            <td class="px-3 py-2.5">
-              <span class="flex items-center gap-2">
-                <%= render "partial/file_icon", folder: entry.folder %>
-                <span class="truncate"><%= entry.name %></span>
-              </span>
-            </td>
-            <td class="px-3 py-2.5 text-sm"><%= entry.owner %></td>
-            <td class="px-3 py-2.5 text-sm"><%= time_to_s(entry.updated_at) %></td>
-            <td class="px-3 py-2.5 text-right text-sm">
-              <%= entry.bytes ? number_to_human_size(entry.bytes) : "-" %>
-            </td>
-            <td class="py-2.5 pr-3">
-              <details class="relative" data-dropdown>
-                <summary class="flex cursor-pointer list-none justify-center rounded p-1 text-slate-500 hover:bg-slate-200 [&::-webkit-details-marker]:hidden"
-                         aria-label="<%= t(".row_menu") %>">
-                  <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
-                    <path d="M12 7a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 12 7Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z" />
-                  </svg>
-                </summary>
-                <div class="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
-                  <% %i[download rename destroy].each do |action| %>
-                    <span class="block px-4 py-2 text-slate-400"><%= t(".row_actions.#{action}") %></span>
-                  <% end %>
-                </div>
-              </details>
-            </td>
+    <div class="min-h-0 flex-1 overflow-auto">
+      <table id="file-list" class="w-full">
+        <thead class="sticky top-0 bg-slate-50 text-sm text-slate-500">
+          <tr class="border-b border-slate-200">
+            <th class="px-4 py-2 text-left font-normal sm:px-6"><%= t(".columns.name") %></th>
+            <th class="hidden px-3 py-2 text-left font-normal lg:table-cell"><%= t(".columns.owner") %></th>
+            <th class="hidden px-3 py-2 text-left font-normal md:table-cell"><%= t(".columns.updated_at") %></th>
+            <th class="hidden px-3 py-2 text-right font-normal sm:table-cell"><%= t(".columns.size") %></th>
+            <th class="w-10"></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @entries.each do |entry| %>
+            <tr class="border-b border-slate-100 hover:bg-blue-50/60">
+              <td class="px-4 py-2.5 sm:px-6">
+                <span class="flex items-center gap-2">
+                  <%= render "partial/file_icon", folder: entry.folder %>
+                  <span class="truncate"><%= entry.name %></span>
+                </span>
+                <%# 画面が狭いときは、隠した列の内容を名前の下にまとめる %>
+                <span class="mt-0.5 block pl-7 text-xs text-slate-500 lg:hidden">
+                  <%# サイズは "-" のような短い値でも区切りと詰まらないよう最低幅を持たせる %>
+                  <span class="sm:hidden">
+                    <span class="inline-block min-w-[4ch]"><%= entry.bytes ? number_to_human_size(entry.bytes) : "-" %></span>・</span>
+                  <span class="md:hidden"><%= time_to_s(entry.updated_at) %>・</span>
+                  <%= entry.owner %>
+                </span>
+              </td>
+              <td class="hidden px-3 py-2.5 text-sm lg:table-cell"><%= entry.owner %></td>
+              <td class="hidden px-3 py-2.5 text-sm md:table-cell"><%= time_to_s(entry.updated_at) %></td>
+              <td class="hidden px-3 py-2.5 text-right text-sm sm:table-cell">
+                <%= entry.bytes ? number_to_human_size(entry.bytes) : "-" %>
+              </td>
+              <td class="py-2.5 pr-2 sm:pr-4">
+                <details class="relative" data-dropdown>
+                  <summary class="flex cursor-pointer list-none justify-center rounded p-1 text-slate-500 hover:bg-slate-200 [&::-webkit-details-marker]:hidden"
+                           aria-label="<%= t(".row_menu") %>">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
+                      <path d="M12 7a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 12 7Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z" />
+                    </svg>
+                  </summary>
+                  <div class="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                    <% %i[download rename destroy].each do |action| %>
+                      <span class="block px-4 py-2 text-slate-400"><%= t(".row_actions.#{action}") %></span>
+                    <% end %>
+                  </div>
+                </details>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   </section>
 </div>

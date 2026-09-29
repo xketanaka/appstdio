@@ -1,5 +1,6 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="mx-auto my-12 max-w-md rounded-lg border border-slate-200 bg-white px-8 pt-6 pb-8">
+<div class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-10">
+  <div class="mx-auto max-w-md rounded-lg border border-slate-200 bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
   <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
   <%= form_with url: admin_login_path, method: :post do |f| %>
@@ -16,4 +17,5 @@
 
     <%= f.submit t("actions.login"), class: "w-full cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
   <% end %>
+</div>
 </div>
