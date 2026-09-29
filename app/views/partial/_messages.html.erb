@@ -17,7 +17,7 @@
 %>
 <%- styles.each do |type, style| -%>
   <%- if flash[type] -%>
-  <div class="mb-6 rounded border px-4 py-3 <%= style %>" role="<%= type == :notice ? "status" : "alert" %>">
+  <div class="mx-4 mt-4 rounded border px-4 py-3 <%= style %>" role="<%= type == :notice ? "status" : "alert" %>">
     <% split_message flash[type] do |message| %>
       <div><%= flash["#{type}_html_safe"] ? message.html_safe : message %></div>
     <% end %>
