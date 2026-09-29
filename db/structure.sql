@@ -24,6 +24,16 @@ CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
 COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
 
 
+--
+-- Name: files_node_kind; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.files_node_kind AS ENUM (
+    'folder',
+    'file'
+);
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -152,7 +162,7 @@ CREATE TABLE public.files_nodes (
     tenant_id uuid NOT NULL,
     drive_id bigint NOT NULL,
     parent_id bigint,
-    kind character varying NOT NULL,
+    kind public.files_node_kind NOT NULL,
     name character varying NOT NULL,
     creator_id bigint,
     current_version_id bigint,
@@ -164,7 +174,8 @@ CREATE TABLE public.files_nodes (
     purged_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT files_nodes_kind_check CHECK (((kind)::text = ANY ((ARRAY['folder'::character varying, 'file'::character varying])::text[])))
+    CONSTRAINT files_nodes_folder_size_check CHECK (((kind = 'file'::public.files_node_kind) OR (byte_size = 0))),
+    CONSTRAINT files_nodes_folder_version_check CHECK (((kind = 'file'::public.files_node_kind) OR (current_version_id IS NULL)))
 );
 
 
@@ -1421,6 +1432,8 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260929100100'),
+('20260929100000'),
 ('20260928100200'),
 ('20260928100100'),
 ('20260928100000'),

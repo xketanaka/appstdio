@@ -20,6 +20,8 @@ module Files
     scope :trash_roots, -> { trashed.where("id = deleted_root_id") }
 
     validates :name, presence: true, length: { maximum: 255 }
+    validates :current_version_id, absence: true, if: :folder?
+    validates :byte_size, numericality: { equal_to: 0 }, if: :folder?
     validates :name, exclusion: { in: [".", ".."] }
     validates :name, format: { without: %r{/} }
 
