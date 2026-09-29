@@ -2,6 +2,19 @@
 
 開発環境の動かし方は `docker/README.md` を参照。
 
+## 用語
+
+「管理者」に当たるものが3つあるので、コード上の名前で呼び分ける。
+
+| コード | 指すもの | 画面の言葉 |
+|---|---|---|
+| `operator`（`operators`、`/ops`、`Ops::`） | サービスの運営側。システム管理画面を使う | システム管理者 |
+| `admin` / `owner`（`tenant_users.role`） | テナントの管理者。`/management` を使う | 管理者 / オーナー |
+| `manager`（`files_permissions.role`） | ファイル・フォルダの管理権限 | 管理者 |
+
+`admin` はテナントの管理者だけを指す。システム管理者を `admin` と呼ばない。
+画面では「組織」と呼ぶものも、コードでは `tenant` と書く。
+
 ## テナント分離 (Row Level Security)
 
 テナント間のデータ分離は PostgreSQL の RLS で行う。
