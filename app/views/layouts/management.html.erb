@@ -1,22 +1,4 @@
-<% content_for :content do %>
-  <div class="flex min-h-0 flex-1 flex-col md:flex-row">
-    <details class="shrink-0 border-b border-slate-200 bg-slate-50 md:hidden">
-      <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-        <%= t("management.menu.items.#{controller_name}") %>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             class="size-4 text-slate-400" aria-hidden="true">
-          <path stroke-linecap="round" d="M6 9l6 6 6-6" />
-        </svg>
-      </summary>
-      <div class="pb-2"><%= render "management/menu" %></div>
-    </details>
-
-    <aside id="management-menu" class="hidden w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-slate-50 py-3 md:block">
-      <div class="px-4 pb-2 text-lg font-bold"><%= t("menus.management") %></div>
-      <%= render "management/menu" %>
-    </aside>
-
-    <section class="flex min-h-0 min-w-0 flex-1 flex-col"><%= yield %></section>
-  </div>
-<% end %>
-<%= render template: "layouts/application" %>
+<% content_for :pane_title, t("menus.management") %>
+<% content_for :pane_summary, t("management.menu.items.#{controller_name}") %>
+<% content_for :pane do %><%= render "management/menu" %><% end %>
+<%= render template: "layouts/two_pane" %>

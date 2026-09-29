@@ -47,9 +47,9 @@ class ManagementTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
 
-    assert_select "#management-menu a", 3
-    assert_select "#management-menu", text: /\A管理\s*利用者管理.*グループ管理.*組織管理/m
-    assert_select "#management-menu a[aria-current=page]", text: "利用者管理"
+    assert_select "#side-pane a", 3
+    assert_select "#side-pane", text: /\A管理\s*利用者管理.*グループ管理.*組織管理/m
+    assert_select "#side-pane a[aria-current=page]", text: "利用者管理"
     assert_select "h1", text: "利用者管理"
 
     assert_select "#user-list tbody tr", 3
@@ -63,8 +63,8 @@ class ManagementTest < ActionDispatch::IntegrationTest
       management_organizations_path => "組織管理" }.each do |path, label|
       get path
       assert_response :success
-      assert_select "#management-menu a[aria-current=page]", text: label
-      assert_select "#management-menu a[aria-current]", 1
+      assert_select "#side-pane a[aria-current=page]", text: label
+      assert_select "#side-pane a[aria-current]", 1
       assert_select "h1", text: label
     end
   end

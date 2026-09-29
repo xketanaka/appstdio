@@ -1,5 +1,7 @@
 module Files
   class FoldersController < ApplicationController
+    layout "two_pane"
+
     # 画面モック。実データは未実装で、以下はすべて仮の表示用
     Entry = Struct.new(:name, :folder, :owner, :updated_at, :bytes, keyword_init: true)
 
