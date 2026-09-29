@@ -284,23 +284,41 @@ Tailwind の既定のブレークポイントをそのまま使う（`sm` 40rem 
 PC では常に開く」を実現できない。`summary` を `md:hidden` で隠す手もあるが、
 スマホ幅で閉じたままウィンドウを広げると開けなくなる。
 
-### 画面の高さいっぱいに広げる
+### 画面全体を使うレイアウト
 
-レイアウトは `body` から本文の器まで縦の flex 列になっている。**中身が伸びてほしい画面は
-ルート要素に `flex-1` を足す**だけでよい。
+ヘッダより下は画面いっぱいに使う。カード（角丸・枠線・影で浮かせた箱）は使わず、
+左右の余白も持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
 
 ```
-body      flex min-h-dvh flex-col
+body      flex h-dvh flex-col overflow-hidden
 header    shrink-0
-本文の器   mx-auto flex w-full max-w-5xl flex-1 flex-col
-ビュー     flex-1 を付けた要素だけが縦に伸びる
+本文の器   flex min-h-0 flex-1          余白も最大幅も持たない
+ビュー     ここを自分で埋める
 ```
 
-`flex-1` を付けない画面（ログインなど中央寄せの小さなカード）は内容なりの高さのままに
-なる。全画面を一律に伸ばすと、狭いカードが縦長の箱になって不格好。
+**ページ全体はスクロールしない。** `body` が `overflow-hidden` なので、
+**各ビューが自分でスクロール領域を作る**。`min-h-0` を付け忘れると、flex の子が
+内容の高さまで伸びてスクロールせずにはみ出すので注意。
 
-`min-h-screen` ではなく `min-h-dvh` を使っている。スマホでアドレスバーの分だけ
-`100vh` が画面からはみ出すのを避けるため。
+ビューの書き方は2通り。
+
+```erb
+<%# 一覧など画面を埋めるもの。見出しは固定し、中身だけスクロールさせる %>
+<div class="flex min-h-0 flex-1 flex-col">
+  <div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">見出し</div>
+  <div class="min-h-0 flex-1 overflow-auto">一覧</div>
+</div>
+
+<%# フォームや詳細。読みやすさのため最大幅を設ける %>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">本文</div>
+</div>
+```
+
+ログイン画面だけは中央寄せのカードのまま。未ログインの画面で、業務画面とは性質が違う。
+
+`h-screen` ではなく `h-dvh` を使っている。スマホでアドレスバーの分だけ `100vh` が
+画面からはみ出すため。
 
 ### テストはスタイルのクラスを参照しない
 
