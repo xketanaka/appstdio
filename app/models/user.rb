@@ -1,5 +1,4 @@
 class User < ApplicationRecord
-  # 認証主体としての情報のみを保持する。テナント内でのプロフィールは TenantUser を参照。
   has_secure_password
 
   has_many :tenant_users, dependent: :destroy

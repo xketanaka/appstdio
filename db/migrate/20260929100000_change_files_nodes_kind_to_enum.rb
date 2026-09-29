@@ -1,6 +1,4 @@
 class ChangeFilesNodesKindToEnum < ActiveRecord::Migration[8.1]
-  # kind は folder / file で、値の削除も改名も起きない列。PG ENUM の唯一の欠点
-  # （値を消すのに型ごと作り直す）が当たらないため、型そのもので値域を縛る
   def up
     create_enum :files_node_kind, %w[folder file]
 

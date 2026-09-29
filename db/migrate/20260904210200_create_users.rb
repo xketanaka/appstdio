@@ -4,12 +4,10 @@ class CreateUsers < ActiveRecord::Migration[8.1]
       t.citext :email, null: false
       t.string :password_digest, null: false
 
-      # メール到達確認
       t.datetime :email_verified_at
       t.string :email_verification_token
       t.datetime :email_verification_token_expires_at
 
-      # パスワード再設定
       t.string :password_reset_token
       t.datetime :password_reset_token_expires_at
 

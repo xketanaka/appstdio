@@ -51,7 +51,6 @@ ja:
         created_at: "作成日時"
         updated_at: "更新日時"
 
-  # enum の表示名。ビューでは I18n.t("enums.tenant_user.role.#{tenant_user.role}") のように参照する
   enums:
     admin_user:
       status:

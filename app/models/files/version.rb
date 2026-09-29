@@ -1,6 +1,5 @@
 module Files
   class Version < ApplicationRecord
-    # 実体はノードではなく版に添付する。上書きが行の追加になる
     has_one_attached :body
 
     belongs_to :tenant

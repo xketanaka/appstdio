@@ -1,6 +1,3 @@
-# リクエストの間だけ DB のテナントコンテキストを設定し、解決した結果を
-# @current_tenant_user に置く。
-# 参照は SessionsHelper の current_user / current_tenant_user / current_tenant を使う。
 module TenantContextFilter
   extend ActiveSupport::Concern
 

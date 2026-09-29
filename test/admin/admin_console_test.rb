@@ -1,7 +1,6 @@
 require "test_helper"
 
-# 管理画面は appstdio_admin で接続し、ルーティングも利用テナント側と入れ替わる。
-# 通常の bin/rails test では動かないので、bin/rails test:admin で実行する。
+# 通常の bin/rails test では動かない。bin/rails test:admin で実行する
 class AdminConsoleTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
@@ -45,7 +44,6 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   end
 
   test "テナントコンテキストを設定しなくても所属情報が見える" do
-    # 利用テナント側のロールでは 0 件になる範囲
     assert_nil TenantContext.tenant_id
     assert_equal 1, TenantUser.count
   end
@@ -92,7 +90,6 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
     assert_select "button[data-drawer-open]"
     assert_select "dialog[data-drawer]" do
       assert_select "a[href=?]", admin_tenants_path
-      # 管理者の管理はまだ無いので表示のみ
       assert_select "span[aria-disabled=true]", 1
     end
   end
@@ -106,7 +103,6 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
   end
 
   test "利用テナント側の画面は配信しない" do
-    # appstdio_admin で接続しているため、利用テナント側を動かすとテナントの遮断が効かない
     get "/login"
     assert_response :not_found
 

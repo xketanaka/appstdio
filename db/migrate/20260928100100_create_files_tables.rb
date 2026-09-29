@@ -50,7 +50,6 @@ class CreateFilesTables < ActiveRecord::Migration[8.1]
       t.bigint :current_version_id
       t.bigint :byte_size, null: false, default: 0
 
-      # ゴミ箱。deleted_root_id は利用者が削除操作をしたノード
       t.datetime :deleted_at
       t.bigint :deleted_root_id
       t.references :deleted_by, null: true,
@@ -92,7 +91,6 @@ class CreateFilesTables < ActiveRecord::Migration[8.1]
       t.index :tenant_id
     end
 
-    # files_nodes と files_versions は相互参照になるため、両方できてから張る
     add_foreign_key :files_nodes, :files_versions, column: :current_version_id, on_delete: :nullify
     add_foreign_key :files_nodes, :files_nodes, column: :deleted_root_id, on_delete: :cascade
 
@@ -104,7 +102,6 @@ class CreateFilesTables < ActiveRecord::Migration[8.1]
       t.references :group, null: true, foreign_key: { on_delete: :cascade }, index: false
       t.references :tenant_user, null: true, foreign_key: { on_delete: :cascade }, index: false
 
-      # none は打ち消し。継承してきた権限をこのノードで無効にする
       t.string :role, null: false
 
       t.timestamps

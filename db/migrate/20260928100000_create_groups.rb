@@ -11,7 +11,6 @@ class CreateGroups < ActiveRecord::Migration[8.1]
 
       t.timestamps
 
-      # NULL 同士は別物として扱われるため、親の有無で索引を分ける
       t.index [:tenant_id, :parent_id, :name], unique: true, where: "parent_id IS NOT NULL"
       t.index [:tenant_id, :name], unique: true, where: "parent_id IS NULL"
       t.index :tenant_id, unique: true, where: "kind = 'everyone'",

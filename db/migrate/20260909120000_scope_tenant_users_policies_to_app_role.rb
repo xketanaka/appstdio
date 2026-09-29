@@ -6,8 +6,6 @@ class ScopeTenantUsersPoliciesToAppRole < ActiveRecord::Migration[8.1]
     tenant_users_delete
   ].freeze
 
-  # ポリシーは permissive (OR 結合) なので、TO を省略して PUBLIC 宛にしておくと
-  # 後から追加したロールにもこのポリシーが効いてしまう
   def up
     POLICIES.each do |policy|
       execute "ALTER POLICY #{policy} ON tenant_users TO appstdio_app;"

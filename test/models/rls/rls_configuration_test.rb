@@ -28,7 +28,6 @@ class RlsConfigurationTest < ActiveSupport::TestCase
     assert_not_includes roles, ENV.fetch("DB_USER", "appstdio_app"),
       "利用テナント側のロール向けのポリシーがあると、管理者の一覧が参照できてしまう"
     assert_not_includes roles, "public"
-    # 所有者ロール（管理画面）は RLS を素通りするので、ポリシーは不要
     assert_equal false, ApplicationRecord.with_connection { |c|
       c.select_value("SELECT relforcerowsecurity FROM pg_class WHERE relname = 'admin_users'")
     }, "FORCE を付けると所有者にも RLS が適用され、管理画面から参照できなくなる"

@@ -16,7 +16,6 @@ module Files
 
     scope :kept, -> { where(deleted_at: nil) }
     scope :trashed, -> { where.not(deleted_at: nil).where(purged_at: nil) }
-    # ゴミ箱に並べるのは削除操作の起点だけ。中身は展開しない
     scope :trash_roots, -> { trashed.where("id = deleted_root_id") }
 
     validates :name, presence: true, length: { maximum: 255 }
@@ -29,7 +28,6 @@ module Files
       parent_id.nil?
     end
 
-    # 自身から根まで。権限の解決に使う
     def self_and_ancestors
       chain = [self]
       node = parent
