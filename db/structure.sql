@@ -39,40 +39,6 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: admin_users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.admin_users (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    display_name character varying NOT NULL,
-    status character varying DEFAULT 'active'::character varying NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT admin_users_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying])::text[])))
-);
-
-
---
--- Name: admin_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.admin_users_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: admin_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.admin_users_id_seq OWNED BY public.admin_users.id;
-
-
---
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -379,6 +345,42 @@ ALTER SEQUENCE public.groups_id_seq OWNED BY public.groups.id;
 
 
 --
+-- Name: operators; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.operators (
+    id bigint NOT NULL,
+    email public.citext NOT NULL,
+    password_digest character varying NOT NULL,
+    display_name character varying NOT NULL,
+    status character varying DEFAULT 'active'::character varying NOT NULL,
+    last_signed_in_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT operators_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying])::text[])))
+);
+
+
+--
+-- Name: operators_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.operators_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: operators_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.operators_id_seq OWNED BY public.operators.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -477,13 +479,6 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: admin_users id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.admin_users ALTER COLUMN id SET DEFAULT nextval('public.admin_users_id_seq'::regclass);
-
-
---
 -- Name: files_activities id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -540,6 +535,13 @@ ALTER TABLE ONLY public.groups ALTER COLUMN id SET DEFAULT nextval('public.group
 
 
 --
+-- Name: operators id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.operators ALTER COLUMN id SET DEFAULT nextval('public.operators_id_seq'::regclass);
+
+
+--
 -- Name: tenant_users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -551,14 +553,6 @@ ALTER TABLE ONLY public.tenant_users ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
-
-
---
--- Name: admin_users admin_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.admin_users
-    ADD CONSTRAINT admin_users_pkey PRIMARY KEY (id);
 
 
 --
@@ -634,6 +628,14 @@ ALTER TABLE ONLY public.groups
 
 
 --
+-- Name: operators operators_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.operators
+    ADD CONSTRAINT operators_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -663,13 +665,6 @@ ALTER TABLE ONLY public.tenants
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
--- Name: index_admin_users_on_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_admin_users_on_user_id ON public.admin_users USING btree (user_id);
 
 
 --
@@ -855,6 +850,13 @@ CREATE UNIQUE INDEX index_groups_on_tenant_id_and_parent_id_and_name ON public.g
 
 
 --
+-- Name: index_operators_on_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_operators_on_email ON public.operators USING btree (email);
+
+
+--
 -- Name: index_tenant_users_on_tenant_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1026,14 +1028,6 @@ ALTER TABLE ONLY public.groups
 
 
 --
--- Name: admin_users fk_rails_c4f75db4e4; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.admin_users
-    ADD CONSTRAINT fk_rails_c4f75db4e4 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
 -- Name: files_drives fk_rails_ccbb849065; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1112,12 +1106,6 @@ ALTER TABLE ONLY public.files_nodes
 ALTER TABLE ONLY public.files_permissions
     ADD CONSTRAINT fk_rails_f8fa1ce4b3 FOREIGN KEY (tenant_user_id) REFERENCES public.tenant_users(id) ON DELETE CASCADE;
 
-
---
--- Name: admin_users; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: files_activities; Type: ROW SECURITY; Schema: public; Owner: -
@@ -1392,6 +1380,12 @@ CREATE POLICY groups_update ON public.groups FOR UPDATE TO appstdio_app USING ((
 
 
 --
+-- Name: operators; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.operators ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: tenant_users; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1432,6 +1426,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260929110000'),
 ('20260929100100'),
 ('20260929100000'),
 ('20260928100200'),

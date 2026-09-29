@@ -14,22 +14,22 @@ class RlsConfigurationTest < ActiveSupport::TestCase
     assert_equal false, role["rolbypassrls"], "接続ロールが BYPASSRLS を持っています"
   end
 
-  test "admin_users は利用テナント側のロールから参照できない" do
+  test "operators は利用テナント側のロールから参照できない" do
     rls, roles = ApplicationRecord.with_connection do |connection|
       [
-        connection.select_value("SELECT relrowsecurity FROM pg_class WHERE relname = 'admin_users'"),
+        connection.select_value("SELECT relrowsecurity FROM pg_class WHERE relname = 'operators'"),
         connection.select_values(
-          "SELECT unnest(roles)::text FROM pg_policies WHERE tablename = 'admin_users'",
+          "SELECT unnest(roles)::text FROM pg_policies WHERE tablename = 'operators'",
         ),
       ]
     end
 
-    assert_equal true, rls, "admin_users の RLS が無効になっている"
+    assert_equal true, rls, "operators の RLS が無効になっている"
     assert_not_includes roles, ENV.fetch("DB_USER", "appstdio_app"),
-      "利用テナント側のロール向けのポリシーがあると、管理者の一覧が参照できてしまう"
+      "利用テナント側のロール向けのポリシーがあると、システム管理者のパスワードハッシュが参照できてしまう"
     assert_not_includes roles, "public"
     assert_equal false, ApplicationRecord.with_connection { |c|
-      c.select_value("SELECT relforcerowsecurity FROM pg_class WHERE relname = 'admin_users'")
+      c.select_value("SELECT relforcerowsecurity FROM pg_class WHERE relname = 'operators'")
     }, "FORCE を付けると所有者にも RLS が適用され、管理画面から参照できなくなる"
   end
 

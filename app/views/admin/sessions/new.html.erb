@@ -5,13 +5,13 @@
 
   <%= form_with url: admin_login_path, method: :post do |f| %>
     <div class="mb-5">
-      <%= f.label :email, User.human_attribute_name(:email), class: "mb-1.5 block text-sm font-semibold" %>
+      <%= f.label :email, Operator.human_attribute_name(:email), class: "mb-1.5 block text-sm font-semibold" %>
       <%= f.email_field :email, value: params[:email], autofocus: true,
             autocomplete: "username", class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
     </div>
 
     <div class="mb-5">
-      <%= f.label :password, User.human_attribute_name(:password), class: "mb-1.5 block text-sm font-semibold" %>
+      <%= f.label :password, Operator.human_attribute_name(:password), class: "mb-1.5 block text-sm font-semibold" %>
       <%= f.password_field :password, autocomplete: "current-password", class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
     </div>
 

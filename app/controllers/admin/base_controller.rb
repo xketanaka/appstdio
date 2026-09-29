@@ -8,19 +8,19 @@ module Admin
 
     before_action :admin_login_required
 
-    helper_method :current_admin_user
+    helper_method :current_operator
 
     private
 
-    def current_admin_user
-      @current_admin_user
+    def current_operator
+      @current_operator
     end
 
     def admin_login_required
-      if session[:current_admin_user_id].present?
-        @current_admin_user = AdminUser.active.find_by(id: session[:current_admin_user_id])
+      if session[:current_operator_id].present?
+        @current_operator = Operator.active.find_by(id: session[:current_operator_id])
       end
-      return if @current_admin_user
+      return if @current_operator
 
       session[:admin_return_to] = request.fullpath if request.get?
       redirect_to admin_login_path

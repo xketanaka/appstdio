@@ -8,7 +8,7 @@ ja:
           has_many: "%{record}が存在しているため削除できません。"
     models:
       tenant: "テナント"
-      admin_user: "管理者"
+      operator: "システム管理者"
       user: "ユーザ"
       tenant_user: "テナントユーザ"
     attributes:
@@ -31,12 +31,14 @@ ja:
         last_signed_in_at: "最終ログイン日時"
         created_at: "作成日時"
         updated_at: "更新日時"
-      admin_user:
+      operator:
         id: "ID"
-        user: "ユーザ"
-        user_id: "ユーザ"
+        email: "メールアドレス"
+        password: "パスワード"
+        password_confirmation: "パスワード（確認）"
         display_name: "表示名"
         status: "状態"
+        last_signed_in_at: "最終ログイン日時"
         created_at: "作成日時"
         updated_at: "更新日時"
       tenant_user:
@@ -52,7 +54,7 @@ ja:
         updated_at: "更新日時"
 
   enums:
-    admin_user:
+    operator:
       status:
         active: "有効"
         suspended: "停止中"

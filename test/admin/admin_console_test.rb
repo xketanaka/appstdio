@@ -12,8 +12,9 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
     @tenant_a = Tenant.create!(name: "テナントA")
     @tenant_b = Tenant.create!(name: "テナントB")
 
-    @operator = User.create!(email: "operator@example.com", password: PASSWORD)
-    @admin_user = AdminUser.create!(user: @operator, display_name: "運用担当", status: :active)
+    @operator = Operator.create!(
+      email: "operator@example.com", password: PASSWORD, display_name: "運用担当", status: :active,
+    )
 
     @tenant_member = User.create!(email: "member@example.com", password: PASSWORD)
     TenantUser.create!(
@@ -48,20 +49,30 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
     assert_equal 1, TenantUser.count
   end
 
-  test "管理者でないユーザは正しいパスワードでも入れない" do
+  test "利用者のアカウントでは正しいパスワードでも入れない" do
     post admin_login_path, params: { email: @tenant_member.email, password: PASSWORD }
 
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
-    assert_nil session[:current_admin_user_id]
+    assert_nil session[:current_operator_id]
   end
 
-  test "停止中の管理者はログインできない" do
-    @admin_user.update!(status: :suspended)
+  test "同じメールアドレスの利用者がいても、システム管理者のパスワードでしか入れない" do
+    User.create!(email: @operator.email, password: "user-password")
+
+    post admin_login_path, params: { email: @operator.email, password: "user-password" }
+    assert_response :unprocessable_entity
+
+    post admin_login_path, params: { email: @operator.email, password: PASSWORD }
+    assert_redirected_to admin_root_path
+  end
+
+  test "停止中のシステム管理者はログインできない" do
+    @operator.update!(status: :suspended)
 
     post admin_login_path, params: { email: @operator.email, password: PASSWORD }
     assert_response :unprocessable_entity
-    assert_nil session[:current_admin_user_id]
+    assert_nil session[:current_operator_id]
   end
 
   test "ログイン前に見ようとしたページへ戻る" do
@@ -77,7 +88,7 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
 
     delete admin_logout_path
     assert_redirected_to admin_login_path
-    assert_nil session[:current_admin_user_id]
+    assert_nil session[:current_operator_id]
 
     get admin_root_path
     assert_redirected_to admin_login_path
