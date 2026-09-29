@@ -1,29 +1,33 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="flex flex-1 flex-col rounded-lg border border-slate-200 bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
-  <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
+<div class="flex min-h-0 flex-1 flex-col">
+  <div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">
+    <h1 class="text-lg font-bold"><%= t(".heading") %></h1>
+  </div>
 
-  <% if @tenants.empty? %>
-    <p class="text-slate-500"><%= t("messages.not_search_result") %></p>
-  <% else %>
-    <table id="tenant-table" class="w-full">
-      <thead>
-        <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
-          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:name) %></th>
-          <th class="px-3 py-2.5 text-left"><%= Tenant.human_attribute_name(:status) %></th>
-          <th class="px-3 py-2.5 text-right"><%= t(".members_count") %></th>
-          <th class="hidden px-3 py-2.5 text-left sm:table-cell"><%= Tenant.human_attribute_name(:created_at) %></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @tenants.each do |tenant| %>
+  <div class="min-h-0 flex-1 overflow-auto">
+    <% if @tenants.empty? %>
+      <p class="px-4 py-6 text-slate-500 sm:px-6"><%= t("messages.not_search_result") %></p>
+    <% else %>
+      <table id="tenant-table" class="w-full">
+        <thead class="sticky top-0 bg-slate-50 text-sm text-slate-500">
           <tr class="border-b border-slate-200">
-            <td class="px-3 py-2.5"><span class="block truncate"><%= tenant.name %></span></td>
-            <td class="px-3 py-2.5"><%= t("enums.tenant.status.#{tenant.status}") %></td>
-            <td class="px-3 py-2.5 text-right"><%= tenant.members_count %></td>
-            <td class="hidden px-3 py-2.5 sm:table-cell"><%= time_to_s(tenant.created_at) %></td>
+            <th class="px-4 py-2 text-left font-normal sm:px-6"><%= Tenant.human_attribute_name(:name) %></th>
+            <th class="px-3 py-2 text-left font-normal"><%= Tenant.human_attribute_name(:status) %></th>
+            <th class="px-3 py-2 text-right font-normal"><%= t(".members_count") %></th>
+            <th class="hidden px-3 py-2 text-left font-normal sm:table-cell"><%= Tenant.human_attribute_name(:created_at) %></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% end %>
+        </thead>
+        <tbody>
+          <% @tenants.each do |tenant| %>
+            <tr class="border-b border-slate-100 hover:bg-blue-50/60">
+              <td class="px-4 py-2.5 sm:px-6"><span class="block truncate"><%= tenant.name %></span></td>
+              <td class="px-3 py-2.5"><%= t("enums.tenant.status.#{tenant.status}") %></td>
+              <td class="px-3 py-2.5 text-right"><%= tenant.members_count %></td>
+              <td class="hidden px-3 py-2.5 sm:table-cell"><%= time_to_s(tenant.created_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
 </div>
