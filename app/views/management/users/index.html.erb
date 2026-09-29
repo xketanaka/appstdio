@@ -1,13 +1,13 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">
+<div class="shrink-0 border-b border-slate-200 px-4 py-3">
   <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
 </div>
 
-<div class="min-h-0 flex-1 overflow-auto">
+<div class="min-h-0 flex-1 overflow-auto px-4">
   <table id="user-list" class="w-full">
     <thead class="sticky top-0 bg-slate-50 text-sm text-slate-500">
       <tr class="border-b border-slate-200">
-        <th class="px-4 py-2 text-left font-normal sm:px-6"><%= TenantUser.human_attribute_name(:display_name) %></th>
+        <th class="px-3 py-2 text-left font-normal"><%= TenantUser.human_attribute_name(:display_name) %></th>
         <th class="hidden px-3 py-2 text-left font-normal lg:table-cell"><%= User.human_attribute_name(:email) %></th>
         <th class="hidden px-3 py-2 text-left font-normal sm:table-cell"><%= TenantUser.human_attribute_name(:role) %></th>
         <th class="px-3 py-2 text-left font-normal"><%= TenantUser.human_attribute_name(:status) %></th>
@@ -16,7 +16,7 @@
     <tbody>
       <% @tenant_users.each do |tenant_user| %>
         <tr class="border-b border-slate-100 hover:bg-blue-50/60">
-          <td class="px-4 py-2.5 sm:px-6">
+          <td class="px-3 py-2.5">
             <span class="block truncate"><%= tenant_user.display_name %></span>
             <span class="mt-0.5 block text-xs text-slate-500 lg:hidden">
               <span class="sm:hidden"><%= t("enums.tenant_user.role.#{tenant_user.role}") %>・</span>
