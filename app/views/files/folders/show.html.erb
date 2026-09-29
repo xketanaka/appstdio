@@ -1,31 +1,26 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
-  <aside class="w-56 shrink-0 border-r border-slate-200 py-3">
-    <% @sections.each do |section| %>
-      <details class="group" <%= "open" if section[:open] %>>
-        <summary class="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-               class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
-            <path d="M8 4l10 8-10 8V4Z" />
-          </svg>
-          <span class="truncate"><%= t(".sections.#{section[:key]}") %></span>
-        </summary>
+<div class="overflow-hidden rounded-lg border border-slate-200 bg-white md:flex">
+  <%# スマホではドライブ一覧を折りたたむ。常に開いていると一覧が下に押し出される %>
+  <details class="border-b border-slate-200 md:hidden">
+    <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+      <%= t(".drives") %>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           class="size-4 text-slate-400" aria-hidden="true">
+        <path stroke-linecap="round" d="M6 9l6 6 6-6" />
+      </svg>
+    </summary>
+    <div class="pb-2"><%= render "tree", sections: @sections %></div>
+  </details>
 
-        <% section[:children].each do |child| %>
-          <div class="flex items-center gap-2 py-1.5 pr-3 pl-8 text-sm hover:bg-slate-100">
-            <%= render "partial/file_icon", folder: true %>
-            <span class="truncate"><%= child %></span>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
+  <aside class="hidden w-56 shrink-0 border-r border-slate-200 py-3 md:block">
+    <%= render "tree", sections: @sections %>
   </aside>
 
-  <section class="min-w-0 flex-1 px-6 py-5">
-    <div class="mb-6 flex items-center justify-between gap-4">
-      <h1 class="text-lg font-bold"><%= t(".heading") %></h1>
+  <section class="min-w-0 flex-1 px-4 py-4 md:px-6 md:py-5">
+    <div class="mb-4 flex items-center justify-between gap-4 md:mb-6">
+      <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
       <button type="button"
-              class="flex cursor-pointer items-center gap-1.5 rounded border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">
+              class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-100 md:px-4">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
           <path stroke-linecap="round" d="M12 5v14M5 12h14" />
         </svg>
@@ -37,9 +32,9 @@
       <thead>
         <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
           <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.name") %></th>
-          <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.owner") %></th>
-          <th class="px-3 py-2.5 text-left font-normal"><%= t(".columns.updated_at") %></th>
-          <th class="px-3 py-2.5 text-right font-normal"><%= t(".columns.size") %></th>
+          <th class="hidden px-3 py-2.5 text-left font-normal lg:table-cell"><%= t(".columns.owner") %></th>
+          <th class="hidden px-3 py-2.5 text-left font-normal md:table-cell"><%= t(".columns.updated_at") %></th>
+          <th class="hidden px-3 py-2.5 text-right font-normal sm:table-cell"><%= t(".columns.size") %></th>
           <th class="w-10"></th>
         </tr>
       </thead>
@@ -51,13 +46,19 @@
                 <%= render "partial/file_icon", folder: entry.folder %>
                 <span class="truncate"><%= entry.name %></span>
               </span>
+              <%# 画面が狭いときは、隠した列の内容を名前の下にまとめる %>
+              <span class="mt-0.5 block pl-7 text-xs text-slate-500 lg:hidden">
+                <span class="sm:hidden"><%= entry.bytes ? number_to_human_size(entry.bytes) : "-" %>・</span>
+                <span class="md:hidden"><%= time_to_s(entry.updated_at) %>・</span>
+                <%= entry.owner %>
+              </span>
             </td>
-            <td class="px-3 py-2.5 text-sm"><%= entry.owner %></td>
-            <td class="px-3 py-2.5 text-sm"><%= time_to_s(entry.updated_at) %></td>
-            <td class="px-3 py-2.5 text-right text-sm">
+            <td class="hidden px-3 py-2.5 text-sm lg:table-cell"><%= entry.owner %></td>
+            <td class="hidden px-3 py-2.5 text-sm md:table-cell"><%= time_to_s(entry.updated_at) %></td>
+            <td class="hidden px-3 py-2.5 text-right text-sm sm:table-cell">
               <%= entry.bytes ? number_to_human_size(entry.bytes) : "-" %>
             </td>
-            <td class="py-2.5 pr-3">
+            <td class="py-2.5 pr-1 md:pr-3">
               <details class="relative" data-dropdown>
                 <summary class="flex cursor-pointer list-none justify-center rounded p-1 text-slate-500 hover:bg-slate-200 [&::-webkit-details-marker]:hidden"
                          aria-label="<%= t(".row_menu") %>">
