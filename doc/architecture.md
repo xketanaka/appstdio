@@ -107,6 +107,50 @@ RLS が防げるのは **アプリケーションのバグ**（`where tenant_id 
 攻撃者自身が `set_config('app.tenant_id', ...)` を呼べてしまうため。
 そちらは通常どおりアプリケーション側で防ぐ必要がある。
 
+## enum を持つ列の型
+
+`status` / `role` / `kind` / `action` のような列は、**varchar + CHECK 制約**で持っている。
+Rails の `enum` は列の型を選ばないので、integer でも varchar でも動く。
+
+varchar にしている理由は2つ。
+
+* **CHECK 制約で値の集合ごと縛れる。** `CHECK (role IN ('viewer','editor','manager','none'))`
+  は意味まで書かれるが、integer の `CHECK (role IN (0,1,2,3))` は個数しか縛れない。
+  `structure.sql` をリポジトリに入れており、RLS のポリシーも SQL で書くため、
+  スキーマが自己記述であることの価値が大きい
+* **integer は並べ替えが静かに事故る。** `enum :status, [:active, :suspended]` の順序を
+  入れ替えると、マイグレーションも警告も無く既存レコードの意味が反転する
+
+### PostgreSQL の ENUM 型に移す選択肢
+
+性能を詰めたくなったときの選択肢として有効で、**大きな欠点は無い**。
+
+| | varchar + CHECK | PG ENUM |
+|---|---|---|
+| 容量 | 値の長さ分 | 4バイト |
+| 順序比較 | `CASE` が必要 | 宣言順でそのまま比較できる |
+| SQL から読める | ○ | ○ |
+
+とくに**段階に意味がある列**（`files_permissions.role` など）で、権限の解決を SQL 側に
+寄せる場合は `MAX(role)` がそのまま書ける利点がある。現状 `Files::Permission.strongest`
+は Ruby 側で配列の添字を見ており、この利点を使っていない。
+
+移すときに知っておくこと（実測で確認済み）。
+
+* **値の追加・改名はできる。** `ALTER TYPE ... ADD VALUE 'x' BEFORE 'y'`（並び順も指定可）、
+  `ALTER TYPE ... RENAME VALUE 'a' TO 'b'`
+* **値の削除だけコマンドが無い。** 型を作り直して `ALTER COLUMN ... TYPE` で移す。
+  これは**テーブル全体の書き換え**になり、その間 `ACCESS EXCLUSIVE` ロックを取る。
+  20万行で 177ms だったので、行数に比例して見積もればよい。`DEFAULT` を先に外さないと
+  `default for column cannot be cast automatically` で落ちる
+* **追加した値を同じトランザクション内で使えない**（`unsafe use of new value`）。
+  Rails のマイグレーションは既定でトランザクションなので、値の追加と既存データの移行を
+  1本のマイグレーションに書けない。`disable_ddl_transaction!` を付けるか2本に分ける
+
+列ごとに性質で選べばよく、全列を揃える必要はない。値が安定していて順序に意味がある列は
+PG ENUM 向き、値が増減しそうで行数が伸びる列（`files_activities.action` など）は
+varchar 向き。
+
 ## システム管理画面
 
 管理画面は**同じコードベースを別プロセスとしてデプロイする**。プロセスが接続する
