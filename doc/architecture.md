@@ -287,7 +287,7 @@ PC では常に開く」を実現できない。`summary` を `md:hidden` で隠
 ### 画面全体を使うレイアウト
 
 ヘッダより下は画面いっぱいに使う。カード（角丸・枠線・影で浮かせた箱）は使わず、
-左右の余白も持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
+本文の器は左右の余白を持たない。Atlassian の Jira のような業務アプリの見た目に寄せている。
 
 ```
 body      flex h-dvh flex-col overflow-hidden
@@ -305,8 +305,8 @@ header    shrink-0
 ```erb
 <%# 一覧など画面を埋めるもの。見出しは固定し、中身だけスクロールさせる %>
 <div class="flex min-h-0 flex-1 flex-col">
-  <div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">見出し</div>
-  <div class="min-h-0 flex-1 overflow-auto">一覧</div>
+  <div class="shrink-0 border-b border-slate-200 px-4 py-3">見出し</div>
+  <div class="min-h-0 flex-1 overflow-auto px-4">一覧</div>
 </div>
 
 <%# フォームや詳細。読みやすさのため最大幅を設ける %>
@@ -314,6 +314,14 @@ header    shrink-0
   <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">本文</div>
 </div>
 ```
+
+一覧の表は左右に 16px（`px-4`）の余白を取り、ペインの端まで広げない。端まで届くと
+表が枠に貼り付いて見えるため（GitHub のファイル一覧程度の余白）。見出しの行も
+同じ `px-4` にして、見出しと表の左端をそろえる。
+
+2ペインの画面では、左ペインの先頭に機能名（スライドメニューの項目名 `menus.*`）を出す。
+右ペインの見出しは開いている場所（「組織共有ドライブ」「利用者管理」）なので、
+どの機能にいるかは左ペインで示す。スマホ幅の折りたたみには出さない。
 
 ログイン画面だけは中央寄せのカードのまま。未ログインの画面で、業務画面とは性質が違う。
 
