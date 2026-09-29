@@ -4,12 +4,6 @@ ja:
     application:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
-    management:
-      menu: "管理メニュー"
-      items:
-        users: "利用者管理"
-        groups: "グループ管理"
-        organizations: "組織管理"
     admin:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
@@ -57,6 +51,12 @@ ja:
       heading: "テナントの選択"
 
   management:
+    menu:
+      label: "管理メニュー"
+      items:
+        users: "利用者管理"
+        groups: "グループ管理"
+        organizations: "組織管理"
     users:
       index:
         title: "利用者管理"

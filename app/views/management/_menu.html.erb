@@ -1,0 +1,12 @@
+<%# PC とスマホの2箇所から描画される。id を持つ要素を置かないこと %>
+<nav aria-label="<%= t(".label") %>">
+  <% { users: management_users_path,
+       groups: management_groups_path,
+       organizations: management_organizations_path }.each do |key, path| %>
+    <% current = controller_name == key.to_s %>
+    <%= link_to t(".items.#{key}"), path,
+          "aria-current": (current ? "page" : nil),
+          class: class_names("block px-4 py-2 text-sm hover:bg-slate-100",
+                             "bg-slate-200/70 font-semibold": current) %>
+  <% end %>
+</nav>

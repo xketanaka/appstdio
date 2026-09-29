@@ -1,13 +1,17 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<h1 class="mb-6 text-lg font-bold"><%= t(".heading") %></h1>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
-<dl id="organization" class="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2">
-  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:name) %></dt>
-  <dd><%= current_tenant.name %></dd>
+    <dl id="organization" class="grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] sm:gap-y-2">
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:name) %></dt>
+      <dd class="mb-2 sm:mb-0"><%= current_tenant.name %></dd>
 
-  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:id) %></dt>
-  <dd class="font-mono text-sm"><%= current_tenant.id %></dd>
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:id) %></dt>
+      <dd class="mb-2 font-mono text-sm break-all sm:mb-0"><%= current_tenant.id %></dd>
 
-  <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:created_at) %></dt>
-  <dd><%= time_to_s(current_tenant.created_at) %></dd>
-</dl>
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:created_at) %></dt>
+      <dd class="mb-2 sm:mb-0"><%= time_to_s(current_tenant.created_at) %></dd>
+    </dl>
+  </div>
+</div>

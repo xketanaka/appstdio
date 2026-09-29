@@ -33,7 +33,6 @@ Rails.application.routes.draw do
       root "folders#show"
     end
 
-    # テナント管理者向け。/admin はシステム管理画面が使っているので別の名前にする
     namespace :management do
       resources :users, only: [:index]
       resources :groups, only: [:index]

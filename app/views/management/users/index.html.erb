@@ -1,23 +1,33 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<h1 class="mb-6 text-lg font-bold"><%= t(".heading") %></h1>
+<div class="shrink-0 border-b border-slate-200 px-4 py-3 sm:px-6">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
 
-<table id="user-list" class="w-full">
-  <thead>
-    <tr class="border-b-2 border-slate-200 text-sm text-slate-500">
-      <th class="px-3 py-2.5 text-left font-normal"><%= TenantUser.human_attribute_name(:display_name) %></th>
-      <th class="px-3 py-2.5 text-left font-normal"><%= User.human_attribute_name(:email) %></th>
-      <th class="px-3 py-2.5 text-left font-normal"><%= TenantUser.human_attribute_name(:role) %></th>
-      <th class="px-3 py-2.5 text-left font-normal"><%= TenantUser.human_attribute_name(:status) %></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @tenant_users.each do |tenant_user| %>
-      <tr class="border-b border-slate-200 hover:bg-slate-50">
-        <td class="px-3 py-2.5"><%= tenant_user.display_name %></td>
-        <td class="px-3 py-2.5 text-sm"><%= tenant_user.user.email %></td>
-        <td class="px-3 py-2.5 text-sm"><%= t("enums.tenant_user.role.#{tenant_user.role}") %></td>
-        <td class="px-3 py-2.5 text-sm"><%= t("enums.tenant_user.status.#{tenant_user.status}") %></td>
+<div class="min-h-0 flex-1 overflow-auto">
+  <table id="user-list" class="w-full">
+    <thead class="sticky top-0 bg-slate-50 text-sm text-slate-500">
+      <tr class="border-b border-slate-200">
+        <th class="px-4 py-2 text-left font-normal sm:px-6"><%= TenantUser.human_attribute_name(:display_name) %></th>
+        <th class="hidden px-3 py-2 text-left font-normal lg:table-cell"><%= User.human_attribute_name(:email) %></th>
+        <th class="hidden px-3 py-2 text-left font-normal sm:table-cell"><%= TenantUser.human_attribute_name(:role) %></th>
+        <th class="px-3 py-2 text-left font-normal"><%= TenantUser.human_attribute_name(:status) %></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @tenant_users.each do |tenant_user| %>
+        <tr class="border-b border-slate-100 hover:bg-blue-50/60">
+          <td class="px-4 py-2.5 sm:px-6">
+            <span class="block truncate"><%= tenant_user.display_name %></span>
+            <span class="mt-0.5 block text-xs text-slate-500 lg:hidden">
+              <span class="sm:hidden"><%= t("enums.tenant_user.role.#{tenant_user.role}") %>・</span>
+              <%= tenant_user.user.email %>
+            </span>
+          </td>
+          <td class="hidden px-3 py-2.5 text-sm lg:table-cell"><%= tenant_user.user.email %></td>
+          <td class="hidden px-3 py-2.5 text-sm sm:table-cell"><%= t("enums.tenant_user.role.#{tenant_user.role}") %></td>
+          <td class="px-3 py-2.5 text-sm"><%= t("enums.tenant_user.status.#{tenant_user.status}") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
