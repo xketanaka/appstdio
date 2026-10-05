@@ -1,5 +1,5 @@
 module Files
-  class Access
+1;95;0c  class Access
     RANKED_ROLES = %w[viewer editor manager].freeze
 
     # 相関サブクエリ。外側のクエリの files_nodes の行ごとに評価される
@@ -36,8 +36,8 @@ module Files
       roles([node])[node.id]
     end
 
-    # 複数ノードの権限を { id => 権限 } で返す。フォルダを開いたときの子の一覧や、
-    # Elasticsearch でヒットしたノードの判定に使う。権限の無いノードはキーを持たない
+    # 複数ノードの権限を { id => 権限 } で返す。
+    # フォルダを開いたときの子の一覧のノードの判定等で使う。権限の無いノードはキーを持たない
     def roles(nodes)
       ids = nodes.map(&:id)
       return ids.index_with("manager") if @privileged
