@@ -4,7 +4,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     @owner = User.create!(email: "owner@example.com", password: PASSWORD)
     @admin = User.create!(email: "admin@example.com", password: PASSWORD)
     @member = User.create!(email: "member@example.com", password: PASSWORD)
@@ -70,7 +70,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "組織管理には自分のテナントの情報を出す" do
-    Tenant.create!(name: "テナントB")
+    Tenant.setup!(name: "テナントB")
     login(@admin)
     get management_tenants_path
 

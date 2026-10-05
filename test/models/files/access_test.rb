@@ -2,7 +2,7 @@ require "test_helper"
 
 class Files::AccessTest < ActiveSupport::TestCase
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     TenantContext.apply(tenant: @tenant)
 
     @sales1_member = member("営業1課の人")

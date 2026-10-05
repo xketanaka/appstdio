@@ -5,9 +5,9 @@ class TenantTest < ActiveSupport::TestCase
     TenantContext.clear
   end
 
-  describe "作成" do
+  describe ".setup!" do
     test "「全員」グループを作る" do
-      tenant = Tenant.create!(name: "テナントA")
+      tenant = Tenant.setup!(name: "テナントA")
 
       TenantContext.switch(tenant: tenant) do
         assert_equal ["全員"], Group.everyone.pluck(:name)
@@ -15,10 +15,10 @@ class TenantTest < ActiveSupport::TestCase
     end
 
     test "作成の前に設定していたコンテキストに戻す" do
-      other = Tenant.create!(name: "テナントB")
+      other = Tenant.setup!(name: "テナントB")
       TenantContext.apply(tenant: other)
 
-      Tenant.create!(name: "テナントA")
+      Tenant.setup!(name: "テナントA")
 
       assert_equal other.id, TenantContext.tenant_id
     end

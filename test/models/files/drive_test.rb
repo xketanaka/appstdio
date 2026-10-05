@@ -2,7 +2,7 @@ require "test_helper"
 
 class Files::DriveTest < ActiveSupport::TestCase
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     TenantContext.apply(tenant: @tenant)
     user = User.create!(email: "a@example.com", password: "password1234")
     @member = TenantUser.create!(tenant: @tenant, user: user, display_name: "Aさん", status: :active)

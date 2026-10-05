@@ -4,7 +4,7 @@ class FilesTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     @owner_user = User.create!(email: "owner@example.com", password: PASSWORD)
     @member_user = User.create!(email: "member@example.com", password: PASSWORD)
 
@@ -210,7 +210,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
 
     test "テナント未選択でアクセスすると、選択後に元のページへ戻る" do
-      other = Tenant.create!(name: "テナントB")
+      other = Tenant.setup!(name: "テナントB")
       TenantContext.switch(tenant: other) do
         TenantUser.create!(tenant: other, user: @member_user, display_name: "一般さん", status: :active)
       end

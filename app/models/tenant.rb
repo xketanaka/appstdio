@@ -6,10 +6,15 @@ class Tenant < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 255 }
 
-  # groups は RLS が掛かっているので、作るテナントのコンテキストで入れる
-  after_create do
-    TenantContext.switch(tenant: self) do
-      Group.create!(tenant: self, kind: :everyone, name: I18n.t("groups.everyone"))
+  # テナントは必ずこれで作る。create! だと「全員」グループなどの初期データが無い
+  def self.setup!(**attributes)
+    transaction do
+      tenant = create!(**attributes)
+      # groups は RLS が掛かっているので、作るテナントのコンテキストで入れる
+      TenantContext.switch(tenant: tenant) do
+        Group.create!(tenant: tenant, kind: :everyone, name: I18n.t("groups.everyone"))
+      end
+      tenant
     end
   end
 end

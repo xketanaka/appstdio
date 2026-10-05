@@ -40,8 +40,8 @@ if Rails.env.local?
     Files::Permission.find_or_initialize_by(node: node, subject_key => subject).update!(tenant: node.tenant, role: role)
   end
 
-  sample = Tenant.find_or_create_by!(name: "サンプル株式会社")
-  test = Tenant.find_or_create_by!(name: "テスト工業")
+  sample = Tenant.find_by(name: "サンプル株式会社") || Tenant.setup!(name: "サンプル株式会社")
+  test = Tenant.find_by(name: "テスト工業") || Tenant.setup!(name: "テスト工業")
 
   admin = upsert_user("admin@example.com", password)
   sample_admin = join(sample, admin, "管理者", :owner)

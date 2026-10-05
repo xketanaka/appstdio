@@ -4,8 +4,8 @@ require "test_helper"
 # RlsConfigurationTest で担保している。
 class RowLevelSecurityTest < ActiveSupport::TestCase
   setup do
-    @tenant_a = Tenant.create!(name: "テナントA")
-    @tenant_b = Tenant.create!(name: "テナントB")
+    @tenant_a = Tenant.setup!(name: "テナントA")
+    @tenant_b = Tenant.setup!(name: "テナントB")
     @user_a = User.create!(email: "a@example.com", password: "password1234")
     @user_b = User.create!(email: "b@example.com", password: "password1234")
 
