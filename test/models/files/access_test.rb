@@ -165,12 +165,19 @@ class Files::AccessTest < ActiveSupport::TestCase
     end
   end
 
-  describe ".at_least?" do
-    test "権限の強さを比べられる" do
-      assert Files::Access.at_least?("manager", :editor)
-      assert Files::Access.at_least?("editor", :editor)
-      assert_not Files::Access.at_least?("viewer", :editor)
-      assert_not Files::Access.at_least?(nil, :viewer)
+  describe ".at_least_viewer? / .at_least_editor? / .at_least_manager?" do
+    test "上位の権限は下位を含む" do
+      assert Files::Access.at_least_viewer?("manager")
+      assert Files::Access.at_least_editor?("manager")
+      assert Files::Access.at_least_editor?("editor")
+      assert Files::Access.at_least_manager?("manager")
+    end
+
+    test "足りない権限と権限なしは満たさない" do
+      assert_not Files::Access.at_least_editor?("viewer")
+      assert_not Files::Access.at_least_manager?("editor")
+      assert_not Files::Access.at_least_viewer?(nil)
+      assert_not Files::Access.at_least_viewer?("none")
     end
   end
 
