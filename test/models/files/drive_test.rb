@@ -25,15 +25,6 @@ class Files::DriveTest < ActiveSupport::TestCase
     test "2回目以降は同じルートを返す" do
       assert_equal Files::Drive.shared_root(@tenant), Files::Drive.shared_root(@tenant)
       assert_equal 1, Files::Drive.count
-      assert_equal 1, Group.everyone.count
-    end
-
-    test "「全員」グループが既にあれば使う" do
-      everyone = Group.create!(tenant: @tenant, kind: :everyone, name: "全員")
-
-      root = Files::Drive.shared_root(@tenant)
-
-      assert_equal everyone, root.permissions.sole.group
     end
   end
 

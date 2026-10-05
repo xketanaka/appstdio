@@ -79,8 +79,6 @@ class Files::SchemaTest < ActiveSupport::TestCase
   end
 
   test "「全員」グループはテナントに1つだけ" do
-    Group.create!(tenant: @tenant, kind: :everyone, name: "全員")
-
     assert_raises(ActiveRecord::RecordNotUnique) do
       Group.create!(tenant: @tenant, kind: :everyone, name: "全員2")
     end

@@ -1483,6 +1483,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261005120000'),
 ('20260929110000'),
 ('20260929100100'),
 ('20260929100000'),

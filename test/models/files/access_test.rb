@@ -10,7 +10,7 @@ class Files::AccessTest < ActiveSupport::TestCase
     @outsider = member("どこにも属さない人")
     @admin = member("テナント管理者", role: :admin)
 
-    @everyone = Group.create!(tenant: @tenant, kind: :everyone, name: "全員")
+    @everyone = Group.everyone_of(@tenant)
     @sales = Group.create!(tenant: @tenant, name: "営業部")
     @sales1 = Group.create!(tenant: @tenant, parent: @sales, name: "営業1課")
     @general = Group.create!(tenant: @tenant, name: "総務部")

@@ -13,9 +13,7 @@ class Group < ApplicationRecord
   validate :parent_must_not_be_self_or_descendant
 
   def self.everyone_of(tenant)
-    everyone.find_by(tenant: tenant) || everyone.create_or_find_by!(tenant: tenant) do |group|
-      group.name = I18n.t("groups.everyone")
-    end
+    everyone.find_by!(tenant: tenant)
   end
 
   def self_and_ancestors
