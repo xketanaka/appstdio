@@ -1,0 +1,4 @@
+<% content_for :pane_title, t("menus.files") %>
+<% content_for :pane_summary, t("files.sections.#{@section}") %>
+<% content_for :pane do %><%= render "files/tree" %><% end %>
+<%= render template: "layouts/two_pane" %>

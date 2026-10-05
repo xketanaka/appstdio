@@ -31,6 +31,10 @@ Rails.application.routes.draw do
 
     namespace :files do
       root "folders#show"
+      get "my_drive" => "folders#show", defaults: { drive: "personal" }, as: :my_drive
+      resources :folders, only: [:show]
+      get "shared" => "shared_items#index", as: :shared_items
+      get "trash" => "trash#index", as: :trash
     end
 
     namespace :management do
