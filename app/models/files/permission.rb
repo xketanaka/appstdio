@@ -16,10 +16,6 @@ module Files
     validates :group_id, uniqueness: { scope: :node_id }, if: :group_id?
     validates :tenant_user_id, uniqueness: { scope: :node_id }, if: :tenant_user_id?
 
-    def self.strongest(roles)
-      roles.max_by { |role| ROLES.index(role.to_s) || -1 }
-    end
-
     def subject
       group || tenant_user
     end
