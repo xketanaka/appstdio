@@ -23,6 +23,8 @@ require "minitest/spec"
 
 module ActiveSupport
   class TestCase
+    # describe を使うクラスでは test をすべて describe の中に書くこと。
+    # describe より後に外側で定義した test はサブクラスにも継承され、重複して実行される
     extend Minitest::Spec::DSL
   end
 end
