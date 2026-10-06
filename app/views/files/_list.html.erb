@@ -1,4 +1,4 @@
-<%# locals: (entries:, roles:, empty:, trash: false) %>
+<%# locals: (entries:, empty:, permissions: nil, trash: false) %>
 <% time_column = trash ? :deleted_at : :updated_at %>
 <% person_column = trash ? :deleted_by : :owner %>
 <div class="min-h-0 flex-1 overflow-auto px-4">
@@ -14,7 +14,7 @@
     </thead>
     <tbody>
       <% entries.each do |node| %>
-        <% readable = trash || roles.key?(node.id) %>
+        <% readable = trash || permissions[node].readable? %>
         <% person = (trash ? node.deleted_by : node.creator)&.display_name || "-" %>
         <% size = node.file? ? number_to_human_size(node.byte_size) : "-" %>
         <tr class="border-b border-slate-100 hover:bg-blue-50/60">

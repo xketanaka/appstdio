@@ -9,17 +9,17 @@ module Files
         else
           Drive.shared_root(current_tenant)
         end
-      role = access.role(@folder)
-      raise ActiveRecord::RecordNotFound unless Access.at_least_viewer?(role)
+      permission = access.effective_permission(@folder)
+      raise ActiveRecord::RecordNotFound unless permission.readable?
 
-      @can_edit = Access.at_least_editor?(role)
+      @can_edit = permission.editable?
 
       @entries = @folder.children.kept.includes(:creator).order(:kind, :name).to_a
-      @roles = access.roles(@entries)
+      @permissions = access.effective_permissions(@entries)
 
       ancestors = @folder.ancestors.to_a
-      readable = access.roles(ancestors)
-      @breadcrumbs = ancestors.reverse.take_while { |node| readable.key?(node.id) }.reverse
+      ancestor_permissions = access.effective_permissions(ancestors)
+      @breadcrumbs = ancestors.reverse.take_while { |node| ancestor_permissions[node].readable? }.reverse
       @via_shared = @breadcrumbs.size < ancestors.size
 
       @section =

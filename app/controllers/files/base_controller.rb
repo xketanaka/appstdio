@@ -16,8 +16,8 @@ module Files
         shared = Drive.shared.find_by(tenant: current_tenant)&.root
         personal = Drive.personal.find_by(owner: current_tenant_user)&.root
         tops = [shared, personal].compact.index_with { |root| root.children.kept.folder.order(:name).to_a }
-        roles = access.roles(tops.values.flatten)
-        folders = tops.transform_values { |children| children.map { |node| [node, roles.key?(node.id)] } }
+        permissions = access.effective_permissions(tops.values.flatten)
+        folders = tops.transform_values { |children| children.map { |node| [node, permissions[node].readable?] } }
 
         [
           { key: :shared_drive, path: files_root_path, folders: folders.fetch(shared, []) },
