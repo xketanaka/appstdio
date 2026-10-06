@@ -1,29 +1,34 @@
 module Management
   class GroupsController < BaseController
     # 画面モック。実データは未実装で、以下はすべて仮の表示用
-    MockGroup = Struct.new(:id, :name, :parent_id, keyword_init: true)
+    MockGroup = Struct.new(:id, :name, :parent_id, :kind, keyword_init: true)
     MockMember = Struct.new(:display_name, :email, keyword_init: true)
 
-    GROUPS = [
-      MockGroup.new(id: 1, name: "全社", parent_id: nil),
-      MockGroup.new(id: 2, name: "営業本部", parent_id: 1),
-      MockGroup.new(id: 3, name: "第一営業部", parent_id: 2),
-      MockGroup.new(id: 4, name: "第二営業部", parent_id: 2),
-      MockGroup.new(id: 5, name: "開発本部", parent_id: 1),
-      MockGroup.new(id: 6, name: "開発部", parent_id: 5),
+    EVERYONE = MockGroup.new(id: 100, name: "全員", parent_id: nil, kind: :everyone)
+    DEPARTMENTS = [
+      MockGroup.new(id: 1, name: "全社", parent_id: nil, kind: :department),
+      MockGroup.new(id: 2, name: "営業本部", parent_id: 1, kind: :department),
+      MockGroup.new(id: 3, name: "第一営業部", parent_id: 2, kind: :department),
+      MockGroup.new(id: 4, name: "第二営業部", parent_id: 2, kind: :department),
+      MockGroup.new(id: 5, name: "開発本部", parent_id: 1, kind: :department),
+      MockGroup.new(id: 6, name: "開発部", parent_id: 5, kind: :department),
     ].freeze
 
+    yamada = MockMember.new(display_name: "山田 太郎", email: "yamada@example.com")
+    sato = MockMember.new(display_name: "佐藤 花子", email: "sato@example.com")
+    suzuki = MockMember.new(display_name: "鈴木 一郎", email: "suzuki@example.com")
+    takahashi = MockMember.new(display_name: "高橋 次郎", email: "takahashi@example.com")
+    tanaka = MockMember.new(display_name: "田中 三郎", email: "tanaka@example.com")
+    ito = MockMember.new(display_name: "伊藤 美咲", email: "ito@example.com")
+    watanabe = MockMember.new(display_name: "渡辺 健", email: "watanabe@example.com")
     MEMBERS = {
-      2 => [
-        MockMember.new(display_name: "山田 太郎", email: "yamada@example.com"),
-        MockMember.new(display_name: "佐藤 花子", email: "sato@example.com"),
-      ],
-      3 => [
-        MockMember.new(display_name: "鈴木 一郎", email: "suzuki@example.com"),
-        MockMember.new(display_name: "高橋 次郎", email: "takahashi@example.com"),
-        MockMember.new(display_name: "田中 三郎", email: "tanaka@example.com"),
-      ],
+      1 => [yamada],
+      2 => [yamada, sato],
+      3 => [suzuki, takahashi, tanaka],
+      4 => [ito, tanaka],
+      6 => [watanabe],
     }.freeze
+    TENANT_USERS_COUNT = 12
 
     before_action :load_tree
 
@@ -31,14 +36,27 @@ module Management
     end
 
     def show
-      @group = GROUPS.find { |group| group.id == params[:id].to_i }
+      @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
       raise ActiveRecord::RecordNotFound unless @group
+      if @group.kind == :everyone
+        @tenant_users_count = TENANT_USERS_COUNT
+        return
+      end
 
       @members = MEMBERS.fetch(@group.id, [])
 
-      # 自分と自分の下位は上位部門に選べない
-      excluded = [@group.id]
-      excluded.each { |id| excluded.concat(@children.fetch(id, []).map(&:id)) }
+      descendants = @children.fetch(@group.id, []).dup
+      descendants.each { |group| descendants.concat(@children.fetch(group.id, [])) }
+
+      # 同じ人が複数のサブグループにいれば1行にまとめる
+      @sub_members = descendants
+        .flat_map { |group| MEMBERS.fetch(group.id, []).map { |member| [member, group] } }
+        .group_by(&:first)
+        .map { |member, pairs| [member, pairs.map(&:last)] }
+      @total_count = (@members + @sub_members.map(&:first)).uniq.size
+
+      # 自分と自分の下位は上位部門に選べない。「全員」も部門の親にはしない
+      excluded = [@group.id] + descendants.map(&:id)
       @parent_options = []
       walk = ->(parent_id, depth) do
         @children.fetch(parent_id, []).each do |group|
@@ -54,7 +72,8 @@ module Management
     private
 
     def load_tree
-      @children = GROUPS.group_by(&:parent_id)
+      @everyone = EVERYONE
+      @children = DEPARTMENTS.group_by(&:parent_id)
     end
   end
 end

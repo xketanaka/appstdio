@@ -1,5 +1,13 @@
 <%# locals: (class_name:) %>
 <div class="<%= class_names("min-h-0 overflow-y-auto px-2 pb-4", class_name) %>">
   <h2 class="px-2 pt-1 pb-2 text-sm text-slate-500"><%= t(".heading") %></h2>
-  <nav id="group-tree" aria-label="<%= t(".heading") %>"><%= render "tree", parent_id: nil %></nav>
+  <nav id="group-tree" aria-label="<%= t(".heading") %>">
+    <% current = @group&.id == @everyone.id %>
+    <div id="everyone-group" class="<%= class_names("mb-2 flex items-center border-b border-slate-200 pb-2", "font-semibold": current) %>">
+      <%= link_to @everyone.name, management_group_path(@everyone),
+            "aria-current": (current ? "page" : nil),
+            class: class_names("block w-full truncate rounded py-1.5 pr-2 pl-6.5 text-sm hover:bg-slate-100 hover:underline", "bg-slate-200/70": current) %>
+    </div>
+    <%= render "tree", parent_id: nil %>
+  </nav>
 </div>

@@ -8,55 +8,7 @@
     <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
       <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-blue-700 hover:underline lg:hidden" %>
       <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
-
-      <div id="group-detail">
-        <div class="mb-5">
-          <%= label_tag :group_name, t(".fields.name"), class: "mb-1.5 block text-sm font-semibold" %>
-          <%= text_field_tag :group_name, @group.name,
-                class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
-        </div>
-
-        <div class="mb-6">
-          <%= label_tag :group_parent_id, t(".fields.parent"), class: "mb-1.5 block text-sm font-semibold" %>
-          <%= select_tag :group_parent_id,
-                options_for_select(@parent_options, @group.parent_id),
-                include_blank: t(".no_parent"),
-                class: "block w-full rounded border border-slate-300 bg-white px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
-        </div>
-
-        <div class="mb-2 flex items-center justify-between gap-4">
-          <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
-          <%= button_tag t(".members.add"), type: "button",
-                class: "shrink-0 cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100" %>
-        </div>
-        <% if @members.empty? %>
-          <p class="mb-6 border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
-        <% else %>
-          <table id="member-list" class="mb-6 w-full">
-            <tbody>
-              <% @members.each do |member| %>
-                <tr class="border-t border-slate-200">
-                  <td class="py-2 pr-3">
-                    <span class="block truncate"><%= member.display_name %></span>
-                    <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
-                  </td>
-                  <td class="w-px py-2 text-right whitespace-nowrap">
-                    <%= button_tag t(".members.remove"), type: "button",
-                          class: "cursor-pointer rounded px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% end %>
-
-        <div class="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
-          <%= button_tag t("actions.save"), type: "button",
-                class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
-          <%= button_tag t(".destroy"), type: "button",
-                class: "cursor-pointer rounded border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50" %>
-        </div>
-      </div>
+      <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>
     </div>
   </div>
 </div>

@@ -84,6 +84,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
     get management_groups_path
     assert_response :success
 
+    assert_select "#group-tree #everyone-group a", text: "全員"
     assert_select "#group-tree details > summary a", text: "全社"
     assert_select "#group-tree details details > summary a", text: "営業本部"
     assert_select "#group-tree details details > div a", text: "第一営業部"
@@ -101,8 +102,27 @@ class ManagementTest < ActionDispatch::IntegrationTest
       assert_select "select[name=group_parent_id] option[selected]", text: "全社"
       assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
       assert_select "select[name=group_parent_id] option", text: /開発部/
-      assert_select "#member-list tr", 2
+      assert_select "select[name=group_parent_id] option", text: "全員", count: 0
+
+      assert_select "#direct-members tr", 2
+      # 田中さんは第一・第二営業部の両方にいるが1行にまとめる
+      assert_select "#sub-members tr", 4
+      assert_select "#sub-members tr", text: /田中 三郎.*第一営業部.*第二営業部/m
+      assert_select "p", text: /下位グループを含めて 6人/
     end
+  end
+
+  test "「全員」グループは読み取り専用で、サブグループの欄を出さない" do
+    login(@admin)
+    get management_group_path(100)
+    assert_response :success
+
+    assert_select "#group-tree #everyone-group a[aria-current=page]", text: "全員"
+    assert_select "#group-detail" do
+      assert_select "input, select", 0
+      assert_select "p", text: /自動でメンバーになります/
+    end
+    assert_select "#sub-members", 0
   end
 
   test "存在しないグループは 404" do
