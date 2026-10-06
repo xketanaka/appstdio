@@ -4,8 +4,8 @@ class ProfileTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
-    @other_tenant = Tenant.create!(name: "テナントB")
+    @tenant = Tenant.setup!(name: "テナントA")
+    @other_tenant = Tenant.setup!(name: "テナントB")
     @user = User.create!(email: "a@example.com", password: PASSWORD)
     @membership = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(

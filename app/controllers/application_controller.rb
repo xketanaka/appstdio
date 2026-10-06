@@ -65,7 +65,7 @@ class ApplicationController < ActionController::Base
 
   rescue_from ActiveRecord::RecordNotFound do |e|
     error_log(e, logger)
-    render_error(403, e)
+    render_error(404, e)
   end
 
   rescue_from ActiveRecord::RecordNotUnique do |e|

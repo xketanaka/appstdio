@@ -1,0 +1,6 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t("files.sections.shared_with_me") %></h1>
+</div>
+
+<%= render "files/list", entries: @entries, roles: @roles, empty: t(".empty") %>

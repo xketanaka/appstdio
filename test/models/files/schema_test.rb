@@ -3,7 +3,7 @@ require "test_helper"
 # バリデーションを迂回するため insert_all や update_column で書き込んでいる
 class Files::SchemaTest < ActiveSupport::TestCase
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     @user = User.create!(email: "a@example.com", password: "password1234")
     @member = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(tenant: @tenant, user: @user, display_name: "Aさん", status: :active)
@@ -79,8 +79,6 @@ class Files::SchemaTest < ActiveSupport::TestCase
   end
 
   test "「全員」グループはテナントに1つだけ" do
-    Group.create!(tenant: @tenant, kind: :everyone, name: "全員")
-
     assert_raises(ActiveRecord::RecordNotUnique) do
       Group.create!(tenant: @tenant, kind: :everyone, name: "全員2")
     end

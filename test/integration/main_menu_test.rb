@@ -4,7 +4,7 @@ class MainMenuTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     @user = User.create!(email: "a@example.com", password: PASSWORD)
     TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(

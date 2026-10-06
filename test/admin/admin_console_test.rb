@@ -9,8 +9,8 @@ class AdminConsoleTest < ActionDispatch::IntegrationTest
       skip("管理画面のテストは bin/rails test:admin で実行する")
     end
 
-    @tenant_a = Tenant.create!(name: "テナントA")
-    @tenant_b = Tenant.create!(name: "テナントB")
+    @tenant_a = Tenant.setup!(name: "テナントA")
+    @tenant_b = Tenant.setup!(name: "テナントB")
 
     @operator = User.create!(email: "operator@example.com", password: PASSWORD)
     @admin_user = AdminUser.create!(user: @operator, display_name: "運用担当", status: :active)

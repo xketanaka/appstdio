@@ -1,5 +1,5 @@
 module Files
-1;95;0c  class Access
+  class Access
     RANKED_ROLES = %w[viewer editor manager].freeze
 
     # 相関サブクエリ。外側のクエリの files_nodes の行ごとに評価される
