@@ -30,7 +30,7 @@ ja:
     tree:
       label: "ドライブ"
     privileged_mode:
-      enter: "特権モードにする"
+      label: "特権モード"
       description: "すべてのファイル・フォルダに管理者としてアクセスできます"
       active: "特権モードです。すべてのファイル・フォルダに管理者としてアクセスしています"
       leave: "特権モードを終える"

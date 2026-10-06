@@ -111,12 +111,15 @@ class FilesTest < ActionDispatch::IntegrationTest
       get files_root_path
       assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
       assert_select "[role=status]", text: /特権モード/, count: 0
+      assert_select "aside button[role=switch][aria-checked=false]", text: /特権モード/
 
       post files_privileged_mode_path
       follow_redirect!
 
       assert_select "#file-list a[href=?]", files_folder_path(@hr)
       assert_select "[role=status]", text: /特権モードです/
+      assert_select "aside button[role=switch][aria-checked=true]"
+      assert_select "aside form input[name=_method][value=delete]"
       get files_folder_path(@hr)
       assert_response :success
     end
@@ -136,7 +139,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     test "一般の利用者には入口を出さず、切り替えもできない" do
       login(@member_user)
       get files_root_path
-      assert_select "aside button", text: "特権モードにする", count: 0
+      assert_select "aside button[role=switch]", 0
 
       post files_privileged_mode_path
       assert_response :not_found
@@ -156,7 +159,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       get files_root_path
 
       assert_select "[role=status]", text: /特権モード/, count: 0
-      assert_select "aside button", text: "特権モードにする"
+      assert_select "aside button[role=switch][aria-checked=false]"
     end
   end
 
