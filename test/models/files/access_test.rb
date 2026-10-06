@@ -96,10 +96,22 @@ class Files::AccessTest < ActiveSupport::TestCase
       assert_equal "editor", access(@general_member).effective_permission(@estimate).role
     end
 
-    test "テナント管理者はすべてのノードで管理者になる" do
+    test "特権モードのテナント管理者はすべてのノードで管理者になる" do
       grant(@sales_folder, @everyone, :none)
 
-      assert_equal "manager", access(@admin).effective_permission(@estimate).role
+      assert_equal "manager", access(@admin, privileged: true).effective_permission(@estimate).role
+    end
+
+    test "特権モードでなければテナント管理者も付与された権限で判定する" do
+      grant(@sales_folder, @everyone, :none)
+
+      assert_nil access(@admin).effective_permission(@estimate).role
+    end
+
+    test "テナント管理者でなければ特権モードを指定しても効かない" do
+      grant(@sales_folder, @everyone, :none)
+
+      assert_nil access(@outsider, privileged: true).effective_permission(@estimate).role
     end
   end
 
@@ -136,10 +148,10 @@ class Files::AccessTest < ActiveSupport::TestCase
       assert_not_includes readable, review
     end
 
-    test "テナント管理者は絞り込まれない" do
+    test "特権モードのテナント管理者は絞り込まれない" do
       grant(@sales_folder, @everyone, :none)
 
-      assert_equal Files::Node.count, access(@admin).readable(Files::Node.all).count
+      assert_equal Files::Node.count, access(@admin, privileged: true).readable(Files::Node.all).count
     end
   end
 
@@ -154,13 +166,13 @@ class Files::AccessTest < ActiveSupport::TestCase
       assert_equal [review], access(@outsider).shared_items
     end
 
-    test "テナント管理者も付与された権限だけで判定する" do
+    test "特権モードでも付与された権限だけで判定する" do
       hr = folder("人事", @root)
       review = file("評価.xlsx", hr)
       grant(hr, @everyone, :none)
       grant(review, @admin, :viewer)
 
-      assert_equal [review], access(@admin).shared_items
+      assert_equal [review], access(@admin, privileged: true).shared_items
     end
   end
 
@@ -170,7 +182,8 @@ class Files::AccessTest < ActiveSupport::TestCase
 
       assert_equal [@estimate], access(@sales1_member).trash
       assert_empty access(@outsider).trash
-      assert_equal [@estimate], access(@admin).trash
+      assert_empty access(@admin).trash
+      assert_equal [@estimate], access(@admin, privileged: true).trash
     end
   end
 
@@ -194,7 +207,7 @@ class Files::AccessTest < ActiveSupport::TestCase
     Files::Permission.create!(tenant: @tenant, node: node, subject_key => subject, role: role)
   end
 
-  def access(tenant_user)
-    Files::Access.new(tenant_user)
+  def access(tenant_user, privileged: false)
+    Files::Access.new(tenant_user, privileged: privileged)
   end
 end

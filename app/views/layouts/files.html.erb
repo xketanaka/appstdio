@@ -1,4 +1,16 @@
 <% content_for :pane_title, t("menus.files") %>
 <% content_for :pane_summary, t("files.sections.#{@section}") %>
-<% content_for :pane do %><%= render "files/tree" %><% end %>
+<% content_for :pane do %>
+  <%= render "files/tree" %>
+  <%= render "files/privileged_mode" %>
+<% end %>
+<% if privileged_mode? %>
+  <% content_for :banner do %>
+    <div role="status" class="flex shrink-0 items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+      <span><%= t("files.privileged_mode.active") %></span>
+      <%= button_to t("files.privileged_mode.leave"), files_privileged_mode_path, method: :delete,
+            class: "shrink-0 cursor-pointer rounded border border-amber-300 bg-white px-3 py-1 hover:bg-amber-100" %>
+    </div>
+  <% end %>
+<% end %>
 <%= render template: "layouts/two_pane" %>

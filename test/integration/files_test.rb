@@ -103,12 +103,60 @@ class FilesTest < ActionDispatch::IntegrationTest
       get files_folder_path(@sales)
       assert_select "button", text: "作成"
     end
+  end
 
-    test "テナント管理者は権限の無いフォルダも開ける" do
+  describe "特権モード" do
+    test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)
       get files_root_path
+      assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
+      assert_select "[role=status]", text: /特権モード/, count: 0
+
+      post files_privileged_mode_path
+      follow_redirect!
 
       assert_select "#file-list a[href=?]", files_folder_path(@hr)
+      assert_select "[role=status]", text: /特権モードです/
+      get files_folder_path(@hr)
+      assert_response :success
+    end
+
+    test "終えると付与された権限での表示に戻る" do
+      login(@owner_user)
+      post files_privileged_mode_path
+
+      delete files_privileged_mode_path
+      assert_redirected_to files_root_path
+      follow_redirect!
+
+      assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
+      assert_select "[role=status]", text: /特権モード/, count: 0
+    end
+
+    test "一般の利用者には入口を出さず、切り替えもできない" do
+      login(@member_user)
+      get files_root_path
+      assert_select "aside button", text: "特権モードにする", count: 0
+
+      post files_privileged_mode_path
+      assert_response :not_found
+    end
+
+    test "テナントを切り替えると解除される" do
+      other = Tenant.setup!(name: "テナントB")
+      TenantContext.switch(tenant: other) do
+        TenantUser.create!(tenant: other, user: @owner_user, display_name: "管理者さん", role: :owner, status: :active)
+      end
+      post login_path, params: { email: @owner_user.email, password: PASSWORD }
+      post select_tenant_path, params: { tenant_id: @tenant.id }
+      post files_privileged_mode_path
+
+      post select_tenant_path, params: { tenant_id: other.id }
+      post select_tenant_path, params: { tenant_id: @tenant.id }
+      get files_root_path
+
+      assert_select "[role=status]", text: /特権モード/, count: 0
+      assert_select "aside button", text: "特権モードにする"
     end
   end
 
@@ -123,7 +171,6 @@ class FilesTest < ActionDispatch::IntegrationTest
 
       root = TenantContext.switch(tenant: @tenant) { Files::Drive.personal.find_by!(owner: @member).root }
       delete logout_path
-      TenantContext.switch(tenant: @tenant) { @owner.update!(role: :member) }
       login(@owner_user)
       get files_folder_path(root)
       assert_response :not_found

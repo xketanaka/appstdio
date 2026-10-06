@@ -35,6 +35,7 @@ Rails.application.routes.draw do
       resources :folders, only: [:show]
       get "shared" => "shared_items#index", as: :shared_items
       get "trash" => "trash#index", as: :trash
+      resource :privileged_mode, only: [:create, :destroy]
     end
 
     namespace :management do
