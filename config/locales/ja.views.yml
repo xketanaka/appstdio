@@ -82,10 +82,29 @@ ja:
         title: "利用者管理"
         heading: "利用者管理"
     groups:
+      header:
+        create: "グループを追加"
+      tree_column:
+        heading: "グループ（部門）"
       index:
         title: "グループ管理"
         heading: "グループ管理"
-        coming_soon: "この画面は準備中です。"
+        select: "左の一覧からグループを選んでください。"
+      show:
+        title: "%{name} - グループ管理"
+        heading: "グループ管理"
+        detail: "グループ詳細"
+        back: "« グループ一覧へ戻る"
+        no_parent: "（なし）"
+        destroy: "このグループを削除"
+        fields:
+          name: "グループ名"
+          parent: "上位部門"
+        members:
+          heading: "メンバー（%{count}人）"
+          add: "メンバーを追加"
+          remove: "外す"
+          empty: "メンバーはいません。"
     tenants:
       index:
         title: "組織管理"

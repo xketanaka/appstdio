@@ -1,0 +1,5 @@
+<%# locals: (class_name:) %>
+<div class="<%= class_names("min-h-0 overflow-y-auto px-2 pb-4", class_name) %>">
+  <h2 class="px-2 pt-1 pb-2 text-sm text-slate-500"><%= t(".heading") %></h2>
+  <nav id="group-tree" aria-label="<%= t(".heading") %>"><%= render "tree", parent_id: nil %></nav>
+</div>

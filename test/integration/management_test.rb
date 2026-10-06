@@ -79,6 +79,38 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#tenant", text: /テナントB/, count: 0
   end
 
+  test "グループ管理ではグループの階層をツリーで出す" do
+    login(@admin)
+    get management_groups_path
+    assert_response :success
+
+    assert_select "#group-tree details > summary a", text: "全社"
+    assert_select "#group-tree details details > summary a", text: "営業本部"
+    assert_select "#group-tree details details > div a", text: "第一営業部"
+    assert_select "#group-detail", 0
+  end
+
+  test "グループを選ぶと詳細を出し、上位部門には自分と下位を選べない" do
+    login(@admin)
+    get management_group_path(2)
+    assert_response :success
+
+    assert_select "#group-tree a[aria-current=page]", text: "営業本部"
+    assert_select "#group-detail" do
+      assert_select "input[name=group_name][value=?]", "営業本部"
+      assert_select "select[name=group_parent_id] option[selected]", text: "全社"
+      assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
+      assert_select "select[name=group_parent_id] option", text: /開発部/
+      assert_select "#member-list tr", 2
+    end
+  end
+
+  test "存在しないグループは 404" do
+    login(@admin)
+    get management_group_path(999)
+    assert_response :not_found
+  end
+
   test "未ログインでは開けない" do
     get management_users_path
     assert_redirected_to login_path

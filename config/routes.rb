@@ -39,7 +39,7 @@ Rails.application.routes.draw do
 
     namespace :management do
       resources :users, only: [:index]
-      resources :groups, only: [:index]
+      resources :groups, only: [:index, :show]
       resources :tenants, only: [:index]
       root to: redirect("/management/users")
     end
