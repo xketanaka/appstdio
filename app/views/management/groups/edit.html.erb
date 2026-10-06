@@ -1,0 +1,62 @@
+<% content_for :title do %><%= t(".title", name: @group.name) %><% end -%>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
+
+<div class="flex min-h-0 flex-1 border-t border-slate-200">
+  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-200 lg:block" %>
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+      <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+      <div id="group-form">
+        <div class="mb-5">
+          <%= label_tag :group_name, t(".name"), class: "mb-1.5 block text-sm font-semibold" %>
+          <%= text_field_tag :group_name, @group.name,
+                class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+        </div>
+
+        <%= render "parent_field" %>
+
+        <section id="direct-members" class="mb-6">
+          <div class="mb-2 flex items-center justify-between gap-4">
+            <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
+            <%= button_tag t(".members.add"), type: "button",
+                  class: "shrink-0 cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100" %>
+          </div>
+          <% if @members.empty? %>
+            <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
+          <% else %>
+            <table class="w-full">
+              <tbody>
+                <% @members.each do |member| %>
+                  <tr class="border-t border-slate-200">
+                    <td class="py-2 pr-3">
+                      <span class="block truncate"><%= member.display_name %></span>
+                      <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+                    </td>
+                    <td class="w-px py-2 text-right whitespace-nowrap">
+                      <%= button_tag t(".members.remove"), type: "button",
+                            class: "cursor-pointer rounded px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </section>
+
+        <div class="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+          <div class="flex items-center gap-4">
+            <%= button_tag t("actions.save"), type: "button",
+                  class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
+            <%= link_to t(".cancel"), management_group_path(@group), class: "text-sm text-slate-600 hover:underline" %>
+          </div>
+          <%= button_tag t(".destroy"), type: "button",
+                class: "cursor-pointer rounded border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

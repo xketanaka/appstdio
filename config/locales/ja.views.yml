@@ -97,6 +97,7 @@ ja:
         title: "%{name} - グループ管理"
         heading: "グループ管理"
         detail: "グループ詳細"
+        edit: "編集"
         back: "« グループ一覧へ戻る"
       new:
         title: "グループを追加 - グループ管理"
@@ -110,18 +111,29 @@ ja:
         name: "グループ名"
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
-        destroy: "このグループを削除"
         total: "下位グループを含めて %{count}人"
+        no_parent: "（なし）"
         fields:
           name: "グループ名"
+          parent: "上位グループ"
+        members:
+          heading: "所属メンバー（%{count}人）"
+          empty: "直接所属しているメンバーはいません。"
+        sub_members:
+          heading: "サブグループに所属するメンバー（%{count}人）"
+          empty: "サブグループに所属しているメンバーはいません。"
+      edit:
+        title: "%{name}の編集 - グループ管理"
+        heading: "グループ管理"
+        detail: "グループの編集"
+        name: "グループ名"
+        cancel: "キャンセル"
+        destroy: "このグループを削除"
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"
           remove: "外す"
           empty: "直接所属しているメンバーはいません。"
-        sub_members:
-          heading: "サブグループに所属するメンバー（%{count}人）"
-          empty: "サブグループに所属しているメンバーはいません。"
     tenants:
       index:
         title: "組織管理"

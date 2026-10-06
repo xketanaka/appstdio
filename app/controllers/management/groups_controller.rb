@@ -34,33 +34,26 @@ module Management
     TENANT_USERS_COUNT = 12
 
     before_action :load_tree
+    before_action :set_group, only: [:show, :edit]
 
     def index
     end
 
     def show
-      @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
-      raise ActiveRecord::RecordNotFound unless @group
       if @group.kind == :everyone
         @tenant_users_count = TENANT_USERS_COUNT
         return
       end
 
       @members = MEMBERS.fetch(@group.id, [])
-
-      descendants = @children.fetch(@group.id, []).dup
-      descendants.each { |group| descendants.concat(@children.fetch(group.id, [])) }
+      @parent_path = path_to(@group.parent_id)
 
       # 同じ人が複数のサブグループにいれば1行にまとめる
-      @sub_members = descendants
+      @sub_members = descendants_of(@group)
         .flat_map { |group| MEMBERS.fetch(group.id, []).map { |member| [member, group] } }
         .group_by(&:first)
         .map { |member, pairs| [member, pairs.map(&:last)] }
       @total_count = (@members + @sub_members.map(&:first)).uniq.size
-
-      @parent_path = path_to(@group.parent_id)
-      # 自分と自分の下位を上位にすると循環する
-      @parent_options = parent_options(excluded: [@group.id] + descendants.map(&:id))
     end
 
     def new
@@ -69,11 +62,31 @@ module Management
       @parent_options = parent_options(excluded: [])
     end
 
+    def edit
+      raise ActiveRecord::RecordNotFound if @group.kind == :everyone
+
+      @members = MEMBERS.fetch(@group.id, [])
+      @parent_path = path_to(@group.parent_id)
+      # 自分と自分の下位を上位にすると循環する
+      @parent_options = parent_options(excluded: [@group.id] + descendants_of(@group).map(&:id))
+    end
+
     private
 
     def load_tree
       @everyone = EVERYONE
       @children = DEPARTMENTS.group_by(&:parent_id)
+    end
+
+    def set_group
+      @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
+      raise ActiveRecord::RecordNotFound unless @group
+    end
+
+    def descendants_of(group)
+      descendants = @children.fetch(group.id, []).dup
+      descendants.each { |child| descendants.concat(@children.fetch(child.id, [])) }
+      descendants
     end
 
     # 最上位から指定したグループまでの系列（指定したグループを含む）

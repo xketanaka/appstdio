@@ -1,20 +1,25 @@
 <div id="group-detail">
-  <div class="mb-5">
-    <%= label_tag :group_name, t(".fields.name"), class: "mb-1.5 block text-sm font-semibold" %>
-    <%= text_field_tag :group_name, @group.name,
-          class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
-  </div>
+  <dl class="mb-6 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr] sm:gap-y-3">
+    <dt class="text-sm text-slate-500"><%= t(".fields.name") %></dt>
+    <dd class="mb-2 sm:mb-0"><%= @group.name %></dd>
 
-  <%= render "parent_field" %>
+    <dt class="text-sm text-slate-500"><%= t(".fields.parent") %></dt>
+    <dd id="group-parent-path" class="mb-2 sm:mb-0">
+      <% if @parent_path.empty? %>
+        <span class="text-slate-500"><%= t(".no_parent") %></span>
+      <% else %>
+        <% @parent_path.each_with_index do |group, i| %>
+          <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
+          <%= link_to group.name, management_group_path(group), class: "text-blue-700 hover:underline" %>
+        <% end %>
+      <% end %>
+    </dd>
+  </dl>
 
   <p class="mb-3 text-sm text-slate-500"><%= t(".total", count: @total_count) %></p>
 
   <section id="direct-members" class="mb-6">
-    <div class="mb-2 flex items-center justify-between gap-4">
-      <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
-      <%= button_tag t(".members.add"), type: "button",
-            class: "shrink-0 cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100" %>
-    </div>
+    <h3 class="mb-2 text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
     <% if @members.empty? %>
       <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
     <% else %>
@@ -22,13 +27,9 @@
         <tbody>
           <% @members.each do |member| %>
             <tr class="border-t border-slate-200">
-              <td class="py-2 pr-3">
+              <td class="py-2">
                 <span class="block truncate"><%= member.display_name %></span>
                 <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
-              </td>
-              <td class="w-px py-2 text-right whitespace-nowrap">
-                <%= button_tag t(".members.remove"), type: "button",
-                      class: "cursor-pointer rounded px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" %>
               </td>
             </tr>
           <% end %>
@@ -63,11 +64,4 @@
       <% end %>
     </section>
   <% end %>
-
-  <div class="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
-    <%= button_tag t("actions.save"), type: "button",
-          class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
-    <%= button_tag t(".destroy"), type: "button",
-          class: "cursor-pointer rounded border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50" %>
-  </div>
 </div>

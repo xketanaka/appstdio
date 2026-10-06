@@ -92,18 +92,16 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#group-detail", 0
   end
 
-  test "グループを選ぶと詳細を出し、上位グループには自分と下位を選べない" do
+  test "グループを選ぶと詳細を参照だけで出し、編集ボタンを置く" do
     login(@admin)
     get management_group_path(2)
     assert_response :success
 
     assert_select "#group-tree a[aria-current=page]", text: "営業本部"
+    assert_select "#edit-group[href=?]", edit_management_group_path(2)
     assert_select "#group-detail" do
-      assert_select "input[name=group_name][value=?]", "営業本部"
-      assert_select "select[name=group_parent_id] option[selected]", text: "全社"
-      assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
-      assert_select "select[name=group_parent_id] option", text: /開発部/
-      assert_select "select[name=group_parent_id] option", text: "全員", count: 0
+      assert_select "input, select, button", 0
+      assert_select "dd", text: "営業本部"
 
       assert_select "#direct-members tr", 2
       # 田中さんは第一・第二営業部の両方にいるが1行にまとめる
@@ -117,10 +115,30 @@ class ManagementTest < ActionDispatch::IntegrationTest
     login(@admin)
 
     get management_group_path(3)
-    assert_select "#group-parent summary", text: /全社\s*>\s*営業本部/
+    assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
+    assert_select "#group-parent-path a[href=?]", management_group_path(2)
 
     get management_group_path(1)
-    assert_select "#group-parent summary", text: /（なし）/
+    assert_select "#group-parent-path", text: /（なし）/
+  end
+
+  test "編集の画面で名前・上位グループ・メンバーを変えられ、上位には自分と下位を選べない" do
+    login(@admin)
+    get edit_management_group_path(2)
+    assert_response :success
+
+    assert_select "#group-tree a[aria-current=page]", text: "営業本部"
+    assert_select "#group-form" do
+      assert_select "input[name=group_name][value=?]", "営業本部"
+      assert_select "#group-parent summary", text: /全社/
+      assert_select "select[name=group_parent_id] option[selected]", text: "全社"
+      assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
+      assert_select "select[name=group_parent_id] option", text: /開発部/
+      assert_select "select[name=group_parent_id] option", text: "全員", count: 0
+      assert_select "#direct-members tr", 2
+      assert_select "button", text: "保存する"
+      assert_select "a[href=?]", management_group_path(2), text: "キャンセル"
+    end
   end
 
   test "グループの追加は、選んでいるグループを上位の初期値にする" do
@@ -159,6 +177,10 @@ class ManagementTest < ActionDispatch::IntegrationTest
       assert_select "p", text: /自動でメンバーになります/
     end
     assert_select "#sub-members", 0
+    assert_select "#edit-group", 0
+
+    get edit_management_group_path(100)
+    assert_response :not_found
   end
 
   test "存在しないグループは 404" do

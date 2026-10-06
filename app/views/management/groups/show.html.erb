@@ -9,7 +9,13 @@
   <div class="min-h-0 flex-1 overflow-y-auto">
     <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
       <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-blue-700 hover:underline lg:hidden" %>
-      <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+      <div class="mb-5 flex items-center justify-between gap-4">
+        <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
+        <% if @group.kind != :everyone %>
+          <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group",
+                class: "shrink-0 rounded border border-slate-300 px-4 py-1.5 text-sm font-semibold hover:bg-slate-100" %>
+        <% end %>
+      </div>
       <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>
     </div>
   </div>
