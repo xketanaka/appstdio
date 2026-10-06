@@ -82,10 +82,13 @@ ja:
         title: "利用者管理"
         heading: "利用者管理"
     groups:
-      header:
-        create: "グループを追加"
       tree_column:
         label: "グループ"
+        create: "グループを追加"
+      parent_field:
+        label: "上位グループ"
+        no_parent: "（なし）"
+        change: "変更"
       index:
         title: "グループ管理"
         heading: "グループ管理"
@@ -95,17 +98,22 @@ ja:
         heading: "グループ管理"
         detail: "グループ詳細"
         back: "« グループ一覧へ戻る"
+      new:
+        title: "グループを追加 - グループ管理"
+        heading: "グループ管理"
+        detail: "グループを追加"
+        back: "« グループ一覧へ戻る"
+        name: "グループ名"
+        submit: "作成する"
+        cancel: "キャンセル"
       everyone_detail:
         name: "グループ名"
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
-        no_parent: "（なし）"
-        change: "変更"
         destroy: "このグループを削除"
         total: "下位グループを含めて %{count}人"
         fields:
           name: "グループ名"
-          parent: "上位グループ"
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"

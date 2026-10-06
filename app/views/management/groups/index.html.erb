@@ -1,5 +1,7 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<%= render "header", heading: t(".heading") %>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
 
 <div class="flex min-h-0 flex-1 border-t border-slate-200">
   <%= render "tree_column", class_name: "w-full lg:w-64 lg:shrink-0 lg:border-r lg:border-slate-200" %>

@@ -123,6 +123,31 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#group-parent summary", text: /（なし）/
   end
 
+  test "グループの追加は、選んでいるグループを上位の初期値にする" do
+    login(@admin)
+
+    get management_groups_path
+    assert_select "#new-group[href=?]", new_management_group_path
+
+    get management_group_path(2)
+    assert_select "#new-group[href=?]", new_management_group_path(parent_id: 2)
+
+    # 「全員」は親にしないので、選んでいても最上位に追加する
+    get management_group_path(100)
+    assert_select "#new-group[href=?]", new_management_group_path
+
+    get new_management_group_path(parent_id: 3)
+    assert_response :success
+    assert_select "#group-form" do
+      assert_select "input[name=group_name]:not([value])"
+      assert_select "#group-parent summary", text: /全社\s*>\s*営業本部\s*>\s*第一営業部/
+      assert_select "select[name=group_parent_id] option[selected]", text: /第一営業部/
+    end
+
+    get new_management_group_path
+    assert_select "#group-parent summary", text: /（なし）/
+  end
+
   test "「全員」グループは読み取り専用で、サブグループの欄を出さない" do
     login(@admin)
     get management_group_path(100)

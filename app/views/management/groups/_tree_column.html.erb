@@ -7,6 +7,16 @@
             "aria-current": (current ? "page" : nil),
             class: class_names("block w-full truncate rounded py-1.5 pr-2 pl-6.5 text-sm hover:bg-slate-100 hover:underline", "bg-slate-200/70": current) %>
     </div>
+    <div class="mb-2 flex justify-end">
+      <%= link_to new_management_group_path(parent_id: (@group.id if @group && @group.kind != :everyone)),
+            id: "new-group",
+            class: "flex items-center gap-1 rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100" do %>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
+          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+        <%= t(".create") %>
+      <% end %>
+    </div>
     <%= render "tree", parent_id: nil %>
   </nav>
 </div>

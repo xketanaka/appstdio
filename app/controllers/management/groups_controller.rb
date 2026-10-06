@@ -48,14 +48,6 @@ module Management
 
       @members = MEMBERS.fetch(@group.id, [])
 
-      @parent_path = []
-      parent_id = @group.parent_id
-      while parent_id
-        parent = DEPARTMENTS.find { |group| group.id == parent_id }
-        @parent_path.unshift(parent)
-        parent_id = parent.parent_id
-      end
-
       descendants = @children.fetch(@group.id, []).dup
       descendants.each { |group| descendants.concat(@children.fetch(group.id, [])) }
 
@@ -66,18 +58,15 @@ module Management
         .map { |member, pairs| [member, pairs.map(&:last)] }
       @total_count = (@members + @sub_members.map(&:first)).uniq.size
 
-      # 自分と自分の下位は上位グループに選べない。「全員」も親にはしない
-      excluded = [@group.id] + descendants.map(&:id)
-      @parent_options = []
-      walk = ->(parent_id, depth) do
-        @children.fetch(parent_id, []).each do |group|
-          next if excluded.include?(group.id)
+      @parent_path = path_to(@group.parent_id)
+      # 自分と自分の下位を上位にすると循環する
+      @parent_options = parent_options(excluded: [@group.id] + descendants.map(&:id))
+    end
 
-          @parent_options << ["  " * depth + group.name, group.id]
-          walk.(group.id, depth + 1)
-        end
-      end
-      walk.(nil, 0)
+    def new
+      parent = DEPARTMENTS.find { |group| group.id == params[:parent_id].to_i }
+      @parent_path = path_to(parent&.id)
+      @parent_options = parent_options(excluded: [])
     end
 
     private
@@ -85,6 +74,32 @@ module Management
     def load_tree
       @everyone = EVERYONE
       @children = DEPARTMENTS.group_by(&:parent_id)
+    end
+
+    # 最上位から指定したグループまでの系列（指定したグループを含む）
+    def path_to(group_id)
+      path = []
+      while group_id
+        group = DEPARTMENTS.find { |department| department.id == group_id }
+        path.unshift(group)
+        group_id = group.parent_id
+      end
+      path
+    end
+
+    # 「全員」は親にしないので選択肢に入れない
+    def parent_options(excluded:)
+      options = []
+      walk = ->(parent_id, depth) do
+        @children.fetch(parent_id, []).each do |group|
+          next if excluded.include?(group.id)
+
+          options << ["\u00A0\u00A0" * depth + group.name, group.id]
+          walk.(group.id, depth + 1)
+        end
+      end
+      walk.(nil, 0)
+      options
     end
   end
 end
