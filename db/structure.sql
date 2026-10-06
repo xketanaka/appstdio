@@ -34,6 +34,42 @@ CREATE TYPE public.files_node_kind AS ENUM (
 );
 
 
+--
+-- Name: files_nodes_cascade_ancestor_ids(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.files_nodes_cascade_ancestor_ids() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  UPDATE files_nodes SET ancestor_ids = '{}' WHERE parent_id = NEW.id;
+  RETURN NULL;
+END;
+$$;
+
+
+--
+-- Name: files_nodes_set_ancestor_ids(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.files_nodes_set_ancestor_ids() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.parent_id IS NULL THEN
+    NEW.ancestor_ids := '{}';
+  ELSE
+    SELECT ancestor_ids || id INTO NEW.ancestor_ids FROM files_nodes WHERE id = NEW.parent_id;
+    IF NEW.id = ANY(NEW.ancestor_ids) THEN
+      RAISE EXCEPTION 'files_nodes % cannot be moved under itself', NEW.id
+        USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -140,6 +176,7 @@ CREATE TABLE public.files_nodes (
     purged_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    ancestor_ids bigint[] DEFAULT '{}'::bigint[] NOT NULL,
     CONSTRAINT files_nodes_folder_size_check CHECK (((kind = 'file'::public.files_node_kind) OR (byte_size = 0))),
     CONSTRAINT files_nodes_folder_version_check CHECK (((kind = 'file'::public.files_node_kind) OR (current_version_id IS NULL)))
 );
@@ -892,6 +929,20 @@ CREATE UNIQUE INDEX index_users_on_password_reset_token ON public.users USING bt
 
 
 --
+-- Name: files_nodes files_nodes_cascade_ancestor_ids; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER files_nodes_cascade_ancestor_ids AFTER UPDATE OF parent_id, ancestor_ids ON public.files_nodes FOR EACH ROW WHEN ((old.ancestor_ids IS DISTINCT FROM new.ancestor_ids)) EXECUTE FUNCTION public.files_nodes_cascade_ancestor_ids();
+
+
+--
+-- Name: files_nodes files_nodes_set_ancestor_ids; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER files_nodes_set_ancestor_ids BEFORE INSERT OR UPDATE OF parent_id, ancestor_ids ON public.files_nodes FOR EACH ROW EXECUTE FUNCTION public.files_nodes_set_ancestor_ids();
+
+
+--
 -- Name: files_nodes fk_rails_036eed7978; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1426,6 +1477,8 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261006100000'),
+('20261005120000'),
 ('20260929110000'),
 ('20260929100100'),
 ('20260929100000'),

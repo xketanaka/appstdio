@@ -12,6 +12,10 @@ class Group < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   validate :parent_must_not_be_self_or_descendant
 
+  def self.everyone_of(tenant)
+    everyone.find_by!(tenant: tenant)
+  end
+
   def self_and_ancestors
     chain = [self]
     node = parent

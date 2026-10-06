@@ -9,8 +9,8 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
       skip("運営者画面のテストは bin/rails test:ops で実行する")
     end
 
-    @tenant_a = Tenant.create!(name: "テナントA")
-    @tenant_b = Tenant.create!(name: "テナントB")
+    @tenant_a = Tenant.setup!(name: "テナントA")
+    @tenant_b = Tenant.setup!(name: "テナントB")
 
     @operator = Operator.create!(
       email: "operator@example.com", password: PASSWORD, display_name: "運用担当", status: :active,

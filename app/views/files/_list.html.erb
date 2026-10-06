@@ -1,0 +1,65 @@
+<%# locals: (entries:, roles:, empty:, trash: false) %>
+<% time_column = trash ? :deleted_at : :updated_at %>
+<% person_column = trash ? :deleted_by : :owner %>
+<div class="min-h-0 flex-1 overflow-auto px-4">
+  <table id="file-list" class="w-full">
+    <thead class="sticky top-0 bg-slate-50 text-sm text-slate-500">
+      <tr class="border-b border-slate-200">
+        <th class="px-3 py-2 text-left font-normal"><%= t(".columns.name") %></th>
+        <th class="hidden px-3 py-2 text-left font-normal lg:table-cell"><%= t(".columns.#{person_column}") %></th>
+        <th class="hidden px-3 py-2 text-left font-normal md:table-cell"><%= t(".columns.#{time_column}") %></th>
+        <th class="hidden px-3 py-2 text-right font-normal sm:table-cell"><%= t(".columns.size") %></th>
+        <th class="w-10"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% entries.each do |node| %>
+        <% readable = trash || roles.key?(node.id) %>
+        <% person = (trash ? node.deleted_by : node.creator)&.display_name || "-" %>
+        <% size = node.file? ? number_to_human_size(node.byte_size) : "-" %>
+        <tr class="border-b border-slate-100 hover:bg-blue-50/60">
+          <td class="px-3 py-2.5">
+            <span class="flex items-center gap-2">
+              <%= render "partial/file_icon", folder: node.folder? %>
+              <% if !trash && node.folder? && readable %>
+                <%= link_to node.name, files_folder_path(node), class: "truncate hover:underline" %>
+              <% elsif readable %>
+                <span class="truncate"><%= node.name %></span>
+              <% else %>
+                <span class="truncate text-slate-400" title="<%= t(".no_access") %>"><%= node.name %></span>
+              <% end %>
+            </span>
+            <% if readable %>
+              <span class="mt-0.5 block pl-7 text-xs text-slate-500 lg:hidden">
+                <span class="sm:hidden"><span class="inline-block min-w-[4ch]"><%= size %></span>・</span>
+                <span class="md:hidden"><%= time_to_s(node[time_column]) %>・</span>
+                <%= person %>
+              </span>
+            <% end %>
+          </td>
+          <td class="hidden px-3 py-2.5 text-sm lg:table-cell"><%= person if readable %></td>
+          <td class="hidden px-3 py-2.5 text-sm md:table-cell"><%= time_to_s(node[time_column]) if readable %></td>
+          <td class="hidden px-3 py-2.5 text-right text-sm sm:table-cell"><%= size if readable %></td>
+          <td class="py-2.5 pr-1">
+            <details class="relative" data-dropdown>
+              <summary class="flex cursor-pointer list-none justify-center rounded p-1 text-slate-500 hover:bg-slate-200 [&::-webkit-details-marker]:hidden"
+                       aria-label="<%= t(".row_menu") %>">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
+                  <path d="M12 7a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 12 7Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z" />
+                </svg>
+              </summary>
+              <div class="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <% (trash ? %i[restore purge] : %i[download rename destroy]).each do |action| %>
+                  <span class="block px-4 py-2 text-slate-400"><%= t(".row_actions.#{action}") %></span>
+                <% end %>
+              </div>
+            </details>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if entries.empty? %>
+    <p class="py-10 text-center text-sm text-slate-500"><%= empty %></p>
+  <% end %>
+</div>

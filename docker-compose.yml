@@ -37,7 +37,8 @@ services:
       LANGUAGE: "ja_JP:ja"
       LC_ALL: "ja_JP.UTF-8"
       BINDING: "0.0.0.0"
-      RUBYOPT: "-W:deprecated"
+      # Prism は mmap でソースを読み、vboxsf ではホストで書き換えても古い内容が残る
+      RUBYOPT: "-W:deprecated --parser=parse.y"
       DB_HOST: "db"
       DB_PORT: "5432"
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
@@ -67,7 +68,8 @@ services:
       LANGUAGE: "ja_JP:ja"
       LC_ALL: "ja_JP.UTF-8"
       BINDING: "0.0.0.0"
-      RUBYOPT: "-W:deprecated"
+      # Prism は mmap でソースを読み、vboxsf ではホストで書き換えても古い内容が残る
+      RUBYOPT: "-W:deprecated --parser=parse.y"
       DB_HOST: "db"
       DB_PORT: "5432"
       OPS_CONSOLE: "1"
@@ -92,4 +94,5 @@ services:
       HOME: ''
       LANGUAGE: "ja_JP:ja"
       LC_ALL: "ja_JP.UTF-8"
-      RUBYOPT: "-W:deprecated"
+      # Prism は mmap でソースを読み、vboxsf ではホストで書き換えても古い内容が残る
+      RUBYOPT: "-W:deprecated --parser=parse.y"

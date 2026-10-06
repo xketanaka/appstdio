@@ -28,14 +28,10 @@ module Files
       parent_id.nil?
     end
 
-    def self_and_ancestors
-      chain = [self]
-      node = parent
-      while node && chain.exclude?(node)
-        chain << node
-        node = node.parent
-      end
-      chain
+    # ancestor_ids はトリガが書くので、保存直後のインスタンスが持つ値は古い
+    def ancestors
+      ids = self.class.where(id: id).pick(:ancestor_ids)
+      self.class.where(id: ids).in_order_of(:id, ids)
     end
   end
 end

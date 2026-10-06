@@ -3,7 +3,7 @@ require "test_helper"
 # バリデーションを迂回するため insert_all や update_column で書き込んでいる
 class Files::SchemaTest < ActiveSupport::TestCase
   setup do
-    @tenant = Tenant.create!(name: "テナントA")
+    @tenant = Tenant.setup!(name: "テナントA")
     @user = User.create!(email: "a@example.com", password: "password1234")
     @member = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(tenant: @tenant, user: @user, display_name: "Aさん", status: :active)
@@ -79,8 +79,6 @@ class Files::SchemaTest < ActiveSupport::TestCase
   end
 
   test "「全員」グループはテナントに1つだけ" do
-    Group.create!(tenant: @tenant, kind: :everyone, name: "全員")
-
     assert_raises(ActiveRecord::RecordNotUnique) do
       Group.create!(tenant: @tenant, kind: :everyone, name: "全員2")
     end
@@ -130,5 +128,50 @@ class Files::SchemaTest < ActiveSupport::TestCase
 
     duplicate = Files::Version.new(tenant: @tenant, node: node, number: 1, byte_size: 20)
     assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save!(validate: false) }
+  end
+
+  test "祖先の経路は作成時に設定される" do
+    a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
+    b = Files::Node.create!(tenant: @tenant, drive: @drive, parent: a, kind: :file, name: "b.txt")
+
+    assert_equal [], @root.reload.ancestor_ids
+    assert_equal [@root.id, a.id], b.reload.ancestor_ids
+    assert_equal [@root, a], b.ancestors
+  end
+
+  test "移動すると配下の経路も付け替わる" do
+    a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
+    b = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "b")
+    child = Files::Node.create!(tenant: @tenant, drive: @drive, parent: a, kind: :folder, name: "c")
+    grandchild = Files::Node.create!(tenant: @tenant, drive: @drive, parent: child, kind: :file, name: "d.txt")
+
+    a.update_column(:parent_id, b.id)
+
+    assert_equal [@root.id, b.id], a.reload.ancestor_ids
+    assert_equal [@root.id, b.id, a.id], child.reload.ancestor_ids
+    assert_equal [@root.id, b.id, a.id, child.id], grandchild.reload.ancestor_ids
+  end
+
+  test "経路を直接書き換えても親から求め直される" do
+    a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
+
+    a.update_column(:ancestor_ids, [999])
+
+    assert_equal [@root.id], a.reload.ancestor_ids
+  end
+
+  test "insert_all で作っても経路が設定される" do
+    Files::Node.insert_all([{ tenant_id: @tenant.id, drive_id: @drive.id, parent_id: @root.id, kind: "file", name: "x" }])
+
+    assert_equal [@root.id], Files::Node.find_by!(name: "x").ancestor_ids
+  end
+
+  test "自分の配下には移動できない" do
+    a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
+    child = Files::Node.create!(tenant: @tenant, drive: @drive, parent: a, kind: :folder, name: "c")
+
+    assert_raises(ActiveRecord::StatementInvalid) do
+      Files::Node.transaction(requires_new: true) { a.update_column(:parent_id, child.id) }
+    end
   end
 end

@@ -1,0 +1,33 @@
+<%# PC とスマホの2箇所から描画される。id を持つ要素を置かないこと %>
+<nav aria-label="<%= t(".label") %>">
+  <% tree.each do |section| %>
+    <% current = section[:key] == @section %>
+    <% link = link_to t("files.sections.#{section[:key]}"), section[:path],
+                "aria-current": (current ? "page" : nil),
+                class: class_names("truncate hover:underline", "font-semibold": current) %>
+    <% if section[:folders] %>
+      <details class="group" <%= "open" if current %>>
+        <summary class="flex cursor-pointer list-none items-center gap-1.5 px-4 py-2 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+               class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
+            <path d="M8 4l10 8-10 8V4Z" />
+          </svg>
+          <%= link %>
+        </summary>
+
+        <% section[:folders].each do |folder, readable| %>
+          <div class="flex items-center gap-2 py-1.5 pr-4 pl-9 text-sm hover:bg-slate-100">
+            <%= render "partial/file_icon", folder: true %>
+            <% if readable %>
+              <%= link_to folder.name, files_folder_path(folder), class: "truncate" %>
+            <% else %>
+              <span class="truncate text-slate-400"><%= folder.name %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </details>
+    <% else %>
+      <div class="flex items-center gap-1.5 py-2 pr-4 pl-8.5 text-sm hover:bg-slate-100"><%= link %></div>
+    <% end %>
+  <% end %>
+</nav>
