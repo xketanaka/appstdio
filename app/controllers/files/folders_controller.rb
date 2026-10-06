@@ -14,9 +14,8 @@ module Files
 
       @can_edit = Access.at_least_editor?(role)
 
-      children = @folder.children.kept.includes(:creator).order(:kind, :name).to_a
-      @roles = access.roles(children)
-      @entries = children.select { |node| node.folder? || @roles.key?(node.id) }
+      @entries = @folder.children.kept.includes(:creator).order(:kind, :name).to_a
+      @roles = access.roles(@entries)
 
       ancestors = @folder.ancestors.to_a
       readable = access.roles(ancestors)
