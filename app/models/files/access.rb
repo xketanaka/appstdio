@@ -27,7 +27,7 @@ module Files
 
     def initialize(tenant_user, privileged: true)
       @tenant_user = tenant_user
-      @privileged = privileged && tenant_user.manager?
+      @privileged = privileged && tenant_user.admin_or_owner?
     end
 
     # 1ノードの権限。名前の変更・削除・ダウンロードなど、操作の可否を決めるときに使う。

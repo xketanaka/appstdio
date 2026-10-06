@@ -7,9 +7,9 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # 管理画面のプロセスは所有者ロールで RLS を素通りするので、利用テナント側の画面を出さない
-  if Rails.configuration.x.admin_console
-    namespace :admin do
+  # 運営者画面のプロセスは所有者ロールで RLS を素通りするので、利用テナント側の画面を出さない
+  if Rails.configuration.x.ops_console
+    namespace :ops do
       get    "login"  => "sessions#new",     as: :login
       post   "login"  => "sessions#create"
       delete "logout" => "sessions#destroy", as: :logout
@@ -18,7 +18,7 @@ Rails.application.routes.draw do
       root "tenants#index"
     end
 
-    root to: redirect("/admin")
+    root to: redirect("/ops")
   else
     get    "login"  => "sessions#new",     as: :login
     post   "login"  => "sessions#create"

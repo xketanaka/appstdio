@@ -70,13 +70,13 @@ if Rails.env.local?
   end
   node(Files::Drive.personal_root(sample_member), :file, "メモ.txt", sample_member, byte_size: 1_024)
 
-  operator = upsert_user("operator@example.com", password)
-  account = AdminUser.find_or_initialize_by(user_id: operator.id)
-  account.display_name = "運用担当"
-  account.status = :active
-  account.save!
+  operator = Operator.find_or_initialize_by(email: "operator@example.com")
+  operator.password = password if operator.new_record?
+  operator.display_name = "運用担当"
+  operator.status = :active
+  operator.save!
 
   puts "ログイン (所属2件、選択画面あり): #{admin.email} / #{password}"
   puts "ログイン (所属1件、選択画面なし): #{member.email} / #{password}"
-  puts "管理画面 /admin/login              : #{operator.email} / #{password}"
+  puts "運営者画面 /ops/login           : #{operator.email} / #{password}"
 end

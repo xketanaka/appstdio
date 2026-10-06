@@ -21,7 +21,7 @@
   <body class="flex h-dvh flex-col overflow-hidden bg-white leading-relaxed text-slate-800">
     <header class="flex shrink-0 items-center justify-between gap-2 bg-slate-900 px-3 py-2.5 text-white sm:gap-4 sm:px-6">
       <div class="flex min-w-0 items-center gap-2 sm:gap-3">
-        <% if current_admin_user %>
+        <% if current_operator %>
           <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
                   class="-ml-2 cursor-pointer rounded p-2 hover:bg-white/10">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -31,26 +31,26 @@
           </button>
         <% end %>
         <div class="font-bold">
-          <%= link_to t(".brand", system_title: Settings.system_title), admin_root_path, class: "hover:underline" %>
+          <%= link_to t(".brand", system_title: Settings.system_title), ops_root_path, class: "hover:underline" %>
         </div>
       </div>
-      <% if current_admin_user %>
+      <% if current_operator %>
         <div class="flex min-w-0 shrink-0 items-center gap-2 text-sm sm:gap-3">
           <%= render layout: "partial/account_menu",
                 locals: { label: t(".account_menu"),
-                          name: current_admin_user.display_name,
-                          email: current_admin_user.user.email } do %>
-            <%= button_to t("actions.logout"), admin_logout_path, method: :delete,
+                          name: current_operator.display_name,
+                          email: current_operator.email } do %>
+            <%= button_to t("actions.logout"), ops_logout_path, method: :delete,
                   class: "block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100" %>
           <% end %>
         </div>
       <% end %>
     </header>
 
-    <% if current_admin_user %>
+    <% if current_operator %>
       <%= render layout: "partial/drawer" do %>
-        <%= render "partial/drawer_item", label: t("menus.tenants"), path: admin_tenants_path %>
-        <%= render "partial/drawer_item", label: t("menus.admin_users"), path: nil %>
+        <%= render "partial/drawer_item", label: t("menus.tenants"), path: ops_tenants_path %>
+        <%= render "partial/drawer_item", label: t("menus.operators"), path: nil %>
       <% end %>
     <% end %>
 

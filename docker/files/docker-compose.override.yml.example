@@ -3,6 +3,6 @@ services:
   app:
     ports:
       - "6000:3000"
-  admin:
+  ops:
     ports:
       - "6001:3000"

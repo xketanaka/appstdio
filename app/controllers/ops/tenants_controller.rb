@@ -1,4 +1,4 @@
-module Admin
+module Ops
   class TenantsController < BaseController
     def index
       @tenants = Tenant
