@@ -30,60 +30,60 @@ class Files::AccessTest < ActiveSupport::TestCase
     TenantContext.clear
   end
 
-  describe "#role" do
+  describe "#effective_permission" do
     test "ルートの「全員=閲覧者」が配下すべてに継承される" do
-      assert_equal "viewer", access(@outsider).role(@estimate)
+      assert_equal "viewer", access(@outsider).effective_permission(@estimate).role
     end
 
     test "上位グループへの付与は下位グループのメンバーに届く" do
-      assert_equal "editor", access(@sales1_member).role(@estimates)
+      assert_equal "editor", access(@sales1_member).effective_permission(@estimates).role
     end
 
     test "未設定は主体ごとに判定する" do
       grant(@estimates, @general, :viewer)
 
-      assert_equal "editor", access(@sales1_member).role(@estimates)
-      assert_equal "viewer", access(@general_member).role(@estimates)
+      assert_equal "editor", access(@sales1_member).effective_permission(@estimates).role
+      assert_equal "viewer", access(@general_member).effective_permission(@estimates).role
     end
 
     test "同じ主体への設定は最も近いものが効き、子で下げられる" do
       grant(@estimates, @sales, :viewer)
 
-      assert_equal "editor", access(@sales1_member).role(@sales_folder)
-      assert_equal "viewer", access(@sales1_member).role(@estimates)
-      assert_equal "viewer", access(@sales1_member).role(@estimate)
+      assert_equal "editor", access(@sales1_member).effective_permission(@sales_folder).role
+      assert_equal "viewer", access(@sales1_member).effective_permission(@estimates).role
+      assert_equal "viewer", access(@sales1_member).effective_permission(@estimate).role
     end
 
     test "打ち消しはその主体の継承だけを無効にし、子孫にも効く" do
       grant(@estimates, @sales, :none)
 
-      assert_equal "viewer", access(@sales1_member).role(@estimate), "全員からの閲覧者は残る"
+      assert_equal "viewer", access(@sales1_member).effective_permission(@estimate).role, "全員からの閲覧者は残る"
 
       grant(@estimates, @everyone, :none)
-      assert_nil access(@sales1_member).role(@estimates)
-      assert_nil access(@sales1_member).role(@estimate)
+      assert_nil access(@sales1_member).effective_permission(@estimates).role
+      assert_nil access(@sales1_member).effective_permission(@estimate).role
     end
 
     test "打ち消した主体に孫で付与し直せる" do
       grant(@sales_folder, @everyone, :none)
       grant(@estimates, @everyone, :viewer)
 
-      assert_nil access(@outsider).role(@sales_folder)
-      assert_equal "viewer", access(@outsider).role(@estimate)
+      assert_nil access(@outsider).effective_permission(@sales_folder).role
+      assert_equal "viewer", access(@outsider).effective_permission(@estimate).role
     end
 
     test "下位グループの打ち消しでは上位グループへの付与を除外できない" do
       grant(@estimates, @sales1, :none)
 
-      assert_equal "editor", access(@sales1_member).role(@estimates)
+      assert_equal "editor", access(@sales1_member).effective_permission(@estimates).role
     end
 
     test "本人への付与とグループへの付与は強い方を採る" do
       grant(@estimates, @sales1_member, :manager)
       grant(@sales_folder, @outsider, :none)
 
-      assert_equal "manager", access(@sales1_member).role(@estimate)
-      assert_equal "viewer", access(@outsider).role(@estimate), "本人の打ち消しでは全員は消えない"
+      assert_equal "manager", access(@sales1_member).effective_permission(@estimate).role
+      assert_equal "viewer", access(@outsider).effective_permission(@estimate).role, "本人の打ち消しでは全員は消えない"
     end
 
     test "移動すると移動先の権限を継承する" do
@@ -92,25 +92,34 @@ class Files::AccessTest < ActiveSupport::TestCase
 
       @estimates.update!(parent: general_folder)
 
-      assert_equal "viewer", access(@sales1_member).role(@estimate)
-      assert_equal "editor", access(@general_member).role(@estimate)
+      assert_equal "viewer", access(@sales1_member).effective_permission(@estimate).role
+      assert_equal "editor", access(@general_member).effective_permission(@estimate).role
     end
 
     test "テナント管理者はすべてのノードで管理者になる" do
       grant(@sales_folder, @everyone, :none)
 
-      assert_equal "manager", access(@admin).role(@estimate)
+      assert_equal "manager", access(@admin).effective_permission(@estimate).role
     end
   end
 
-  describe "#roles" do
-    test "権限の無いノードは結果に含まれない" do
+  describe "#effective_permissions" do
+    test "ノードごとの権限をまとめて求める" do
       hr = folder("人事", @root)
       grant(hr, @everyone, :none)
+      grant(@estimates, @sales1_member, :manager)
 
-      roles = access(@outsider).roles([@sales_folder, hr])
+      permissions = access(@sales1_member).effective_permissions([@sales_folder, @estimates, hr])
 
-      assert_equal({ @sales_folder.id => "viewer" }, roles)
+      assert_equal "editor", permissions[@sales_folder].role
+      assert_equal "manager", permissions[@estimates].role
+      assert_not permissions[hr].readable?
+    end
+
+    test "渡していないノードは権限なしとして扱う" do
+      permissions = access(@outsider).effective_permissions([@sales_folder])
+
+      assert_not permissions[@estimate].readable?
     end
   end
 
@@ -162,22 +171,6 @@ class Files::AccessTest < ActiveSupport::TestCase
       assert_equal [@estimate], access(@sales1_member).trash
       assert_empty access(@outsider).trash
       assert_equal [@estimate], access(@admin).trash
-    end
-  end
-
-  describe ".at_least_viewer? / .at_least_editor? / .at_least_manager?" do
-    test "上位の権限は下位を含む" do
-      assert Files::Access.at_least_viewer?("manager")
-      assert Files::Access.at_least_editor?("manager")
-      assert Files::Access.at_least_editor?("editor")
-      assert Files::Access.at_least_manager?("manager")
-    end
-
-    test "足りない権限と権限なしは満たさない" do
-      assert_not Files::Access.at_least_editor?("viewer")
-      assert_not Files::Access.at_least_manager?("editor")
-      assert_not Files::Access.at_least_viewer?(nil)
-      assert_not Files::Access.at_least_viewer?("none")
     end
   end
 

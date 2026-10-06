@@ -19,7 +19,7 @@ class Files::DriveTest < ActiveSupport::TestCase
       assert root.root?
       assert root.drive.shared?
       assert_equal [["全員", "viewer"]], root.permissions.map { |p| [p.group.name, p.role] }
-      assert_equal "viewer", Files::Access.new(@member).role(root)
+      assert_equal "viewer", Files::Access.new(@member).effective_permission(root).role
     end
 
     test "2回目以降は同じルートを返す" do
@@ -34,7 +34,7 @@ class Files::DriveTest < ActiveSupport::TestCase
 
       assert root.drive.personal?
       assert_equal @member, root.drive.owner
-      assert_equal "manager", Files::Access.new(@member).role(root)
+      assert_equal "manager", Files::Access.new(@member).effective_permission(root).role
     end
 
     test "他の利用者には見えない" do
@@ -43,7 +43,7 @@ class Files::DriveTest < ActiveSupport::TestCase
 
       root = Files::Drive.personal_root(@member)
 
-      assert_nil Files::Access.new(other).role(root)
+      assert_nil Files::Access.new(other).effective_permission(root).role
       assert_not_equal root, Files::Drive.personal_root(other)
     end
   end

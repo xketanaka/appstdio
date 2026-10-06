@@ -3,4 +3,4 @@
   <h1 class="truncate text-lg font-bold"><%= t("files.sections.shared_with_me") %></h1>
 </div>
 
-<%= render "files/list", entries: @entries, roles: @roles, empty: t(".empty") %>
+<%= render "files/list", entries: @entries, permissions: @permissions, empty: t(".empty") %>
