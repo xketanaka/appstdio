@@ -1,7 +1,10 @@
 module Management
   class GroupsController < BaseController
     # 画面モック。実データは未実装で、以下はすべて仮の表示用
-    MockGroup = Struct.new(:id, :name, :parent_id, :kind, keyword_init: true)
+    MockGroup = Struct.new(:id, :name, :parent_id, :kind, keyword_init: true) do
+      # パスのヘルパーに渡したとき、ActiveRecord と同じく id を URL に使わせる
+      def to_param = id.to_s
+    end
     MockMember = Struct.new(:display_name, :email, keyword_init: true)
 
     EVERYONE = MockGroup.new(id: 100, name: "全員", parent_id: nil, kind: :everyone)

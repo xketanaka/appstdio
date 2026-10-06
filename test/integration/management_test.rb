@@ -84,7 +84,8 @@ class ManagementTest < ActionDispatch::IntegrationTest
     get management_groups_path
     assert_response :success
 
-    assert_select "#group-tree #everyone-group a", text: "全員"
+    assert_select "#group-tree #everyone-group a[href=?]", management_group_path(100), text: "全員"
+    assert_select "#group-tree a[href=?]", management_group_path(2), text: "営業本部"
     assert_select "#group-tree details > summary a", text: "全社"
     assert_select "#group-tree details details > summary a", text: "営業本部"
     assert_select "#group-tree details details > div a", text: "第一営業部"
