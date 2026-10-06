@@ -8,6 +8,8 @@ AllCops:
   Exclude:
     - 'lib/runners/**/*'
     - 'bin/*'
+    # solid_queue が生成する。手で直しても生成し直すと戻る
+    - 'db/queue_schema.rb'
 
 # スタイルはたくさんでるので適用しない
 Style:
