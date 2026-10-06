@@ -54,15 +54,16 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_select "#file-list span[title=?]", "権限がないため開けません", text: "人事"
     end
 
-    test "権限の無いファイルも名前とオーナー・更新日時・サイズを出す" do
+    test "権限の無いファイルも名前だけは出し、付帯情報は出さない" do
       TenantContext.switch(tenant: @tenant) { grant(@minutes, @everyone, :none) }
       login(@member_user)
       get files_root_path
 
       assert_select "#file-list tbody tr", 3
       assert_select "#file-list span[title=?]", "権限がないため開けません", text: "議事録.docx"
-      assert_select "#file-list tbody tr:nth-child(3) td", "管理者さん"
-      assert_select "#file-list tbody tr:nth-child(3) td", "24.5 KB"
+      assert_select "#file-list tbody tr:nth-child(3) td", text: "管理者さん", count: 0
+      assert_select "#file-list tbody tr:nth-child(3) td", text: "24.5 KB", count: 0
+      assert_select "#file-list tbody tr:nth-child(3) td:nth-child(2)", ""
     end
 
     test "サブフォルダではパンくずに上位のフォルダが出る" do
