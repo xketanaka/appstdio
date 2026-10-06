@@ -92,7 +92,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#group-detail", 0
   end
 
-  test "グループを選ぶと詳細を出し、上位部門には自分と下位を選べない" do
+  test "グループを選ぶと詳細を出し、上位グループには自分と下位を選べない" do
     login(@admin)
     get management_group_path(2)
     assert_response :success
@@ -111,6 +111,16 @@ class ManagementTest < ActionDispatch::IntegrationTest
       assert_select "#sub-members tr", text: /田中 三郎.*第一営業部.*第二営業部/m
       assert_select "p", text: /下位グループを含めて 6人/
     end
+  end
+
+  test "上位グループは階層をたどって表示する" do
+    login(@admin)
+
+    get management_group_path(3)
+    assert_select "#group-parent summary", text: /全社\s*>\s*営業本部/
+
+    get management_group_path(1)
+    assert_select "#group-parent summary", text: /（なし）/
   end
 
   test "「全員」グループは読み取り専用で、サブグループの欄を出さない" do

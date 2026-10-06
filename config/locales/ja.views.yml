@@ -85,7 +85,7 @@ ja:
       header:
         create: "グループを追加"
       tree_column:
-        heading: "グループ（部門）"
+        label: "グループ"
       index:
         title: "グループ管理"
         heading: "グループ管理"
@@ -100,11 +100,12 @@ ja:
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
         no_parent: "（なし）"
+        change: "変更"
         destroy: "このグループを削除"
         total: "下位グループを含めて %{count}人"
         fields:
           name: "グループ名"
-          parent: "上位部門"
+          parent: "上位グループ"
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"

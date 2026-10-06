@@ -48,6 +48,14 @@ module Management
 
       @members = MEMBERS.fetch(@group.id, [])
 
+      @parent_path = []
+      parent_id = @group.parent_id
+      while parent_id
+        parent = DEPARTMENTS.find { |group| group.id == parent_id }
+        @parent_path.unshift(parent)
+        parent_id = parent.parent_id
+      end
+
       descendants = @children.fetch(@group.id, []).dup
       descendants.each { |group| descendants.concat(@children.fetch(group.id, [])) }
 
@@ -58,7 +66,7 @@ module Management
         .map { |member, pairs| [member, pairs.map(&:last)] }
       @total_count = (@members + @sub_members.map(&:first)).uniq.size
 
-      # 自分と自分の下位は上位部門に選べない。「全員」も部門の親にはしない
+      # 自分と自分の下位は上位グループに選べない。「全員」も親にはしない
       excluded = [@group.id] + descendants.map(&:id)
       @parent_options = []
       walk = ->(parent_id, depth) do
