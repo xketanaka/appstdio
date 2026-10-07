@@ -10,7 +10,8 @@ module Files
         array_position(files_nodes.ancestor_ids || files_nodes.id, p.node_id) DESC
     SQL
 
-    def initialize(tenant_user, privileged: true)
+    # privileged: 特権モード中か。管理者・オーナーでなければ true を渡しても効かない
+    def initialize(tenant_user, privileged: false)
       @tenant_user = tenant_user
       @privileged = privileged && tenant_user.admin_or_owner?
     end

@@ -23,6 +23,7 @@ class TenantSelectionsController < ApplicationController
 
   def select(tenant_user)
     session[:current_tenant_id] = tenant_user.tenant_id
+    session.delete(:files_privileged_tenant_id)
     redirect_to(session.delete(:return_to) || top_page_path)
   end
 

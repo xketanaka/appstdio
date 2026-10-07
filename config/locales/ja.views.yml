@@ -29,6 +29,11 @@ ja:
       trash: "ゴミ箱"
     tree:
       label: "ドライブ"
+    privileged_mode:
+      label: "特権モード"
+      description: "すべてのファイル・フォルダに管理者としてアクセスできます"
+      active: "特権モードです。すべてのファイル・フォルダに管理者としてアクセスしています"
+      leave: "特権モードを終える"
     list:
       no_access: "権限がないため開けません"
       row_menu: "この項目の操作"

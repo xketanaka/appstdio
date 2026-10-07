@@ -2,12 +2,16 @@ module Files
   class BaseController < ApplicationController
     layout "files"
 
-    helper_method :tree, :node_label
+    helper_method :tree, :node_label, :privileged_mode?
 
     private
 
     def access
-      @access ||= Access.new(current_tenant_user)
+      @access ||= Access.new(current_tenant_user, privileged: privileged_mode?)
+    end
+
+    def privileged_mode?
+      current_tenant_user.admin_or_owner? && session[:files_privileged_tenant_id] == current_tenant.id
     end
 
     # 描画時に呼ぶ。アクションの中でドライブを作った場合も反映される
