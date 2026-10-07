@@ -1,7 +1,11 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="min-h-0 flex-1 overflow-y-auto">
-  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-    <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
-    <p class="text-sm text-slate-500"><%= t(".coming_soon") %></p>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
+
+<div class="flex min-h-0 flex-1 border-t border-slate-200">
+  <%= render "tree_column", class_name: "w-full lg:w-64 lg:shrink-0 lg:border-r lg:border-slate-200" %>
+  <div class="hidden min-h-0 flex-1 items-center justify-center text-sm text-slate-500 lg:flex">
+    <%= t(".select") %>
   </div>
 </div>

@@ -1,0 +1,21 @@
+<%# locals: (parent_id:) %>
+<% @children.fetch(parent_id, []).each do |group| %>
+  <% current = @group&.id == group.id %>
+  <% link = link_to group.name, management_group_path(group),
+              "aria-current": (current ? "page" : nil),
+              class: class_names("truncate hover:underline", "font-semibold": current) %>
+  <% if @children.key?(group.id) %>
+    <details class="group" open>
+      <summary class="<%= class_names("flex cursor-pointer list-none items-center gap-1.5 rounded px-2 py-1.5 text-sm hover:bg-slate-100 [&::-webkit-details-marker]:hidden", "bg-slate-200/70": current) %>">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+             class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
+          <path d="M8 4l10 8-10 8V4Z" />
+        </svg>
+        <%= link %>
+      </summary>
+      <div class="pl-4"><%= render "tree", parent_id: group.id %></div>
+    </details>
+  <% else %>
+    <div class="<%= class_names("flex items-center rounded py-1.5 pr-2 pl-6.5 text-sm hover:bg-slate-100", "bg-slate-200/70": current) %>"><%= link %></div>
+  <% end %>
+<% end %>
