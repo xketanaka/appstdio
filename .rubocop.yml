@@ -5,6 +5,9 @@ inherit_gem:
 
 # 以下ファイルは対象外
 AllCops:
+  # 指定しないと .ruby-version も Gemfile の ruby も無いため 2.7 として解析し、
+  # 3.0 以降の文法（1行のメソッド定義など）を構文エラーにする
+  TargetRubyVersion: 4.0
   Exclude:
     - 'lib/runners/**/*'
     - 'bin/*'
