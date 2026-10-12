@@ -6,7 +6,7 @@
     <% current = controller_name == key.to_s %>
     <%= link_to t(".items.#{key}"), path,
           "aria-current": (current ? "page" : nil),
-          class: class_names("block px-4 py-2 text-sm hover:bg-slate-100",
-                             "bg-slate-200/70 font-semibold": current) %>
+          class: class_names("mx-2 block rounded-md px-2 py-2 text-sm",
+                             current ? "bg-primary-50 font-semibold text-primary-700" : "hover:bg-slate-100") %>
   <% end %>
 </nav>

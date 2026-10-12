@@ -10,7 +10,7 @@
       <% else %>
         <% @parent_path.each_with_index do |group, i| %>
           <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
-          <%= link_to group.name, management_group_path(group), class: "text-blue-700 hover:underline" %>
+          <%= link_to group.name, management_group_path(group), class: "text-primary-700 hover:underline" %>
         <% end %>
       <% end %>
     </dd>
@@ -54,7 +54,7 @@
                 </td>
                 <td class="py-2 text-right text-sm">
                   <% groups.each do |group| %>
-                    <%= link_to group.name, management_group_path(group), class: "ml-2 inline-block text-blue-700 hover:underline" %>
+                    <%= link_to group.name, management_group_path(group), class: "ml-2 inline-block text-primary-700 hover:underline" %>
                   <% end %>
                 </td>
               </tr>

@@ -252,9 +252,33 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 `class` 属性に直接書く。`@apply` でクラスを作るのは、Tailwind 側が推奨していないので
 避ける。同じ組み合わせが増えてきたら、CSS ではなく partial かヘルパーにまとめる。
 
-`@theme` で変更しているのはフォントスタックのみ（既定のスタックに日本語フォントが
-含まれないため）。色は Tailwind 既定のパレット（slate / blue / green / amber / red）を
-そのまま使っている。
+`@theme` で足しているのは、フォントスタック（既定のスタックに日本語フォントが含まれないため）と
+ブランドカラー `primary`（中身は Tailwind の indigo と同じ値）。
+
+### 見た目の決まりごと
+
+画面ごとに色や角丸を選ぶと、全体がちぐはぐに見える。次の範囲に絞る。
+
+| 用途 | 使うもの |
+|---|---|
+| ブランド・主要な操作・選択中の項目 | `primary`（ボタン `600`、リンク `700`、選択中の背景 `50`） |
+| 文字・線・背景 | `slate`（本文 `800`、補足 `500`、薄い字 `400`、線 `200`、行の境目 `100`） |
+| 状態を伝える色 | 成功 `green` / 注意 `amber` / エラー・削除 `red`。特権モードの表示は `amber` |
+| 角丸 | ボタン・入力欄・メニューの項目 `rounded-md`、ポップアップ `rounded-lg`、ログインのカード `rounded-xl`、丸いもの `rounded-full` |
+| 影 | ボタン・入力欄 `shadow-xs`、ログインのカード `shadow-sm`、ポップアップ `shadow-lg` |
+
+ボタンと入力欄はクラスが長く、使う箇所も多いので `UiHelper` にまとめてある。
+
+```erb
+<%= f.submit t("actions.save"), class: ui_button_class %>
+<%= link_to t(".edit"), path, class: ui_button_class(:secondary, size: :sm) %>
+<%= f.text_field :name, class: ui_input_class %>
+```
+
+左ペインやメニューで選択中の項目は、`bg-primary-50 font-semibold text-primary-700` で示す。
+
+運営者画面だけはヘッダを暗い色（`slate-900`）のままにしている。利用テナント側の画面と
+取り違えないため。
 
 ### 開閉する UI は標準の要素で作る
 
