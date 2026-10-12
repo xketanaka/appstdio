@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rubocop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.2"
+          bundler-cache: true
+
+      # main には直接コミットしない運用なので、自動修正は作業ブランチでだけ行う
+      - name: 自動修正をコミットする
+        if: github.ref != 'refs/heads/main'
+        run: |
+          bundle exec rubocop --autocorrect || true
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "style: rubocop の自動修正を当てる"
+            git push
+          fi
+
+      - name: 違反が残っていないか確かめる
+        run: bundle exec rubocop
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=ja-JP --locale=C.UTF-8"
+          TZ: Asia/Tokyo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      RAILS_ENV: test
+      TZ: Asia/Tokyo
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: appstdio_app
+      DB_PASSWORD: app_password
+      DB_OWNER_USER: appstdio_owner
+      DB_OWNER_PASSWORD: owner_password
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.2"
+          bundler-cache: true
+
+      - name: DB のロールを作る
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/files/db/initdb/01_roles.sql
+        env:
+          PGPASSWORD: password
+
+      - name: テスト用の DB を作る
+        run: bin/rails-as-owner db:create db:schema:load
+
+      - name: CSS をビルドする
+        run: bin/rails tailwindcss:build
+
+      - name: テストを実行する
+        run: bin/rails test:full

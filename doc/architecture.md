@@ -410,3 +410,23 @@ Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つに�
 未定のため。Vite を先に入れても Vue が無いうちは構成を抱えるだけになる。
 なお standalone バイナリでは**第三者製の Tailwind プラグインが使えない**
 （第一者の typography / forms は使える）。これが必要になった時点でも移行の理由になる。
+
+## CI (GitHub Actions)
+
+すべてのブランチへの push で `.github/workflows/ci.yml` が動く。ジョブは2つ。
+
+| ジョブ | 内容 |
+|---|---|
+| `rubocop` | main 以外のブランチでは `rubocop --autocorrect` で直せるものを直し、差分があれば `style: rubocop の自動修正を当てる` としてそのブランチにコミットして push する。そのあと違反が残っていないかを確かめる |
+| `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作ってから `bin/rails test:full` を実行する |
+
+注意すること。
+
+* **自動修正のコミットが積まれたら、手元で pull してから作業を続ける。** そのまま次の
+  コミットを push すると履歴が分かれて push が拒否される
+* 自動修正は安全なもの（`--autocorrect`）だけ。意味が変わりうる修正（`--autocorrect-all`）は
+  行わない。自動で直せない違反が残ればジョブが失敗する
+* GitHub Actions が push したコミットでは、ワークフローは再び動かない。自動修正の
+  コミットに対するテストは走らない（自動修正は書式の修正に限られるため）
+* CI は Docker の開発環境ではなく、GitHub のランナーに直接 Ruby を入れて動かす。
+  開発環境の `RUBYOPT=--parser=parse.y` は vboxsf 向けの対策なので、CI には入れていない
