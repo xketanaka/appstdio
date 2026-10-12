@@ -6,11 +6,19 @@ ja:
         restrict_dependent_destroy:
           has_one: "%{record}が存在しているため削除できません。"
           has_many: "%{record}が存在しているため削除できません。"
+      models:
+        tenant_setting:
+          attributes:
+            logo:
+              invalid_content_type: "は PNG・JPEG・GIF・WebP のいずれかにしてください。"
+              too_large: "は%{count}MB以下にしてください。"
     models:
       tenant: "テナント"
       operator: "運営者"
       user: "ユーザ"
       tenant_user: "テナントユーザ"
+      tenant_setting: "組織設定"
+      files/setting: "ファイル管理の設定"
     attributes:
       tenant:
         id: "テナントID"
@@ -41,6 +49,12 @@ ja:
         last_signed_in_at: "最終ログイン日時"
         created_at: "作成日時"
         updated_at: "更新日時"
+      tenant_setting:
+        title_label: "タイトルラベル"
+        title_color: "タイトルカラー"
+        logo: "ロゴ画像"
+      files/setting:
+        enabled: "ファイル管理"
       tenant_user:
         id: "ID"
         tenant: "テナント"

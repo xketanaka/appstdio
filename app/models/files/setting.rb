@@ -1,6 +1,7 @@
 module Files
   class Setting < ApplicationRecord
-    belongs_to :tenant
+    # 省略すると名前空間を外した :setting を逆の関連と推定し、Tenant#setting（TenantSetting）を上書きする
+    belongs_to :tenant, inverse_of: :files_setting
 
     validates :tenant_id, uniqueness: true
     validates :storage_limit_bytes, numericality: { greater_than: 0 }

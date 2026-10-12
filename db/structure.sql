@@ -526,6 +526,40 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: tenant_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tenant_settings (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    title_label character varying,
+    title_color character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT tenant_settings_title_color_check CHECK (((title_color)::text ~ '^#[0-9a-f]{6}$'::text))
+);
+
+
+--
+-- Name: tenant_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tenant_settings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tenant_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tenant_settings_id_seq OWNED BY public.tenant_settings.id;
+
+
+--
 -- Name: tenant_users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -699,6 +733,13 @@ ALTER TABLE ONLY public.operators ALTER COLUMN id SET DEFAULT nextval('public.op
 
 
 --
+-- Name: tenant_settings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_settings ALTER COLUMN id SET DEFAULT nextval('public.tenant_settings_id_seq'::regclass);
+
+
+--
 -- Name: tenant_users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -822,6 +863,14 @@ ALTER TABLE ONLY public.operators
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: tenant_settings tenant_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_settings
+    ADD CONSTRAINT tenant_settings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1066,6 +1115,13 @@ CREATE UNIQUE INDEX index_operators_on_email ON public.operators USING btree (em
 
 
 --
+-- Name: index_tenant_settings_on_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_tenant_settings_on_tenant_id ON public.tenant_settings USING btree (tenant_id);
+
+
+--
 -- Name: index_tenant_users_on_tenant_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1176,6 +1232,14 @@ ALTER TABLE ONLY public.files_permissions
 
 ALTER TABLE ONLY public.files_nodes
     ADD CONSTRAINT fk_rails_396179183d FOREIGN KEY (drive_id) REFERENCES public.files_drives(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tenant_settings fk_rails_3edf7ce8f1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_settings
+    ADD CONSTRAINT fk_rails_3edf7ce8f1 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -1625,6 +1689,40 @@ CREATE POLICY groups_update ON public.groups FOR UPDATE TO appstdio_app USING ((
 ALTER TABLE public.operators ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: tenant_settings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.tenant_settings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: tenant_settings tenant_settings_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_settings_delete ON public.tenant_settings FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_settings tenant_settings_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_settings_insert ON public.tenant_settings FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_settings tenant_settings_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_settings_select ON public.tenant_settings FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_settings tenant_settings_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_settings_update ON public.tenant_settings FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
 -- Name: tenant_users; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1665,6 +1763,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261012100000'),
 ('20261012064301'),
 ('20261006100000'),
 ('20261005120000'),
