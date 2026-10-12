@@ -77,7 +77,9 @@
 
     <% if logged_in? %>
       <%= render layout: "partial/drawer" do %>
-        <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>
+        <% if current_tenant&.files_setting&.enabled? %>
+          <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>
+        <% end %>
         <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
         <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
         <% if current_tenant_user&.admin_or_owner? %>
