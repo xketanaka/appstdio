@@ -1,0 +1,32 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
+
+<div class="flex min-h-0 flex-1 border-t border-slate-200">
+  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-200 lg:block" %>
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+      <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-blue-700 hover:underline lg:hidden" %>
+      <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+      <div id="group-form">
+        <div class="mb-5">
+          <%= label_tag :group_name, t(".name"), class: "mb-1.5 block text-sm font-semibold" %>
+          <%= text_field_tag :group_name, nil, autofocus: true,
+                class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+        </div>
+
+        <%= render "parent_field" %>
+
+        <div class="flex items-center gap-4 border-t border-slate-200 pt-4">
+          <%= button_tag t(".submit"), type: "button",
+                class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
+          <%= link_to t(".cancel"), (@parent_path.any? ? management_group_path(@parent_path.last) : management_groups_path),
+                class: "text-sm text-slate-600 hover:underline" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

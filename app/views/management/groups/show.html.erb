@@ -1,0 +1,22 @@
+<% content_for :title do %><%= t(".title", name: @group.name) %><% end -%>
+<div class="shrink-0 px-4 py-3">
+  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+</div>
+
+<div class="flex min-h-0 flex-1 border-t border-slate-200">
+  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-200 lg:block" %>
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+      <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-blue-700 hover:underline lg:hidden" %>
+      <div class="mb-5 flex items-center justify-between gap-4">
+        <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
+        <% if @group.kind != :everyone %>
+          <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group",
+                class: "shrink-0 rounded border border-slate-300 px-4 py-1.5 text-sm font-semibold hover:bg-slate-100" %>
+        <% end %>
+      </div>
+      <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>
+    </div>
+  </div>
+</div>
