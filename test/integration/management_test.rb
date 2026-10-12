@@ -34,7 +34,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "dialog[data-drawer] nav a[href=?]", management_root_path, 0
     assert_select "dialog[data-drawer] nav", text: /管理/, count: 0
 
-    [management_users_path, management_groups_path, management_tenants_path].each do |path|
+    [management_users_path, management_groups_path, management_tenant_setting_path].each do |path|
       get path
       assert_response :not_found
     end
@@ -48,7 +48,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select "#side-pane a", 3
-    assert_select "#side-pane", text: /\A管理\s*利用者管理.*グループ管理.*組織管理/m
+    assert_select "#side-pane", text: /\A管理\s*利用者管理.*グループ管理.*組織設定/m
     assert_select "#side-pane a[aria-current=page]", text: "利用者管理"
     assert_select "h1", text: "利用者管理"
 
@@ -60,7 +60,7 @@ class ManagementTest < ActionDispatch::IntegrationTest
   test "左ペインでグループ管理・組織管理に切り替えられる" do
     login(@admin)
     { management_groups_path => "グループ管理",
-      management_tenants_path => "組織管理" }.each do |path, label|
+      management_tenant_setting_path => "組織設定" }.each do |path, label|
       get path
       assert_response :success
       assert_select "#side-pane a[aria-current=page]", text: label
@@ -69,10 +69,10 @@ class ManagementTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "組織管理には自分のテナントの情報を出す" do
+  test "組織設定には自分のテナントの情報を出す" do
     Tenant.setup!(name: "テナントB")
     login(@admin)
-    get management_tenants_path
+    get management_tenant_setting_path
 
     assert_select "#tenant dd", text: "テナントA"
     assert_select "#tenant dd", text: @tenant.id

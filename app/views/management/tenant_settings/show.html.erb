@@ -1,0 +1,60 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div class="mb-6 flex items-center justify-between gap-4">
+      <h1 class="text-xl font-bold"><%= t(".heading") %></h1>
+      <%= link_to t(".edit"), edit_management_tenant_setting_path, id: "edit-tenant-setting",
+            class: ui_button_class(:secondary, size: :sm) %>
+    </div>
+
+    <h2 class="mb-3 text-sm font-semibold text-slate-500"><%= t(".sections.basic") %></h2>
+    <dl id="tenant" class="mb-8 grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] sm:gap-y-2">
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:name) %></dt>
+      <dd class="mb-2 sm:mb-0"><%= current_tenant.name %></dd>
+
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:id) %></dt>
+      <dd class="mb-2 font-mono text-sm break-all sm:mb-0"><%= current_tenant.id %></dd>
+
+      <dt class="text-sm text-slate-500"><%= Tenant.human_attribute_name(:created_at) %></dt>
+      <dd class="mb-2 sm:mb-0"><%= time_to_s(current_tenant.created_at) %></dd>
+    </dl>
+
+    <h2 class="mb-3 border-t border-slate-200 pt-6 text-sm font-semibold text-slate-500"><%= t(".sections.appearance") %></h2>
+    <dl id="tenant-appearance" class="mb-8 grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] sm:gap-y-3">
+      <dt class="text-sm text-slate-500"><%= TenantSetting.human_attribute_name(:title_label) %></dt>
+      <dd class="mb-2 sm:mb-0">
+        <% if @setting.title_label %>
+          <%= @setting.title_label %>
+        <% else %>
+          <span class="text-slate-500"><%= t(".default_label", title: Settings.system_title) %></span>
+        <% end %>
+      </dd>
+
+      <dt class="text-sm text-slate-500"><%= TenantSetting.human_attribute_name(:title_color) %></dt>
+      <dd class="mb-2 flex items-center gap-2 sm:mb-0">
+        <% if @setting.title_color %>
+          <span class="size-5 rounded-md border border-slate-300" style="background-color: <%= @setting.title_color %>" aria-hidden="true"></span>
+          <span class="font-mono text-sm"><%= @setting.title_color %></span>
+        <% else %>
+          <span class="text-slate-500"><%= t(".default_color") %></span>
+        <% end %>
+      </dd>
+
+      <dt class="text-sm text-slate-500"><%= TenantSetting.human_attribute_name(:logo) %></dt>
+      <dd class="mb-2 sm:mb-0">
+        <% if @setting.logo.attached? %>
+          <%= image_tag @setting.logo, alt: TenantSetting.human_attribute_name(:logo),
+                class: "h-10 w-auto rounded-md border border-slate-200 bg-slate-50 p-1" %>
+        <% else %>
+          <span class="text-slate-500"><%= t(".no_logo") %></span>
+        <% end %>
+      </dd>
+    </dl>
+
+    <h2 class="mb-3 border-t border-slate-200 pt-6 text-sm font-semibold text-slate-500"><%= t(".sections.features") %></h2>
+    <dl id="tenant-features" class="grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] sm:gap-y-3">
+      <dt class="text-sm text-slate-500"><%= Files::Setting.human_attribute_name(:enabled) %></dt>
+      <dd class="mb-2 sm:mb-0"><%= t(".files_enabled.#{@files_setting.enabled?}") %></dd>
+    </dl>
+  </div>
+</div>

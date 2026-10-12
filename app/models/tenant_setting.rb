@@ -2,7 +2,7 @@ class TenantSetting < ApplicationRecord
   # SVG はスクリプトを埋め込めるので受け付けない
   LOGO_CONTENT_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"].freeze
   LOGO_MAX_BYTES = 1.megabyte
-  # 未設定のときのヘッダーの背景（bg-white）と同じ色
+  # 未設定のときのヘッダーの背景（bg-white）と同じ色。カラーピッカーの初期値にも使う
   DEFAULT_TITLE_COLOR = "#ffffff"
 
   belongs_to :tenant
