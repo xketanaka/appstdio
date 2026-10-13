@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  --font-sans: "Noto Sans JP", system-ui, "Hiragino Kaku Gothic ProN", sans-serif;
 
   --color-primary-50: oklch(96.2% 0.018 272.314);
   --color-primary-100: oklch(93% 0.034 272.788);

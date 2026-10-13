@@ -87,8 +87,11 @@ services:
       - ".:/opt/app-root/appstdio"
       - "./docker/volumes/bundle:/usr/local/bundle"
     working_dir: /opt/app-root/appstdio
+    # vboxsf ではファイルの変更が通知されないので、ポーリングで監視する（gem の rake タスクは --poll を渡せない）。
     # always を付けないと、tty の無いコンテナでは監視が始まらずに終了する
-    command: sh -c "bundle install; bin/rails 'tailwindcss:watch[always]'"
+    command: >-
+      sh -c "bundle install; bundle exec tailwindcss
+      -i app/assets/tailwind/application.css -o app/assets/builds/tailwind.css --watch=always --poll=5000"
     restart: always
     environment:
       HOME: ''

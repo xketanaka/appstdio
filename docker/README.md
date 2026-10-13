@@ -85,6 +85,11 @@ docker compose exec app bin/rails-as-owner console
 `css` サービスがファイルを監視して自動でビルドする。`docker compose up` に含まれている
 ので通常は意識しなくてよい。
 
+共有フォルダ（vboxsf）ではファイルの変更が通知されないため、5秒ごとのポーリングで監視している。
+変更してから CSS に反映されるまで最大5秒かかり、CPU を少し（1コアの1〜2%程度）使い続ける。
+gem の `tailwindcss:watch` タスクはポーリングを指定できないので、`docker-compose.yml` では
+Tailwind の CLI を直接呼んでいる。
+
 - 入力: `app/assets/tailwind/application.css`
 - 出力: `app/assets/builds/tailwind.css`（git 管理外）
 
