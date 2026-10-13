@@ -2,6 +2,8 @@ class TenantSetting < ApplicationRecord
   # SVG はスクリプトを埋め込めるので受け付けない
   LOGO_CONTENT_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"].freeze
   LOGO_MAX_BYTES = 1.megabyte
+  # 未設定のときのヘッダーの背景（bg-white）と同じ色
+  DEFAULT_TITLE_COLOR = "#ffffff"
 
   belongs_to :tenant
   has_one_attached :logo
@@ -16,9 +18,7 @@ class TenantSetting < ApplicationRecord
 
   # 背景が明るく、白い文字では読めないか。WCAG のコントラスト比で白と黒を比べる
   def light_title_color?
-    return false if title_color.nil?
-
-    channels = title_color.delete_prefix("#").scan(/../).map do |hex|
+    channels = (title_color || DEFAULT_TITLE_COLOR).delete_prefix("#").scan(/../).map do |hex|
       value = hex.to_i(16) / 255.0
       value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055)**2.4
     end

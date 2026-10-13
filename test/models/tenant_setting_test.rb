@@ -31,7 +31,7 @@ class TenantSettingTest < ActiveSupport::TestCase
       assert_predicate @setting.errors[:title_color], :present?
     end
 
-    test "明るい色なら黒い文字、暗い色や未設定なら白い文字にする" do
+    test "明るい色や未設定（既定の白）なら黒い文字、暗い色なら白い文字にする" do
       @setting.title_color = "#fde047"
       assert_predicate @setting, :light_title_color?
 
@@ -39,7 +39,7 @@ class TenantSettingTest < ActiveSupport::TestCase
       assert_not_predicate @setting, :light_title_color?
 
       @setting.title_color = nil
-      assert_not_predicate @setting, :light_title_color?
+      assert_predicate @setting, :light_title_color?
     end
   end
 
