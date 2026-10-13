@@ -91,7 +91,7 @@ services:
     # always を付けないと、tty の無いコンテナでは監視が始まらずに終了する
     command: >-
       sh -c "bundle install; bundle exec tailwindcss
-      -i app/assets/tailwind/application.css -o app/assets/builds/tailwind.css --watch=always --poll=1000"
+      -i app/assets/tailwind/application.css -o app/assets/builds/tailwind.css --watch=always --poll=5000"
     restart: always
     environment:
       HOME: ''
