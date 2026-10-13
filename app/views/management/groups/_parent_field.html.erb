@@ -12,12 +12,12 @@
           <% end %>
         <% end %>
       </span>
-      <span class="shrink-0 cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100 group-open:hidden"><%= t(".change") %></span>
+      <span class="<%= ui_button_class(:secondary, size: :sm, extra: "group-open:hidden") %>"><%= t(".change") %></span>
     </span>
   </summary>
   <%= label_tag :group_parent_id, t(".label"), class: "sr-only" %>
   <%= select_tag :group_parent_id,
         options_for_select(@parent_options, @parent_path.last&.id),
         include_blank: t(".no_parent"),
-        class: "mt-2 block w-full rounded border border-slate-300 bg-white px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+        class: class_names(ui_input_class, "mt-2") %>
 </details>

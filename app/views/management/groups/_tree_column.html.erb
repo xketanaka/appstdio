@@ -3,7 +3,7 @@
   <div class="mb-2 flex justify-end border-b border-slate-200 pb-3">
     <%= link_to new_management_group_path(parent_id: (@group.id if @group && @group.kind != :everyone)),
           id: "new-group",
-          class: "flex items-center gap-1.5 rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700" do %>
+          class: ui_button_class(size: :sm) do %>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
         <path stroke-linecap="round" d="M12 5v14M5 12h14" />
       </svg>
@@ -13,10 +13,10 @@
 
   <nav id="group-tree" aria-label="<%= t(".label") %>">
     <% current = @group&.id == @everyone.id %>
-    <div id="everyone-group" class="<%= class_names("flex items-center", "font-semibold": current) %>">
+    <div id="everyone-group" class="flex items-center">
       <%= link_to @everyone.name, management_group_path(@everyone),
             "aria-current": (current ? "page" : nil),
-            class: class_names("block w-full truncate rounded py-1.5 pr-2 pl-6.5 text-sm hover:bg-slate-100 hover:underline", "bg-slate-200/70": current) %>
+            class: class_names("block w-full truncate rounded-md py-1.5 pr-2 pl-6.5 text-sm", current ? "bg-primary-50 font-semibold text-primary-700" : "hover:bg-slate-100") %>
     </div>
     <%= render "tree", parent_id: nil %>
   </nav>

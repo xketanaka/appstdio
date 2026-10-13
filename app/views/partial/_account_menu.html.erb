@@ -1,11 +1,11 @@
 <%# data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.js が拾っている） %>
 <details class="relative" data-dropdown>
-  <summary class="flex cursor-pointer list-none items-center rounded-full focus-visible:outline-2 focus-visible:outline-white [&::-webkit-details-marker]:hidden"
+  <summary class="flex cursor-pointer list-none items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 [&::-webkit-details-marker]:hidden"
            aria-label="<%= label %>">
     <%= render "partial/avatar" %>
   </summary>
 
-  <div class="absolute right-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white py-2 text-slate-800 shadow-lg">
+  <div class="absolute right-0 z-10 mt-2 w-60 rounded-lg bg-white py-2 ring-1 ring-slate-900/10 text-slate-800 shadow-lg">
     <div class="border-b border-slate-200 px-4 pb-2">
       <div class="font-semibold"><%= name %></div>
       <div class="text-xs break-all text-slate-500"><%= email %></div>

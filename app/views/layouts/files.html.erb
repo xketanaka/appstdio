@@ -9,7 +9,7 @@
     <div role="status" class="flex shrink-0 items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
       <span><%= t("files.privileged_mode.active") %></span>
       <%= button_to t("files.privileged_mode.leave"), files_privileged_mode_path, method: :delete,
-            class: "shrink-0 cursor-pointer rounded border border-amber-300 bg-white px-3 py-1 hover:bg-amber-100" %>
+            class: "shrink-0 cursor-pointer rounded-md bg-white px-3 py-1 font-semibold shadow-xs ring-1 ring-amber-300 ring-inset hover:bg-amber-100" %>
     </div>
   <% end %>
 <% end %>

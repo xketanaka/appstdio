@@ -17,7 +17,7 @@
   </div>
   <% if @can_edit %>
     <%= button_tag type: "button",
-          class: "flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 sm:px-4" do %>
+          class: ui_button_class(size: :sm) do %>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
         <path stroke-linecap="round" d="M12 5v14M5 12h14" />
       </svg>

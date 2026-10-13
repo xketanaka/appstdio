@@ -10,11 +10,11 @@
         <%= f.label :display_name, TenantUser.human_attribute_name(:display_name),
               class: "mb-1.5 block text-sm font-semibold" %>
         <%= f.text_field :display_name,
-              class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+              class: ui_input_class %>
       </div>
 
       <%= f.submit t("actions.save"),
-            class: "cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
+            class: ui_button_class %>
     <% end %>
 
     <dl class="mt-8 grid gap-x-4 gap-y-1 border-t border-slate-200 pt-6 sm:grid-cols-[10rem_1fr] sm:gap-y-2">

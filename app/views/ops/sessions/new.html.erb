@@ -1,21 +1,21 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
 <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-10">
-  <div class="mx-auto max-w-md rounded-lg border border-slate-200 bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
+  <div class="mx-auto max-w-md rounded-xl border border-slate-200 bg-white px-5 shadow-sm pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8">
   <h1 class="mb-6 text-xl font-bold"><%= t(".heading") %></h1>
 
   <%= form_with url: ops_login_path, method: :post do |f| %>
     <div class="mb-5">
       <%= f.label :email, Operator.human_attribute_name(:email), class: "mb-1.5 block text-sm font-semibold" %>
       <%= f.email_field :email, value: params[:email], autofocus: true,
-            autocomplete: "username", class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+            autocomplete: "username", class: ui_input_class %>
     </div>
 
     <div class="mb-5">
       <%= f.label :password, Operator.human_attribute_name(:password), class: "mb-1.5 block text-sm font-semibold" %>
-      <%= f.password_field :password, autocomplete: "current-password", class: "block w-full rounded border border-slate-300 px-3 py-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600/25" %>
+      <%= f.password_field :password, autocomplete: "current-password", class: ui_input_class %>
     </div>
 
-    <%= f.submit t("actions.login"), class: "w-full cursor-pointer rounded bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700" %>
+    <%= f.submit t("actions.login"), class: ui_button_class(extra: "w-full") %>
   <% end %>
 </div>
 </div>
