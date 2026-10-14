@@ -64,7 +64,9 @@ Docker コンテナ内で実行する。セットアップ・DB接続・テス�
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
 
-CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。`css` サービスが監視してビルドする（出力の `app/assets/builds/tailwind.css` は git 管理外）。詳細は `doc/architecture.md` の「CSS」を参照。
+JavaScript と CSS は Vite でビルドする。`vite` サービスが開発サーバを動かす。npm のコマンドは `vite` コンテナの中で実行する（`node_modules` はホストから見えない）。画面は ERB が基本で、ファイル画面だけ Vue.js（TypeScript）で作る。どの画面を Vue.js にするかの基準は `doc/architecture.md` の「フロントエンド」を参照。
+
+CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。詳細は `doc/architecture.md` の「CSS」を参照。
 
 **文言はソースコードに直接書かず、`config/locales` に置くこと。** ビューでは lazy lookup（`t(".title")`）を使う。詳細は `doc/architecture.md` の「国際化」を参照。
 

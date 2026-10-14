@@ -7,12 +7,10 @@ gem "pg", "~> 1.6"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 
-# Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
-gem "importmap-rails"
 gem "propshaft"
 
-# Use Tailwind CSS [https://github.com/rails/tailwindcss-rails]
-gem "tailwindcss-rails"
+# JavaScript / CSS は Vite でビルドする [https://vite-ruby.netlify.app/]
+gem "vite_rails"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"

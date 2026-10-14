@@ -36,6 +36,24 @@ jobs:
       - name: 違反が残っていないか確かめる
         run: bundle exec rubocop
 
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型を検査する
+        run: npm run typecheck
+
+      - name: テストを実行する
+        run: npm test
+
   test:
     runs-on: ubuntu-latest
     services:
@@ -70,6 +88,13 @@ jobs:
           ruby-version: "4.0.2"
           bundler-cache: true
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
       - name: DB のロールを作る
         run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/files/db/initdb/01_roles.sql
         env:
@@ -78,8 +103,8 @@ jobs:
       - name: テスト用の DB を作る
         run: bin/rails-as-owner db:create db:schema:load
 
-      - name: CSS をビルドする
-        run: bin/rails tailwindcss:build
+      - name: JavaScript と CSS をビルドする
+        run: bin/vite build
 
       - name: テストを実行する
         run: bin/rails test:full

@@ -1,14 +1,14 @@
-// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-
-const closeDropdowns = (except) => {
-  document.querySelectorAll("details[data-dropdown][open]").forEach((dropdown) => {
+const closeDropdowns = (except: Element | null) => {
+  document.querySelectorAll<HTMLDetailsElement>("details[data-dropdown][open]").forEach((dropdown) => {
     if (dropdown !== except) dropdown.open = false
   })
 }
 
-const drawer = () => document.querySelector("[data-drawer]")
+const drawer = () => document.querySelector<HTMLDialogElement>("[data-drawer]")
 
 document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return
+
   closeDropdowns(event.target.closest("details[data-dropdown]"))
 
   if (event.target.closest("[data-drawer-open]")) {

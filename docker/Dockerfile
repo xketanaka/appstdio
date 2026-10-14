@@ -26,8 +26,11 @@ RUN echo \
   "deb [signed-by=/etc/apt/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt \
   $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list > /dev/null
 RUN apt-get update && apt-get install -y libpq-dev postgresql-client-18
-# JavaScriptの実行用のパッケージをインストール
-RUN apt-get install -y libv8-dev nodejs
+## フロントエンドのビルド（Vite）用の Node。Debian の nodejs には npm が付かず版も古いので、公式イメージから持ってくる
+COPY --from=node:24-trixie-slim /usr/local/bin/node /usr/local/bin/
+COPY --from=node:24-trixie-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 ## dockerコマンドインストール
 RUN mkdir -p /etc/apt/keyrings && \

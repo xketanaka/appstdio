@@ -21,8 +21,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400..700&display=swap">
-    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
+    <%= vite_client_tag %>
+    <%= vite_stylesheet_tag "application" %>
+    <%= vite_typescript_tag "application" %>
   </head>
   <body class="flex h-dvh flex-col overflow-hidden bg-white leading-relaxed text-slate-800">
     <header id="site-header"
