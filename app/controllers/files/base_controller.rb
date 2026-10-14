@@ -2,9 +2,17 @@ module Files
   class BaseController < ApplicationController
     layout "files"
 
+    before_action :files_enabled_required
+
     helper_method :tree, :node_label, :privileged_mode?
 
     private
+
+    def files_enabled_required
+      return if current_tenant.files_setting&.enabled?
+
+      render file: Rails.root.join("public/404.html"), status: :not_found, layout: false
+    end
 
     def access
       @access ||= Access.new(current_tenant_user, privileged: privileged_mode?)

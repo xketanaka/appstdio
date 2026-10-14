@@ -81,7 +81,7 @@ ja:
       items:
         users: "利用者管理"
         groups: "グループ管理"
-        tenants: "組織管理"
+        tenant_settings: "組織設定"
     users:
       index:
         title: "利用者管理"
@@ -139,10 +139,36 @@ ja:
           add: "メンバーを追加"
           remove: "外す"
           empty: "直接所属しているメンバーはいません。"
-    tenants:
-      index:
-        title: "組織管理"
-        heading: "組織管理"
+    tenant_settings:
+      show:
+        title: "組織設定"
+        heading: "組織設定"
+        edit: "編集"
+        default_label: "未設定（%{title} を表示）"
+        default_color: "未設定（既定の色）"
+        no_logo: "未設定"
+        sections:
+          basic: "基本情報"
+          appearance: "表示"
+          features: "機能"
+        files_enabled:
+          "true": "利用する"
+          "false": "利用しない"
+      edit:
+        title: "組織設定の編集"
+        heading: "組織設定の編集"
+        use_default_color: "既定の色を使う"
+        remove_logo: "ロゴを削除する"
+        files_enabled: "ファイル管理を利用する"
+        cancel: "キャンセル"
+        sections:
+          appearance: "表示"
+          features: "機能"
+        hints:
+          title_label: "画面左上に表示する名前です。空にすると %{title} を表示します（ロゴがあればロゴだけを表示します）。"
+          title_color: "画面上部の背景色です。文字の色は背景の明るさに合わせて白か黒になります。"
+          logo: "PNG・JPEG・GIF・WebP、%{size}MB まで。タイトルラベルの左に表示します。"
+          files_enabled: "利用しないにすると、メニューから「ファイル」が消え、ファイルの画面を開けなくなります。保存されているファイルは削除されません。"
 
   ops:
     sessions:

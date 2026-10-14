@@ -1,7 +1,9 @@
+<% setting = current_tenant&.setting -%>
+<% light = setting.nil? || setting.light_title_color? -%>
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || Settings.system_title %></title>
+    <title><%= [[Settings.system_title, setting&.title_label].compact.join(" | "), content_for(:title)].compact_blank.join(" - ") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="AppStdio">
@@ -23,26 +25,38 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="flex h-dvh flex-col overflow-hidden bg-white leading-relaxed text-slate-800">
-    <header class="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2.5 sm:gap-4 sm:px-6">
+    <header id="site-header"
+            class="<%= class_names("flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 px-3 py-2.5 sm:gap-4 sm:px-6",
+                                   "bg-white": setting&.title_color.nil?, "text-white": !light) %>"
+            <% if setting&.title_color %>style="background-color: <%= setting.title_color %>"<% end %>>
       <div class="flex min-w-0 items-center gap-2 sm:gap-3">
         <% if logged_in? %>
           <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
-                  class="-ml-2 cursor-pointer rounded-md p-2 text-slate-500 hover:bg-slate-100">
+                  class="<%= class_names("-ml-2 cursor-pointer rounded-md p-2",
+                                         "text-slate-500 hover:bg-black/5": light, "text-white/80 hover:bg-white/10": !light) %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  class="size-5" aria-hidden="true">
               <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
             </svg>
           </button>
         <% end %>
-        <div class="flex min-w-0 items-center gap-2 font-bold">
-          <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-600 text-sm text-white" aria-hidden="true"><%= Settings.system_title.first %></span>
-          <span class="truncate"><%= Settings.system_title %></span>
+        <% title = setting&.title_label || Settings.system_title %>
+        <div id="site-title" class="flex min-w-0 items-center gap-2 font-bold">
+          <% if setting&.logo&.attached? %>
+            <%= image_tag setting.logo, alt: title, class: "h-7 w-auto shrink-0" %>
+          <% else %>
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-600 text-sm text-white" aria-hidden="true"><%= title.first %></span>
+          <% end %>
+          <% if setting&.title_label || !setting&.logo&.attached? %>
+            <span class="truncate"><%= title %></span>
+          <% end %>
         </div>
       </div>
       <% if logged_in? %>
         <div class="flex min-w-0 shrink-0 items-center gap-2 text-sm sm:gap-3">
           <% if current_tenant %>
-            <span class="hidden max-w-40 truncate rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-700 sm:inline-block"><%= current_tenant.name %></span>
+            <span class="<%= class_names("hidden max-w-40 truncate rounded-full px-2.5 py-0.5 sm:inline-block",
+                                         "bg-slate-100 text-slate-700": light, "bg-white/15": !light) %>"><%= current_tenant.name %></span>
           <% end %>
           <%= render layout: "partial/account_menu",
                 locals: { label: t(".account_menu"),
@@ -63,7 +77,9 @@
 
     <% if logged_in? %>
       <%= render layout: "partial/drawer" do %>
-        <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>
+        <% if current_tenant&.files_setting&.enabled? %>
+          <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>
+        <% end %>
         <%= render "partial/drawer_item", label: t("menus.pages"), path: nil %>
         <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
         <% if current_tenant_user&.admin_or_owner? %>

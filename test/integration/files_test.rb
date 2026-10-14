@@ -284,6 +284,24 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "ファイル管理を利用しない" do
+    setup do
+      TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(enabled: false) }
+    end
+
+    test "メニューに「ファイル」を出さず、画面を開くと404" do
+      login(@owner_user)
+
+      get top_page_path
+      assert_select "dialog[data-drawer] a[href=?]", files_root_path, 0
+
+      [files_root_path, files_folder_path(@sales), files_my_drive_path, files_trash_path].each do |path|
+        get path
+        assert_response :not_found
+      end
+    end
+  end
+
   private
 
   def login(user)

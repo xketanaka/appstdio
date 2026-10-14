@@ -21,6 +21,12 @@ class RowLevelSecurityTest < ActiveSupport::TestCase
     TenantContext.clear
   end
 
+  test "組織設定は自テナントの行しか見えない" do
+    TenantContext.switch(tenant: @tenant_a) do
+      assert_equal [@tenant_a.id], TenantSetting.pluck(:tenant_id)
+    end
+  end
+
   test "テナントのコンテキストでは自テナントの所属情報しか見えない" do
     TenantContext.switch(tenant: @tenant_a) do
       assert_equal [@membership_a.id], TenantUser.pluck(:id)
