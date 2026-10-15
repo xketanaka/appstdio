@@ -13,7 +13,8 @@ export default defineConfig({
     allowedHosts: ["vite", ...(process.env.RAILS_DEVELOPMENT_HOSTS?.split(",") ?? [])],
     // vboxsf ではファイルの変更が通知されない
     watch: { usePolling: true, interval: 1000 },
-    hmr: { clientPort: Number(process.env.VITE_LISTEN_PORT ?? 3036) },
+    // ブラウザが HMR の WebSocket をつなぐポート。リバースプロキシ越しなら、そのポート（443 など）にする
+    hmr: { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT || process.env.VITE_LISTEN_PORT || 3036) },
   },
   test: {
     environment: "jsdom",

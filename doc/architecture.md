@@ -491,7 +491,9 @@ TypeScript は 6 系に留めている。7 系（Go への移植版）は `vue-t
 
 `vite` サービスが Vite の開発サーバを動かす。ブラウザはアセットを Rails から受け取り、
 Rails がそれを `vite` サービスへ中継する（`VITE_RUBY_HOST=vite`）。変更の即時反映（HMR）の
-WebSocket だけは、ブラウザから `vite` サービスのポート（既定 3036）へ直接つなぐ。
+WebSocket だけは Rails を通せない（Rails の中継は WebSocket を扱わない）ので、ブラウザから
+`vite` サービスへつなぐ。リバースプロキシ越しに使うときは、プロキシで `/vite-dev/` を
+`vite` サービスへ回し、`VITE_HMR_CLIENT_PORT` をプロキシのポートにする（`docker/README.md`）。
 
 * Vite は既定で知らないホスト名からのアクセスを拒むので、`vite.config.ts` の
   `allowedHosts` に `vite` と `RAILS_DEVELOPMENT_HOSTS` を渡している

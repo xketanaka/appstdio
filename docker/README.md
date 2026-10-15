@@ -99,6 +99,45 @@ docker compose exec vite npm run lint:fix    # ESLint（直せるものは直す
 docker compose exec vite bin/vite build      # 本番用のビルド（public/vite）
 ```
 
+### リバースプロキシ越しに使う場合
+
+ブラウザは HMR の WebSocket を「アドレスバーのホスト名」の `VITE_HMR_CLIENT_PORT` 番
+（未設定なら `VITE_LISTEN_PORT`）へつなぐ。https のページからは `wss` になる。
+リバースプロキシのポートだけを開けて使うときは、`.env` に
+
+```
+VITE_HMR_CLIENT_PORT=443
+```
+
+を書き、プロキシで `/vite-dev/` を `vite` サービスへ回す（WebSocket の切り替えを通す）。
+nginx の例。
+
+```nginx
+# http ブロックに置く
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+server {
+  # ...（https の設定と、/ を app の 3000 番へ回す設定は今のまま）
+
+  location /vite-dev/ {
+    proxy_pass http://<VM のアドレス>:<VITE_LISTEN_PORT>;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Host $host;
+  }
+}
+```
+
+* `Host` はブラウザが開いたホスト名のまま渡すこと。Vite は知らないホスト名を拒み、
+  `RAILS_DEVELOPMENT_HOSTS` に書いたものだけを許している
+* `/vite-dev/` は HTTP の要求もこの経路で `vite` サービスへ直接届く（Rails の中継を通らない）。
+  どちらを通っても同じものが返る
+* 繋がらなくても画面は動く。保存した変更の自動反映が効かず、手で再読み込みが要るだけ
+
 **npm のパッケージを足すときも `vite` コンテナの中で行う。** `node_modules` は Docker の
 名前付きボリュームにあり、ホスト側からは見えない（vboxsf ではシンボリックリンクを作れないため）。
 

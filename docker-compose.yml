@@ -106,6 +106,7 @@ services:
       RUBYOPT: "-W:deprecated --parser=parse.y"
       VITE_RUBY_HOST: "0.0.0.0"
       VITE_LISTEN_PORT: ${VITE_LISTEN_PORT:-3036}
+      VITE_HMR_CLIENT_PORT: ${VITE_HMR_CLIENT_PORT:-}
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
 
 # npm は node_modules にシンボリックリンクを作るが、vboxsf では作れない。コード側のボリュームに重ねて置く
