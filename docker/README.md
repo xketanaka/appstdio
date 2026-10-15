@@ -95,6 +95,7 @@ docker compose exec app bin/rails-as-owner console
 ```bash
 docker compose exec vite npm run typecheck   # 型の検査
 docker compose exec vite npm test            # Vitest
+docker compose exec vite npm run lint:fix    # ESLint（直せるものは直す）
 docker compose exec vite bin/vite build      # 本番用のビルド（public/vite）
 ```
 

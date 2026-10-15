@@ -462,6 +462,7 @@ JavaScript と CSS は Vite でビルドする（`vite_rails`）。画面の多�
 | 入口 | `app/javascript/entrypoints/`。ERB の画面は `application.ts` と `application.css` |
 | 言語 | TypeScript。型の検査は `npm run typecheck`（`vue-tsc`） |
 | テスト | Vitest + jsdom + Vue Test Utils。`*.test.ts` を部品の隣に置く。`npm test` |
+| 書式の検査 | ESLint（`eslint.config.js`）。各推奨設定に、二重引用符・セミコロン無しなどの書式を足した緩めの設定。`npm run lint` / `npm run lint:fix` |
 | 文言 | `config/locales` に置く（ERB と同じ）。Vue の画面へは入れ物のページで渡す |
 
 TypeScript は 6 系に留めている。7 系（Go への移植版）は `vue-tsc` が使う内部の API を
@@ -508,8 +509,8 @@ WebSocket だけは、ブラウザから `vite` サービスのポート（既�
 
 | ジョブ | 内容 |
 |---|---|
+| `lint` | main 以外のブランチでは `rubocop --autocorrect` と `npm run lint:fix`（ESLint）で直せるものを直し、差分があれば `style: rubocop と ESLint の自動修正を当てる` としてそのブランチにコミットして push する。そのあと両方とも違反が残っていないかを確かめる |
 | `frontend` | `npm run typecheck` で型を検査し、`npm test` で Vitest を実行する |
-| `rubocop` | main 以外のブランチでは `rubocop --autocorrect` で直せるものを直し、差分があれば `style: rubocop の自動修正を当てる` としてそのブランチにコミットして push する。そのあと違反が残っていないかを確かめる |
 | `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作り、`bin/vite build` でアセットをビルドしてから `bin/rails test:full` を実行する |
 
 注意すること。
@@ -518,6 +519,8 @@ WebSocket だけは、ブラウザから `vite` サービスのポート（既�
   コミットを push すると履歴が分かれて push が拒否される
 * 自動修正は安全なもの（`--autocorrect`）だけ。意味が変わりうる修正（`--autocorrect-all`）は
   行わない。自動で直せない違反が残ればジョブが失敗する
+* rubocop と ESLint の自動修正を1つのジョブにまとめているのは、別のジョブにすると両方が
+  同じブランチへ push し、後から push した方が拒否されるため
 * GitHub Actions が push したコミットでは、ワークフローは再び動かない。自動修正の
   コミットに対するテストは走らない（自動修正は書式の修正に限られるため）
 * CI は Docker の開発環境ではなく、GitHub のランナーに直接 Ruby を入れて動かす。
