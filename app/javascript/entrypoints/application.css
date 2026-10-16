@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Vite のルートは app/javascript なので、それ以外の場所は明示しないとクラスが拾われない */
+@source "../../views";
+@source "../../helpers";
+
 @theme {
   --font-sans: "Noto Sans JP", system-ui, "Hiragino Kaku Gothic ProN", sans-serif;
 

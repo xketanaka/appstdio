@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rubocop:
+  lint:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,20 +21,50 @@ jobs:
           ruby-version: "4.0.2"
           bundler-cache: true
 
-      # main には直接コミットしない運用なので、自動修正は作業ブランチでだけ行う
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      # main には直接コミットしない運用なので、自動修正は作業ブランチでだけ行う。
+      # rubocop と ESLint を別のジョブにすると、両方が push して後の方が拒否される
       - name: 自動修正をコミットする
         if: github.ref != 'refs/heads/main'
         run: |
           bundle exec rubocop --autocorrect || true
+          npm run lint:fix || true
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "style: rubocop の自動修正を当てる"
+            git commit -am "style: rubocop と ESLint の自動修正を当てる"
             git push
           fi
 
-      - name: 違反が残っていないか確かめる
+      - name: 違反が残っていないか確かめる（rubocop）
         run: bundle exec rubocop
+
+      - name: 違反が残っていないか確かめる（ESLint）
+        run: npm run lint
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型を検査する
+        run: npm run typecheck
+
+      - name: テストを実行する
+        run: npm test
 
   test:
     runs-on: ubuntu-latest
@@ -70,6 +100,13 @@ jobs:
           ruby-version: "4.0.2"
           bundler-cache: true
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
       - name: DB のロールを作る
         run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/files/db/initdb/01_roles.sql
         env:
@@ -78,8 +115,8 @@ jobs:
       - name: テスト用の DB を作る
         run: bin/rails-as-owner db:create db:schema:load
 
-      - name: CSS をビルドする
-        run: bin/rails tailwindcss:build
+      - name: JavaScript と CSS をビルドする
+        run: bin/vite build
 
       - name: テストを実行する
         run: bin/rails test:full

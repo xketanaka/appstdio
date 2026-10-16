@@ -1,0 +1,10 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    "paths": {
+      "~/*": ["./app/javascript/*"]
+    }
+  },
+  "include": ["app/javascript/**/*.ts", "app/javascript/**/*.vue", "vite.config.ts"]
+}

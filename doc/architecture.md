@@ -254,12 +254,17 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 
 ## CSS (Tailwind CSS)
 
-`tailwindcss-rails` を使う。Node は不要で、スタンドアロンのバイナリでビルドする。
-ビルドの操作は `docker/README.md` の「CSS のビルド」を参照。
+Vite の中で `@tailwindcss/vite` を使ってビルドする（構成は「フロントエンド」を参照）。入口は
+`app/javascript/entrypoints/application.css`。ビルドの操作は `docker/README.md` の
+「フロントエンドのビルド」を参照。
+
+Vite のルートは `app/javascript` なので、Tailwind がクラスを拾うのは既定ではその下だけになる。
+ERB とヘルパーは `application.css` の `@source` で明示している。**クラスを書く場所を新しく
+増やしたら `@source` にも足すこと。** 足し忘れると、そのクラスが黙って CSS に出力されない。
 
 ### スタイルはすべてユーティリティで書く
 
-独自の CSS ファイルは持たない。`app/assets/stylesheets/` は空で、スタイルはビューの
+独自の CSS ファイルは持たない。スタイルはビュー（ERB・Vue のテンプレート）の
 `class` 属性に直接書く。`@apply` でクラスを作るのは、Tailwind 側が推奨していないので
 避ける。同じ組み合わせが増えてきたら、CSS ではなく partial かヘルパーにまとめる。
 
@@ -307,8 +312,8 @@ Windows では游ゴシックやメイリオになり、OS ごとに見た目が
 
 ### 開閉する UI は標準の要素で作る
 
-JavaScript のフレームワークを入れていないため、開閉を伴う UI は HTML の標準要素で
-組み立てる。`app/javascript/application.js` が補うのは、標準では付いてこない動作だけ。
+ERB の画面では JavaScript のフレームワークを使わないため、開閉を伴う UI は HTML の標準要素で
+組み立てる。`app/javascript/entrypoints/application.ts` が補うのは、標準では付いてこない動作だけ。
 
 | UI | 要素 | JavaScript で補っている分 |
 |---|---|---|
@@ -446,28 +451,69 @@ lazy lookup（`t(".heading")`）がビューではなく partial のキーを引
 
 flash の領域には `role="alert"` / `role="status"` が付いているので、そこを使う。
 
-### Vue.js を導入する際は Vite に移す想定
+## フロントエンド（Vite / Vue.js）
 
-`.vue`（単一ファイルコンポーネント）を使う場合はバンドラが必要になる。その際は
-Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つにまとめる想定。
+JavaScript と CSS は Vite でビルドする（`vite_rails`）。画面の多くは ERB のままで、
+画面の側に状態を多く持つものだけを Vue.js で作る。
 
-- `tailwindcss-rails` gem と `css` サービスを削除
-- `app/assets/tailwind/application.css` を Vite のエントリへ移動
-- `@tailwindcss/vite` を追加
+| 項目 | 内容 |
+|---|---|
+| ソースの置き場所 | `app/javascript`（`config/vite.json` の `sourceCodeDir`）。`~/` で参照できる |
+| 入口 | `app/javascript/entrypoints/`。ERB の画面は `application.ts` と `application.css` |
+| 言語 | TypeScript。型の検査は `npm run typecheck`（`vue-tsc`） |
+| テスト | Vitest + jsdom + Vue Test Utils。`*.test.ts` を部品の隣に置く。`npm test` |
+| 書式の検査 | ESLint（`eslint.config.js`）。各推奨設定に、二重引用符・セミコロン無しなどの書式を足した緩めの設定。`npm run lint` / `npm run lint:fix` |
+| 文言 | `config/locales` に置く（ERB と同じ）。Vue の画面へは入れ物のページで渡す |
 
-現時点で `tailwindcss-rails` のままにしているのは、Vue の導入時期と SFC を使うかが
-未定のため。Vite を先に入れても Vue が無いうちは構成を抱えるだけになる。
-なお standalone バイナリでは**第三者製の Tailwind プラグインが使えない**
-（第一者の typography / forms は使える）。これが必要になった時点でも移行の理由になる。
+TypeScript は 6 系に留めている。7 系（Go への移植版）は `vue-tsc` が使う内部の API を
+公開しておらず、型の検査が動かないため。`vue-tsc` が対応したら上げる。
+
+### Vue.js で作る画面の判断
+
+どんな機能も ERB と少しの JavaScript で作れはするので、「作れるか」では分けない。
+**画面の状態をどこに置くか**で分ける。次のどれかに当たる画面は Vue.js で作る。
+
+* 保存する前の状態を画面がたくさん持つ（複数行を編集してまとめて保存、取り消し）
+* 1つの操作で画面の多くの部分が連動する（選択に応じてツールバー・件数・各行が変わる）
+* サーバを待たずに反応しなければならない操作が続く（ドラッグ、エディタへの入力）
+
+今はファイル画面（`/files` 以下）が当たる。複数選択とドラッグ＆ドロップでの移動を
+持つため。ヘッダは ERB のままで、その下を Vue.js のアプリにする。
+
+* **1つの画面の中で ERB の部品と Vue.js を混ぜない。** 両方が同じ DOM を触ると、
+  どちらが表示を持っているのかが分からなくなる
+* Vue.js の画面のサーバ側は JSON を返す API になる。権限の判定は今までどおりサーバで
+  行い、結果（閲覧できるか・編集できるか）を返す。判定の規則を JavaScript に持ち込まない
+* API の応答の型は TypeScript 側に手で書く。Ruby 側には型の定義を置かない。
+  食い違いが問題になってきたら、OpenAPI の定義を正としてテストと型の生成に使う形に移る
+
+### 開発サーバ
+
+`vite` サービスが Vite の開発サーバを動かす。ブラウザはアセットを Rails から受け取り、
+Rails がそれを `vite` サービスへ中継する（`VITE_RUBY_HOST=vite`）。変更の即時反映（HMR）の
+WebSocket だけは Rails を通せない（Rails の中継は WebSocket を扱わない）ので、ブラウザから
+`vite` サービスへつなぐ。リバースプロキシ越しに使うときは、プロキシで `/vite-dev/` を
+`vite` サービスへ回し、`VITE_HMR_CLIENT_PORT` をプロキシのポートにする（`docker/README.md`）。
+
+* Vite は既定で知らないホスト名からのアクセスを拒むので、`vite.config.ts` の
+  `allowedHosts` に `vite` と `RAILS_DEVELOPMENT_HOSTS` を渡している
+* vboxsf ではファイルの変更が通知されないので、Vite の監視はポーリング（1秒）にしている
+* `node_modules` は Docker の名前付きボリュームに置く。npm が作るシンボリックリンクを
+  vboxsf では作れないため。その代わり、ホスト側からは `node_modules` が見えない
+* テストのときは、`vite_ruby` が初回にビルドする（`public/vite-test`）
+
+開発サーバが動いていないとき（`vite` サービスを止めているときなど）は、`vite_ruby` が
+要求のたびに変更を確かめてビルドし直す（`autoBuild`）。表示は遅くなるが画面は崩れない。
 
 ## CI (GitHub Actions)
 
-すべてのブランチへの push で `.github/workflows/ci.yml` が動く。ジョブは2つ。
+すべてのブランチへの push で `.github/workflows/ci.yml` が動く。ジョブは3つ。
 
 | ジョブ | 内容 |
 |---|---|
-| `rubocop` | main 以外のブランチでは `rubocop --autocorrect` で直せるものを直し、差分があれば `style: rubocop の自動修正を当てる` としてそのブランチにコミットして push する。そのあと違反が残っていないかを確かめる |
-| `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作ってから `bin/rails test:full` を実行する |
+| `lint` | main 以外のブランチでは `rubocop --autocorrect` と `npm run lint:fix`（ESLint）で直せるものを直し、差分があれば `style: rubocop と ESLint の自動修正を当てる` としてそのブランチにコミットして push する。そのあと両方とも違反が残っていないかを確かめる |
+| `frontend` | `npm run typecheck` で型を検査し、`npm test` で Vitest を実行する |
+| `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作り、`bin/vite build` でアセットをビルドしてから `bin/rails test:full` を実行する |
 
 注意すること。
 
@@ -475,6 +521,8 @@ Tailwind も `@tailwindcss/vite` で処理して、ビルドの入口を1つに�
   コミットを push すると履歴が分かれて push が拒否される
 * 自動修正は安全なもの（`--autocorrect`）だけ。意味が変わりうる修正（`--autocorrect-all`）は
   行わない。自動で直せない違反が残ればジョブが失敗する
+* rubocop と ESLint の自動修正を1つのジョブにまとめているのは、別のジョブにすると両方が
+  同じブランチへ push し、後から push した方が拒否されるため
 * GitHub Actions が push したコミットでは、ワークフローは再び動かない。自動修正の
   コミットに対するテストは走らない（自動修正は書式の修正に限られるため）
 * CI は Docker の開発環境ではなく、GitHub のランナーに直接 Ruby を入れて動かす。

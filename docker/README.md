@@ -6,7 +6,7 @@
 |---|---|---|---|
 | `app` | 利用テナント側のアプリ | `DB_USER=appstdio_app` | `/ops` は 404 |
 | `ops` | 運営者画面 | `DB_USER=appstdio_owner`、`OPS_CONSOLE=1` | 利用テナント側の画面は 404 |
-| `css` | Tailwind のビルド（ファイル監視） | - | `app` / `ops` とコードのボリュームを共有 |
+| `vite` | Vite の開発サーバ（JavaScript と CSS のビルド） | `VITE_LISTEN_PORT`（既定 3036） | `app` / `ops` とコードと `node_modules` のボリュームを共有 |
 | `db` | PostgreSQL 18 | - | 初回起動時に `docker/files/db/initdb/` を実行 |
 
 `app` と `ops` は同じイメージ・同じコードで、環境変数だけが違う。なぜ分けているかは
@@ -80,29 +80,74 @@ rails console から運営者画面と同じ条件でデータを触る場合は
 docker compose exec app bin/rails-as-owner console
 ```
 
-## CSS のビルド
+## フロントエンドのビルド
 
-`css` サービスがファイルを監視して自動でビルドする。`docker compose up` に含まれている
-ので通常は意識しなくてよい。
+`vite` サービスが Vite の開発サーバを動かし、JavaScript と CSS を変更に合わせて配る。
+`docker compose up` に含まれているので通常は意識しなくてよい。起動のたびに `npm install` も行う。
 
-共有フォルダ（vboxsf）ではファイルの変更が通知されないため、5秒ごとのポーリングで監視している。
-変更してから CSS に反映されるまで最大5秒かかり、CPU を少し（1コアの1〜2%程度）使い続ける。
-gem の `tailwindcss:watch` タスクはポーリングを指定できないので、`docker-compose.yml` では
-Tailwind の CLI を直接呼んでいる。
+- 入口: `app/javascript/entrypoints/`
+- ポート: ホスト側の `VITE_LISTEN_PORT`（既定 3036）。変更の即時反映（HMR）の接続にブラウザが
+  直接使う。**同じマシンで複数のチェックアウトを動かすときは `.env` で別の番号にする**
+- 共有フォルダ（vboxsf）ではファイルの変更が通知されないため、1秒ごとのポーリングで監視している
 
-- 入力: `app/assets/tailwind/application.css`
-- 出力: `app/assets/builds/tailwind.css`（git 管理外）
-
-手で実行する場合は以下。
+手で実行するもの。
 
 ```bash
-docker compose exec app bin/rails tailwindcss:build
+docker compose exec vite npm run typecheck   # 型の検査
+docker compose exec vite npm test            # Vitest
+docker compose exec vite npm run lint:fix    # ESLint（直せるものは直す）
+docker compose exec vite bin/vite build      # 本番用のビルド（public/vite）
 ```
 
-**チェックアウト直後は出力ファイルが存在しない。** `docker compose up` すれば `css`
-サービスが生成する。本番では `assets:precompile` に組み込まれている。
+### リバースプロキシ越しに使う場合
 
-書き方の方針は `doc/architecture.md` の「CSS」を参照。
+ブラウザは HMR の WebSocket を「アドレスバーのホスト名」の `VITE_HMR_CLIENT_PORT` 番
+（未設定なら `VITE_LISTEN_PORT`）へつなぐ。https のページからは `wss` になる。
+リバースプロキシのポートだけを開けて使うときは、`.env` に
+
+```
+VITE_HMR_CLIENT_PORT=443
+```
+
+を書き、プロキシで `/vite-dev/` を `vite` サービスへ回す（WebSocket の切り替えを通す）。
+nginx の例。
+
+```nginx
+# http ブロックに置く
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+server {
+  # ...（https の設定と、/ を app の 3000 番へ回す設定は今のまま）
+
+  location /vite-dev/ {
+    proxy_pass http://<VM のアドレス>:<VITE_LISTEN_PORT>;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Host $host;
+  }
+}
+```
+
+* `Host` はブラウザが開いたホスト名のまま渡すこと。Vite は知らないホスト名を拒み、
+  `RAILS_DEVELOPMENT_HOSTS` に書いたものだけを許している
+* `/vite-dev/` は HTTP の要求もこの経路で `vite` サービスへ直接届く（Rails の中継を通らない）。
+  どちらを通っても同じものが返る
+* 繋がらなくても画面は動く。保存した変更の自動反映が効かず、手で再読み込みが要るだけ
+
+**npm のパッケージを足すときも `vite` コンテナの中で行う。** `node_modules` は Docker の
+名前付きボリュームにあり、ホスト側からは見えない（vboxsf ではシンボリックリンクを作れないため）。
+
+```bash
+docker compose exec vite npm install --save-dev <パッケージ>
+```
+
+本番では `assets:precompile` に Vite のビルドが組み込まれている。
+
+構成と書き方の方針は `doc/architecture.md` の「フロントエンド」と「CSS」を参照。
 
 ## テスト(Minitest)実行
 
