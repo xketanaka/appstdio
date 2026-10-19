@@ -4,10 +4,9 @@
     <% current = section[:key] == @section %>
     <% link = link_to t("files.sections.#{section[:key]}"), section[:path],
                 "aria-current": (current ? "page" : nil), class: "truncate" %>
-    <% row_class = current ? "bg-primary-50 font-semibold text-primary-700" : "hover:bg-slate-100" %>
     <% if section[:folders] %>
       <details class="group" <%= "open" if current %>>
-        <summary class="<%= class_names("mx-2 flex cursor-pointer list-none items-center gap-1.5 rounded-md px-2 py-2 text-sm [&::-webkit-details-marker]:hidden", row_class) %>">
+        <summary class="<%= ui_nav_item_class(current, extra: "cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden") %>">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
             <path d="M8 4l10 8-10 8V4Z" />
@@ -16,7 +15,7 @@
         </summary>
 
         <% section[:folders].each do |folder, readable| %>
-          <div class="mx-2 flex items-center gap-2 rounded-md py-1.5 pr-2 pl-7 text-sm hover:bg-slate-100">
+          <div class="<%= ui_nav_item_class(false, extra: "ml-5 py-1.5") %>">
             <%= render "partial/file_icon", folder: true %>
             <% if readable %>
               <%= link_to folder.name, files_folder_path(folder), class: "truncate" %>
@@ -27,7 +26,7 @@
         <% end %>
       </details>
     <% else %>
-      <div class="<%= class_names("mx-2 flex items-center gap-1.5 rounded-md py-2 pr-2 pl-6.5 text-sm", row_class) %>"><%= link %></div>
+      <div class="<%= ui_nav_item_class(current, extra: "pl-7.5") %>"><%= link %></div>
     <% end %>
   <% end %>
 </nav>
