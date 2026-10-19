@@ -1,10 +1,10 @@
 <% content_for :title do %><%= t(".title", name: @group.name) %><% end -%>
-<div class="shrink-0 px-4 py-3">
-  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
 </div>
 
-<div class="flex min-h-0 flex-1 border-t border-slate-200">
-  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-200 lg:block" %>
+<div class="flex min-h-0 flex-1 border-t border-slate-100">
+  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-100 lg:block" %>
 
   <div class="min-h-0 flex-1 overflow-y-auto">
     <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
@@ -38,7 +38,7 @@
                     </td>
                     <td class="w-px py-2 text-right whitespace-nowrap">
                       <%= button_tag t(".members.remove"), type: "button",
-                            class: "cursor-pointer rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" %>
+                            class: "cursor-pointer rounded-full px-3 py-1 text-sm text-slate-500 hover:bg-slate-900/5" %>
                     </td>
                   </tr>
                 <% end %>
@@ -47,11 +47,11 @@
           <% end %>
         </section>
 
-        <div class="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
           <div class="flex items-center gap-4">
             <%= button_tag t("actions.save"), type: "button",
                   class: ui_button_class %>
-            <%= link_to t(".cancel"), management_group_path(@group), class: "text-sm text-slate-600 hover:underline" %>
+            <%= link_to t(".cancel"), management_group_path(@group), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
           </div>
           <%= button_tag t(".destroy"), type: "button",
                 class: ui_button_class(:danger) %>

@@ -1,10 +1,10 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="shrink-0 px-4 py-3">
-  <h1 class="truncate text-lg font-bold"><%= t(".heading") %></h1>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
 </div>
 
-<div class="flex min-h-0 flex-1 border-t border-slate-200">
-  <%= render "tree_column", class_name: "w-full lg:w-64 lg:shrink-0 lg:border-r lg:border-slate-200" %>
+<div class="flex min-h-0 flex-1 border-t border-slate-100">
+  <%= render "tree_column", class_name: "w-full lg:w-64 lg:shrink-0 lg:border-r lg:border-slate-100" %>
   <div class="hidden min-h-0 flex-1 items-center justify-center text-sm text-slate-500 lg:flex">
     <%= t(".select") %>
   </div>

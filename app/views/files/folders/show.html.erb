@@ -1,8 +1,8 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="flex shrink-0 items-center justify-between gap-4 px-4 py-3">
+<div class="flex shrink-0 items-center justify-between gap-4 px-6 pt-5 pb-3">
   <div class="min-w-0">
     <% if @breadcrumbs.any? || @via_shared %>
-      <nav aria-label="<%= t(".breadcrumbs") %>" class="truncate text-sm text-slate-500">
+      <nav aria-label="<%= t(".breadcrumbs") %>" class="mb-0.5 truncate text-sm text-slate-500">
         <% if @via_shared %>
           <%= link_to t("files.sections.shared_with_me"), files_shared_items_path, class: "hover:underline" %>
           <span aria-hidden="true">/</span>
@@ -13,7 +13,7 @@
         <% end %>
       </nav>
     <% end %>
-    <h1 class="truncate text-lg font-bold"><%= node_label(@folder) %></h1>
+    <h1 class="truncate text-title"><%= node_label(@folder) %></h1>
   </div>
   <% if @can_edit %>
     <%= button_tag type: "button",
