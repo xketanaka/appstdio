@@ -23,12 +23,12 @@
     <%= vite_stylesheet_tag "application" %>
     <%= vite_typescript_tag "application" %>
   </head>
-  <body class="flex h-dvh flex-col overflow-hidden bg-white leading-relaxed text-slate-800">
-    <header class="flex shrink-0 items-center justify-between gap-2 bg-slate-900 px-3 py-2.5 text-white sm:gap-4 sm:px-6">
+  <body class="flex h-dvh flex-col overflow-hidden bg-canvas leading-relaxed text-slate-800">
+    <header class="mb-3 flex shrink-0 items-center justify-between gap-2 bg-slate-900 px-3 py-2.5 text-white sm:gap-4 sm:px-5">
       <div class="flex min-w-0 items-center gap-2 sm:gap-3">
         <% if current_operator %>
           <button type="button" data-drawer-open aria-label="<%= t(".main_menu") %>"
-                  class="-ml-2 cursor-pointer rounded-md p-2 hover:bg-white/10">
+                  class="cursor-pointer rounded-full p-2 hover:bg-white/10">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  class="size-5" aria-hidden="true">
               <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
@@ -61,6 +61,12 @@
 
     <div class="shrink-0"><%= render "partial/messages" %></div>
 
-    <div class="flex min-h-0 flex-1"><%= yield %></div>
+    <div class="flex min-h-0 flex-1">
+      <% if current_operator %>
+        <main class="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white sm:mx-4 sm:mb-4"><%= yield %></main>
+      <% else %>
+        <%= yield %>
+      <% end %>
+    </div>
   </body>
 </html>

@@ -2,7 +2,7 @@
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
     <div class="mb-6 flex items-center justify-between gap-4">
-      <h1 class="text-xl font-bold"><%= t(".heading") %></h1>
+      <h1 class="text-title"><%= t(".heading") %></h1>
       <%= link_to t(".edit"), edit_management_tenant_setting_path, id: "edit-tenant-setting",
             class: ui_button_class(:secondary, size: :sm) %>
     </div>
@@ -33,7 +33,7 @@
       <dt class="text-sm text-slate-500"><%= TenantSetting.human_attribute_name(:title_color) %></dt>
       <dd class="mb-2 flex items-center gap-2 sm:mb-0">
         <% if @setting.title_color %>
-          <span class="size-5 rounded-md border border-slate-300" style="background-color: <%= @setting.title_color %>" aria-hidden="true"></span>
+          <span class="size-5 rounded-full border border-slate-300" style="background-color: <%= @setting.title_color %>" aria-hidden="true"></span>
           <span class="font-mono text-sm"><%= @setting.title_color %></span>
         <% else %>
           <span class="text-slate-500"><%= t(".default_color") %></span>
@@ -44,7 +44,7 @@
       <dd class="mb-2 sm:mb-0">
         <% if @setting.logo.attached? %>
           <%= image_tag @setting.logo, alt: TenantSetting.human_attribute_name(:logo),
-                class: "h-10 w-auto rounded-md border border-slate-200 bg-slate-50 p-1" %>
+                class: "h-10 w-auto rounded-lg border border-slate-200 bg-canvas p-1" %>
         <% else %>
           <span class="text-slate-500"><%= t(".no_logo") %></span>
         <% end %>
