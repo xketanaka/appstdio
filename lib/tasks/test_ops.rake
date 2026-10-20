@@ -10,9 +10,10 @@ namespace :test do
 
   # Rails 本体の test:all と名前がぶつかると、bin/rails test:all では呼ばれず
   # 運営者画面側が skip のまま終わる
-  desc "利用テナント側と運営者画面の両方のテストを実行する"
+  desc "利用テナント側（system test を含む）と運営者画面のテストをすべて実行する"
   task :full do
     sh "bin/rails test"
+    sh "bin/rails test:system"
     Rake::Task["test:ops"].invoke
   end
 end

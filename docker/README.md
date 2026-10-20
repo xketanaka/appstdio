@@ -165,9 +165,12 @@ docker compose exec app sh -c "bin/rails test"
 `bin/rails test` では skip される。
 
 ```bash
-docker compose exec app sh -c "bin/rails test:ops"   # 運営者画面のみ
-docker compose exec app sh -c "bin/rails test:full"  # 両方
+docker compose exec app sh -c "bin/rails test:ops"     # 運営者画面のみ
+docker compose exec app sh -c "bin/rails test:system"  # ブラウザを動かすテスト（system test）のみ
+docker compose exec app sh -c "bin/rails test:full"    # すべて
 ```
+
+system test はコンテナの Chromium（headless）で動く。失敗したときの画面は `tmp/screenshots/` に残る。
 
 コンテナが起動してない場合
 

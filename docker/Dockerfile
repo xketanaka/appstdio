@@ -32,6 +32,9 @@ COPY --from=node:24-trixie-slim /usr/local/lib/node_modules /usr/local/lib/node_
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
+## system test 用のブラウザ。arm64 では Selenium が Chrome を取ってこられないので、OS のパッケージを使う
+RUN apt-get update && apt-get install -y chromium chromium-driver fonts-noto-cjk
+
 ## dockerコマンドインストール
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg

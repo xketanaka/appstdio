@@ -445,6 +445,10 @@ GET /files/...（どの URL でも）  Files::AppController#show   入れ物の�
   左ペインはスマホと PC の2箇所に描くので、開閉もここで揃える
 * テストは3層。API は `test/integration/files_test.rb`、部品の表示は Vitest
   （文言は本物の `ja.files_app.yml` を読むのでキーの漏れも拾う）、通しの動きは system test
+  （`test/system/files_test.rb`）
+* system test では、テストとアプリのサーバが DB の接続を共有する。サーバが要求を並行して
+  処理すると、先に終わった要求がテナントの指定（RLS のセッション変数）を消してしまうので、
+  サーバのスレッドを1本にしている（`test/application_system_test_case.rb`）
 
 ### 開発サーバ
 
