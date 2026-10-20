@@ -3,7 +3,7 @@
   <div class="mb-2 flex justify-end border-b border-slate-100 pb-3">
     <%= link_to new_management_group_path(parent_id: (@group.id if @group && @group.kind != :everyone)),
           id: "new-group",
-          class: ui_button_class(size: :sm) do %>
+          class: "btn btn-primary btn-sm" do %>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
         <path stroke-linecap="round" d="M12 5v14M5 12h14" />
       </svg>
@@ -16,7 +16,7 @@
     <div id="everyone-group" class="flex items-center">
       <%= link_to @everyone.name, management_group_path(@everyone),
             "aria-current": (current ? "page" : nil),
-            class: ui_nav_item_class(current, extra: "w-full truncate py-1.5 pl-7") %>
+            class: class_names("nav-item w-full truncate pl-7", "nav-item-current": current) %>
     </div>
     <%= render "tree", parent_id: nil %>
   </nav>

@@ -7,7 +7,6 @@ import LoadMessage from "../components/LoadMessage.vue"
 import { t } from "../i18n"
 import { entryRow } from "../rows"
 import { showSection } from "../store"
-import { buttonClass } from "../ui"
 import { useLoad } from "../useLoad"
 
 const props = defineProps<{ source: FolderSource }>()
@@ -59,7 +58,7 @@ const rows = computed(() => data.value?.entries.map(entryRow) ?? [])
       <button
         v-if="data.can_edit"
         type="button"
-        :class="buttonClass('primary', 'sm')"
+        class="btn btn-primary btn-sm"
       >
         <svg
           viewBox="0 0 24 24"

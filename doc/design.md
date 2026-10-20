@@ -63,22 +63,33 @@ CSS の書き方の仕組み（Tailwind の構成、開閉する UI の作り方
 
 ## 部品
 
-クラスが長く、使う箇所が多いものは `UiHelper` にまとめてある。同じ見た目のものを書くときは必ず使う。
+ボタン・入力欄・左ペインの項目は、部品のクラスとして `app/javascript/entrypoints/application.css` の
+`@layer components` に定義してある。ERB でも Vue でも同じクラスを書く。同じ見た目のものを書くときは必ず使う。
+
+| 部品 | クラス |
+|---|---|
+| 主要なボタン | `btn btn-primary` |
+| 副ボタン | `btn btn-secondary` |
+| 削除のボタン | `btn btn-danger` |
+| 小さいボタン | 上に `btn-sm` を足す（例 `btn btn-secondary btn-sm`） |
+| 入力欄 | `input` |
+| 左ペイン・メニュー・ツリーの1行 | `nav-item`。選択中は `nav-item-current` を足す |
 
 ```erb
-<%= f.submit t("actions.save"), class: ui_button_class %>                        <%# 主要 %>
-<%= link_to t(".edit"), path, class: ui_button_class(:secondary, size: :sm) %>  <%# 副 %>
-<%= button_tag t(".destroy"), class: ui_button_class(:danger) %>                <%# 削除 %>
-<%= f.text_field :name, class: ui_input_class %>
-<%= link_to label, path, class: ui_nav_item_class(current) %>                   <%# 左ペインの項目 %>
+<%= f.submit t("actions.save"), class: "btn btn-primary" %>
+<%= link_to label, path, class: class_names("nav-item", "nav-item-current": current) %>
 ```
 
-Vue の画面（ファイル画面）では、同じクラスを `app/javascript/files/ui.ts` の `buttonClass` /
-`navItemClass` が返す。**`UiHelper` を変えたら `ui.ts` も直すこと**（逆も同じ）。
+```vue
+<button class="btn btn-primary btn-sm">…</button>
+<div class="nav-item" :class="{ 'nav-item-current': current }">…</div>
+```
 
 - 主要なボタンは、1つの画面（パネル）に1つまで
-- 左ペインの項目を字下げするときは、`ui_nav_item_class(current, extra: "ml-5")` のように
-  **margin** でずらす。padding で字下げすると、ヘルパーの `px-4` とぶつかる
+- 位置や幅の調整はユーティリティを足す（`btn btn-primary w-full`、`nav-item ml-5 py-1.5`）。
+  部品のクラスはユーティリティより下の層にあるので、足したユーティリティが必ず勝つ
+- **部品のクラスを増やすのは、ERB と Vue の両方で使う、この文書で形を決めた部品だけ。**
+  1つの画面でしか使わない組み合わせはクラスにしない
 
 ## 画面の骨格
 
@@ -136,6 +147,6 @@ body（canvas）
 ## 新しい画面を作るとき
 
 1. 骨格（パネルの中身だけを書く、一覧か詳細か）を上の2通りから選ぶ
-2. ボタン・入力欄・左ペインの項目は `UiHelper` を使う
+2. ボタン・入力欄・左ペインの項目は部品のクラス（`btn` / `input` / `nav-item`）を使う
 3. 色・角丸・文字の大きさは、この文書の表にあるものだけを使う
 4. スマホ幅（390px 程度）でも崩れないか確かめる（`doc/architecture.md` の「PC とスマホの両対応」）

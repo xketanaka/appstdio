@@ -10,11 +10,11 @@
         <%= f.label :display_name, TenantUser.human_attribute_name(:display_name),
               class: "mb-1.5 block text-sm font-semibold" %>
         <%= f.text_field :display_name,
-              class: ui_input_class %>
+              class: "input" %>
       </div>
 
       <%= f.submit t("actions.save"),
-            class: ui_button_class %>
+            class: "btn btn-primary" %>
     <% end %>
 
     <dl class="mt-8 grid gap-x-4 gap-y-1 border-t border-slate-200 pt-6 sm:grid-cols-[10rem_1fr] sm:gap-y-2">

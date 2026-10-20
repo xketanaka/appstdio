@@ -14,7 +14,7 @@
         <div class="mb-5">
           <%= label_tag :group_name, t(".name"), class: "mb-1.5 block text-sm font-semibold" %>
           <%= text_field_tag :group_name, @group.name,
-                class: ui_input_class %>
+                class: "input" %>
         </div>
 
         <%= render "parent_field" %>
@@ -23,7 +23,7 @@
           <div class="mb-2 flex items-center justify-between gap-4">
             <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
             <%= button_tag t(".members.add"), type: "button",
-                  class: ui_button_class(:secondary, size: :sm) %>
+                  class: "btn btn-secondary btn-sm" %>
           </div>
           <% if @members.empty? %>
             <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
@@ -50,11 +50,11 @@
         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
           <div class="flex items-center gap-4">
             <%= button_tag t("actions.save"), type: "button",
-                  class: ui_button_class %>
+                  class: "btn btn-primary" %>
             <%= link_to t(".cancel"), management_group_path(@group), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
           </div>
           <%= button_tag t(".destroy"), type: "button",
-                class: ui_button_class(:danger) %>
+                class: "btn btn-danger" %>
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@
             </div>
             <%= button_to t("actions.select"), select_tenant_path,
                   params: { tenant_id: tenant_user.tenant_id },
-                  class: ui_button_class(size: :sm) %>
+                  class: "btn btn-primary btn-sm" %>
           </li>
         <% end %>
       </ul>
