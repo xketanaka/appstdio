@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= [[Settings.system_title, setting&.title_label].compact.join(" | "), content_for(:title)].compact_blank.join(" - ") %></title>
+    <title><%= [title_prefix(setting), content_for(:title)].compact_blank.join(" - ") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="AppStdio">

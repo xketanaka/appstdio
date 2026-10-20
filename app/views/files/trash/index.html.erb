@@ -1,6 +1,0 @@
-<% content_for :title do %><%= t(".title") %><% end -%>
-<div class="shrink-0 px-6 pt-5 pb-3">
-  <h1 class="truncate text-title"><%= t("files.sections.trash") %></h1>
-</div>
-
-<%= render "files/list", entries: @entries, empty: t(".empty"), trash: true %>

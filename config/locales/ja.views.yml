@@ -18,52 +18,14 @@ ja:
       heading: "ログインしています"
 
   files:
+    # API がフォルダの表示名として返す（Files::Api::BaseController#node_label）
     drives:
       shared: "組織共有ドライブ"
       mine: "マイドライブ"
       others: "%{name} のマイドライブ"
-    sections:
-      shared_drive: "組織共有ドライブ"
-      shared_with_me: "共有されたアイテム"
-      my_drive: "マイドライブ"
-      trash: "ゴミ箱"
-    tree:
-      label: "ドライブ"
-    privileged_mode:
-      label: "特権モード"
-      description: "すべてのファイル・フォルダに管理者としてアクセスできます"
-      active: "特権モードです。すべてのファイル・フォルダに管理者としてアクセスしています"
-      leave: "特権モードを終える"
-    list:
-      no_access: "権限がないため開けません"
-      row_menu: "この項目の操作"
-      columns:
-        name: "名前"
-        owner: "オーナー"
-        deleted_by: "削除した人"
-        updated_at: "更新日時"
-        deleted_at: "削除日時"
-        size: "サイズ"
-      row_actions:
-        download: "ダウンロード"
-        rename: "名前を変更"
-        destroy: "削除"
-        restore: "元に戻す"
-        purge: "完全に削除"
-    folders:
+    app:
       show:
         title: "ファイル"
-        create: "作成"
-        breadcrumbs: "現在の場所"
-        empty: "このフォルダには何もありません"
-    shared_items:
-      index:
-        title: "共有されたアイテム"
-        empty: "共有されたアイテムはありません"
-    trash:
-      index:
-        title: "ゴミ箱"
-        empty: "ゴミ箱は空です"
 
   profiles:
     show:

@@ -1,0 +1,5 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<% content_for :head do %><%= vite_typescript_tag "files" %><% end -%>
+<% content_for :content do %>
+  <div id="files-app" class="flex min-h-0 flex-1" data-config="<%= @config.to_json %>"></div>
+<% end %>

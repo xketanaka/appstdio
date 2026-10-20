@@ -232,6 +232,7 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 | `config/locales/ja.yml` | モデル名・属性名・enum の表示名 |
 | `config/locales/ja.messages.yml` | flash や共通のメッセージ、ボタンのラベル (`actions`) |
 | `config/locales/ja.views.yml` | ビューごとの文言。キーはビューのパスに対応 |
+| `config/locales/ja.files_app.yml` | ファイル画面（Vue）の文言。「ファイル画面の構成」を参照 |
 
 ビューでは lazy lookup を使う。`app/views/sessions/new.html.erb` の `t(".title")` は
 `ja.sessions.new.title` を引く。レイアウトや partial でも同じで、
@@ -247,8 +248,8 @@ Rails のシャード機構で1プロセス内に2接続を持つ構成も検討
 
 - `config.i18n.raise_on_missing_translations` を development / test で有効にしている。
   キーの指定漏れやタイポは「Translation missing」の表示ではなく例外になる
-- `test/views/hardcoded_text_test.rb` が `app/views/**/*.erb` を走査し、日本語の文字が
-  残っていないことを検査する（ERB のコメントは対象外）
+- `test/views/hardcoded_text_test.rb` が `app/views/**/*.erb` と `app/javascript` の `.vue` / `.ts` を
+  走査し、日本語の文字が残っていないことを検査する（コメントとテストのファイルは対象外）
 
 なお rake タスクの `desc` や `db/seeds.rb` は開発者向けで画面に出ないため、対象外。
 
@@ -355,7 +356,7 @@ PC では常に開く」を実現できない。`summary` を `md:hidden` で隠
 
 - **1画面だけの機能**はビューで `content_for` を書き、コントローラで
   `layout "two_pane"` を指定する
-- **複数のコントローラで左ペインが共通の機能**（ファイル・管理）は、`content_for` だけを書いた
+- **複数のコントローラで左ペインが共通の機能**（管理）は、`content_for` だけを書いた
   機能別のレイアウトを作り、最後に `render template: "layouts/two_pane"` する。
   レイアウトは `management → two_pane → application` と入れ子になる
 
@@ -366,6 +367,9 @@ PC では常に開く」を実現できない。`summary` を `md:hidden` で隠
 <% content_for :pane do %><%= render "management/menu" %><% end %>
 <%= render template: "layouts/two_pane" %>
 ```
+
+ファイル画面は Vue.js のアプリなので、このレイアウトを使わず同じ枠を `app/javascript/files/App.vue` に
+自分で描いている。**枠の見た目を変えるときは両方を直すこと。**
 
 共通の partial を各ビューで `render layout:` として包む形は使わない。ブロックの中の
 lazy lookup（`t(".heading")`）がビューではなく partial のキーを引いてしまう。
@@ -417,6 +421,30 @@ TypeScript は 6 系に留めている。7 系（Go への移植版）は `vue-t
   行い、結果（閲覧できるか・編集できるか）を返す。判定の規則を JavaScript に持ち込まない
 * API の応答の型は TypeScript 側に手で書く。Ruby 側には型の定義を置かない。
   食い違いが問題になってきたら、OpenAPI の定義を正としてテストと型の生成に使う形に移る
+
+### ファイル画面の構成
+
+```
+GET /files/...（どの URL でも）  Files::AppController#show   入れ物のページ。ヘッダは ERB
+  └ #files-app                  app/javascript/files         Vue のアプリ。URL から画面を決める（Vue Router）
+      └ fetch /files/api/...    Files::Api::*Controller      JSON を返す。権限の判定はここ
+```
+
+* **URL は `config/routes.rb` と `app/javascript/files/router.ts` の2箇所に書く。** 直接開いたとき
+  （再読み込み・ブックマーク）はサーバが受け、画面の中で移ったときは Vue Router が受ける。
+  片方だけに足すと、画面の中では開けるのに再読み込みで 404 になる
+* 入れ物のページは、フォルダが存在しなくても 200 を返す。見つからない旨は、API の 404 を
+  受けて Vue が本文に出す
+* API はログインが切れていても転送しない（401 を返す）。Vue はページを読み直し、
+  ログイン画面への転送は入れ物のページに任せる
+* 閲覧できない項目の付帯情報は、API の応答に含めない。画面で隠すだけでは応答を見れば分かる
+* 文言は `config/locales/ja.files_app.yml`。`files_app` 以下をまるごと入れ物のページの
+  `data-config` で渡し、`t("sections.trash")` のように引く（`app/javascript/files/i18n.ts`）。
+  埋め込みは Rails と同じ `%{name}`。開発中とテストでは、無いキーは例外になる
+* 画面をまたいで保つ状態（特権モード・左ペインの開閉・ツリー）は `store.ts` に置く。
+  左ペインはスマホと PC の2箇所に描くので、開閉もここで揃える
+* テストは3層。API は `test/integration/files_test.rb`、部品の表示は Vitest
+  （文言は本物の `ja.files_app.yml` を読むのでキーの漏れも拾う）、通しの動きは system test
 
 ### 開発サーバ
 

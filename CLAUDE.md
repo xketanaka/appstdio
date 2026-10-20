@@ -68,7 +68,7 @@ JavaScript と CSS は Vite でビルドする。`vite` サービスが開発サ
 
 CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。詳細は `doc/architecture.md` の「CSS」を参照。
 
-**画面の見た目は `doc/design.md` の決まりに従う。** 色・文字・角丸は決まった範囲から選び、ボタン・入力欄・左ペインの項目は `UiHelper` を使う。新しい画面を作るときも同じ。
+**画面の見た目は `doc/design.md` の決まりに従う。** 色・文字・角丸は決まった範囲から選び、ボタン・入力欄・左ペインの項目は `UiHelper`（Vue の画面では `app/javascript/files/ui.ts`）を使う。新しい画面を作るときも同じ。
 
 **文言はソースコードに直接書かず、`config/locales` に置くこと。** ビューでは lazy lookup（`t(".title")`）を使う。詳細は `doc/architecture.md` の「国際化」を参照。
 

@@ -1,0 +1,24 @@
+<script setup lang="ts">
+defineProps<{ folder: boolean }>()
+</script>
+
+<template>
+  <svg
+    v-if="folder"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    class="size-5 shrink-0 text-slate-500"
+    aria-hidden="true"
+  >
+    <path d="M2 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6Z" />
+  </svg>
+  <svg
+    v-else
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    class="size-5 shrink-0 text-slate-400"
+    aria-hidden="true"
+  >
+    <path d="M6 2h7l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+  </svg>
+</template>
