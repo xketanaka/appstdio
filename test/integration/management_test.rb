@@ -104,11 +104,37 @@ class ManagementTest < ActionDispatch::IntegrationTest
       assert_select "dd", text: "営業本部"
 
       assert_select "#direct-members tr", 2
-      # 田中さんは第一・第二営業部の両方にいるが1行にまとめる
-      assert_select "#sub-members tr", 4
-      assert_select "#sub-members tr", text: /田中 三郎.*第一営業部.*第二営業部/m
-      assert_select "p", text: /下位グループを含めて 6人/
+      assert_select "p", text: /下位グループを含めて/, count: 0
+
+      # 下位グループのメンバーは人数だけ出して閉じておき、一覧は開いたときに読み込む
+      assert_select "details#sub-members:not([open])" do
+        assert_select "summary", text: "下位グループに所属するメンバー（4人）"
+        assert_select "li[data-load-more=?]", sub_members_management_group_path(2, page: 1)
+      end
     end
+  end
+
+  test "下位グループのメンバーを1ページずつ返し、続きがあれば次の読み込み先を付ける" do
+    login(@admin)
+
+    # 全社の下位は 77人（営業の6人と開発部の71人。田中さんは2つの部にいるが1人と数える）
+    get sub_members_management_group_path(1, page: 1)
+    assert_response :success
+    assert_not_includes response.body, "<html"
+    assert_select "li:not([data-load-more])", 30
+    assert_select "li[data-load-more=?]", sub_members_management_group_path(1, page: 2)
+
+    get sub_members_management_group_path(1, page: 3)
+    assert_select "li:not([data-load-more])", 17
+    assert_select "li[data-load-more]", 0
+
+    # 同じ人が複数の下位グループにいれば1行にまとめ、所属するグループを並べる
+    get sub_members_management_group_path(2, page: 1)
+    assert_select "li", 4
+    assert_select "li", text: /田中 三郎.*第一営業部.*第二営業部/m
+
+    get sub_members_management_group_path(100, page: 1)
+    assert_response :not_found
   end
 
   test "上位グループは階層をたどって表示する" do

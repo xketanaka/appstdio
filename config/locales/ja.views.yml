@@ -116,7 +116,6 @@ ja:
         name: "グループ名"
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
-        total: "下位グループを含めて %{count}人"
         no_parent: "（なし）"
         fields:
           name: "グループ名"
@@ -125,8 +124,11 @@ ja:
           heading: "所属メンバー（%{count}人）"
           empty: "直接所属しているメンバーはいません。"
         sub_members:
-          heading: "サブグループに所属するメンバー（%{count}人）"
-          empty: "サブグループに所属しているメンバーはいません。"
+          heading: "下位グループに所属するメンバー（%{count}人）"
+          empty: "下位グループに所属しているメンバーはいません。"
+      load_more:
+        loading: "読み込み中…"
+        failed: "読み込めませんでした。画面を開き直してください。"
       edit:
         title: "%{name}の編集 - グループ管理"
         heading: "グループ管理"

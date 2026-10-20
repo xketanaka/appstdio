@@ -1,0 +1,16 @@
+<% @rows.each do |member, groups| %>
+  <li class="flex items-center justify-between gap-3 border-t border-slate-100 py-2">
+    <div class="min-w-0">
+      <span class="block truncate"><%= member.display_name %></span>
+      <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+    </div>
+    <div class="shrink-0 text-right text-sm">
+      <% groups.each do |group| %>
+        <%= link_to group.name, management_group_path(group), class: "ml-2 inline-block text-primary-700 hover:underline" %>
+      <% end %>
+    </div>
+  </li>
+<% end %>
+<% if @next_page %>
+  <%= render "load_more", url: sub_members_management_group_path(@group, page: @next_page) %>
+<% end %>

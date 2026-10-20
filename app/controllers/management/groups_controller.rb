@@ -24,17 +24,20 @@ module Management
     tanaka = MockMember.new(display_name: "田中 三郎", email: "tanaka@example.com")
     ito = MockMember.new(display_name: "伊藤 美咲", email: "ito@example.com")
     watanabe = MockMember.new(display_name: "渡辺 健", email: "watanabe@example.com")
+    # 下位グループのメンバーをスクロールで読み足す動きを試せるよう、人数を多めにしている
+    developers = (1..70).map { |i| MockMember.new(display_name: "開発 メンバー#{i}", email: "dev#{i}@example.com") }
     MEMBERS = {
       1 => [yamada],
       2 => [yamada, sato],
       3 => [suzuki, takahashi, tanaka],
       4 => [ito, tanaka],
-      6 => [watanabe],
+      6 => [watanabe] + developers,
     }.freeze
     TENANT_USERS_COUNT = 12
+    SUB_MEMBERS_PER_PAGE = 30
 
     before_action :load_tree
-    before_action :set_group, only: [:show, :edit]
+    before_action :set_group, only: [:show, :edit, :sub_members]
 
     def index
     end
@@ -47,13 +50,18 @@ module Management
 
       @members = MEMBERS.fetch(@group.id, [])
       @parent_path = path_to(@group.parent_id)
+      @sub_members_count = sub_members_of(@group).size
+    end
 
-      # 同じ人が複数のサブグループにいれば1行にまとめる
-      @sub_members = descendants_of(@group)
-        .flat_map { |group| MEMBERS.fetch(group.id, []).map { |member| [member, group] } }
-        .group_by(&:first)
-        .map { |member, pairs| [member, pairs.map(&:last)] }
-      @total_count = (@members + @sub_members.map(&:first)).uniq.size
+    # 下位グループのメンバーの一覧を1ページ分だけ返す。詳細の画面がスクロールに合わせて読み足す
+    def sub_members
+      raise ActiveRecord::RecordNotFound if @group.kind == :everyone
+
+      page = [params[:page].to_i, 1].max
+      members = sub_members_of(@group)
+      @rows = members.drop((page - 1) * SUB_MEMBERS_PER_PAGE).first(SUB_MEMBERS_PER_PAGE)
+      @next_page = (page + 1 if members.size > page * SUB_MEMBERS_PER_PAGE)
+      render partial: "sub_member_rows", layout: false
     end
 
     def new
@@ -81,6 +89,14 @@ module Management
     def set_group
       @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
       raise ActiveRecord::RecordNotFound unless @group
+    end
+
+    # 同じ人が複数の下位グループにいれば1行にまとめる
+    def sub_members_of(group)
+      descendants_of(group)
+        .flat_map { |child| MEMBERS.fetch(child.id, []).map { |member| [member, child] } }
+        .group_by(&:first)
+        .map { |member, pairs| [member, pairs.map(&:last)] }
     end
 
     def descendants_of(group)
