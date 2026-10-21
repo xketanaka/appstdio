@@ -1,7 +1,7 @@
 import "../testing"
 import { flushPromises, mount } from "@vue/test-utils"
 import { beforeEach, expect, test, vi } from "vitest"
-import { api, ValidationError, type FolderPayload } from "../api"
+import { api, NotFoundError, ValidationError, type FolderPayload } from "../api"
 import MoveDialog from "./MoveDialog.vue"
 
 vi.mock("../api", async (original) => ({
@@ -95,4 +95,14 @@ test("閲覧できる祖先が尽きたら、ドライブを選ぶ段に戻る",
   await flushPromises()
   expect(wrapper.find("#move-location").text()).toBe("ドライブ")
   expect(wrapper.text()).toContain("マイドライブ")
+})
+
+test("たどった先のフォルダが見つからないときは、一覧と同じ文言で伝える", async () => {
+  const wrapper = await render()
+  vi.mocked(api.folder).mockRejectedValueOnce(new NotFoundError("/files/api/folders/3"))
+
+  await wrapper.find("button[aria-label='見積 を開く']").trigger("click")
+  await flushPromises()
+
+  expect(wrapper.find("[role=alert]").text()).toBe("フォルダが見つからないか、開く権限がありません")
 })

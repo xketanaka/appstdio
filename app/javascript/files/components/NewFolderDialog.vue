@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue"
-import { api, ValidationError } from "../api"
+import { api, ForbiddenError, NotFoundError, ValidationError } from "../api"
 import { t } from "../i18n"
 
 const props = defineProps<{ parentId: number }>()
@@ -31,8 +31,14 @@ const submit = async () => {
     close()
     emit("created", folder)
   } catch (error) {
-    errors.value = error instanceof ValidationError ? error.messages : [t("new_folder.failed")]
-    if (!(error instanceof ValidationError)) console.error(error)
+    if (error instanceof ValidationError) errors.value = error.messages
+    else if (error instanceof NotFoundError) errors.value = [t("new_folder.not_found")]
+    else if (error instanceof ForbiddenError) errors.value = [t("new_folder.forbidden")]
+    else {
+      // 時間をおいて直りうるのは、サーバの誤りや通信の失敗だけ
+      errors.value = [t("new_folder.failed")]
+      console.error(error)
+    }
     input.value?.select()
   } finally {
     submitting.value = false
