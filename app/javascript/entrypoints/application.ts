@@ -1,3 +1,5 @@
+import "~/components/label_input"
+
 const closeDropdowns = (except: Element | null) => {
   document.querySelectorAll<HTMLDetailsElement>("details[data-dropdown][open]").forEach((dropdown) => {
     if (dropdown !== except) dropdown.open = false
