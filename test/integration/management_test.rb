@@ -199,18 +199,24 @@ class ManagementTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "グループの追加は、選んでいるグループを上位の初期値にする" do
+  test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do
     login(@admin)
 
+    # ツリーの末尾は最上位に作る。どのグループを選んでいても同じ
     get management_groups_path
     assert_select "#new-group[href=?]", new_management_group_path
-
     get management_group_path(2)
-    assert_select "#new-group[href=?]", new_management_group_path(parent_id: 2)
-
-    # 「全員」は親にしないので、選んでいても最上位に追加する
-    get management_group_path(100)
     assert_select "#new-group[href=?]", new_management_group_path
+
+    # ツリーの行ごとの「＋」は、その行のグループの下に作る。「全員」の行には無い
+    assert_select "#group-tree a[aria-label=?][href=?]", "「第一営業部」の下にグループを追加",
+      new_management_group_path(parent_id: 3)
+    assert_select "#everyone-group a[aria-label]", 0
+
+    # 詳細の画面からは、そのグループの下に作る
+    assert_select "#add-child-group[href=?]", new_management_group_path(parent_id: 2)
+    get management_group_path(100)
+    assert_select "#add-child-group", 0
 
     get new_management_group_path(parent_id: 3)
     assert_response :success

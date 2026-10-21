@@ -49,6 +49,8 @@ ja:
         title: "利用者管理"
         heading: "利用者管理"
     groups:
+      tree:
+        add_child: "「%{name}」の下にグループを追加"
       tree_column:
         label: "グループ"
         create: "グループを追加"
@@ -69,6 +71,7 @@ ja:
         title: "%{name} - グループ管理"
         heading: "グループ管理"
         detail: "グループ詳細"
+        add_child: "下位グループを追加"
         edit: "編集"
         back: "« グループ一覧へ戻る"
       new:
