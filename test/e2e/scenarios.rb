@@ -5,6 +5,18 @@ module E2eScenarios
 
   module_function
 
+  # オーナーが1人だけのテナント。管理の画面を開くだけのテストに使う
+  def owner
+    key = SecureRandom.hex(4)
+    tenant = Tenant.setup!(name: "E2E #{key}")
+    user = User.create!(email: "owner-#{key}@example.com", password: PASSWORD)
+    TenantContext.switch(tenant: tenant) do
+      TenantUser.create!(tenant:, user:, display_name: "管理者さん", role: :owner, status: :active)
+    end
+
+    { owner: { email: user.email, password: PASSWORD } }
+  end
+
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
   # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない。
   # オーナーのマイドライブ: 下書き、メモ.txt、保管（ダイアログでの移動で使う）、
