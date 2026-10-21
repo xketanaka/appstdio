@@ -19,6 +19,8 @@
 
         <%= render "parent_field" %>
 
+        <%= render "labels_field" %>
+
         <section id="direct-members" class="mb-6">
           <div class="mb-2 flex items-center justify-between gap-4">
             <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
@@ -30,11 +32,17 @@
           <% else %>
             <table class="w-full">
               <tbody>
-                <% @members.each do |member| %>
+                <% @members.each_with_index do |(member, leader), index| %>
                   <tr class="border-t border-slate-200">
                     <td class="py-2 pr-3">
                       <span class="block truncate"><%= member.display_name %></span>
                       <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+                    </td>
+                    <td class="w-px py-2 pr-2 whitespace-nowrap">
+                      <label class="flex items-center gap-1.5 text-sm text-slate-600">
+                        <%= check_box_tag "leaders[]", member.email, leader, id: "leader_#{index}", class: "accent-primary-600" %>
+                        <%= t(".members.leader") %>
+                      </label>
                     </td>
                     <td class="w-px py-2 text-right whitespace-nowrap">
                       <%= button_tag t(".members.remove"), type: "button",

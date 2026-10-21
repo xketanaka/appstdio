@@ -33,6 +33,22 @@ module Management
       4 => [ito, tanaka],
       6 => [watanabe] + developers,
     }.freeze
+    LEADERS = {
+      1 => ["yamada@example.com"],
+      2 => ["sato@example.com"],
+      3 => ["suzuki@example.com"],
+      6 => ["watanabe@example.com"],
+    }.freeze
+    LABELS = {
+      1 => ["本社"],
+      2 => ["営業", "本部"],
+      3 => ["営業", "東日本"],
+      4 => ["営業", "西日本"],
+      5 => ["開発", "本部"],
+      6 => ["開発"],
+    }.freeze
+    # どのグループにも付いていないラベルも、テナントに登録されていれば候補に出る
+    LABEL_NAMES = (LABELS.values.flatten + ["プロジェクト"]).uniq.freeze
     TENANT_USERS_COUNT = 12
     SUB_MEMBERS_PER_PAGE = 30
 
@@ -48,7 +64,8 @@ module Management
         return
       end
 
-      @members = MEMBERS.fetch(@group.id, [])
+      @members = members_of(@group)
+      @labels = LABELS.fetch(@group.id, [])
       @parent_path = path_to(@group.parent_id)
       @sub_members_count = sub_members_of(@group).size
     end
@@ -68,12 +85,16 @@ module Management
       parent = DEPARTMENTS.find { |group| group.id == params[:parent_id].to_i }
       @parent_path = path_to(parent&.id)
       @parent_options = parent_options(excluded: [])
+      @labels = []
+      @label_names = LABEL_NAMES
     end
 
     def edit
       raise ActiveRecord::RecordNotFound if @group.kind == :everyone
 
-      @members = MEMBERS.fetch(@group.id, [])
+      @members = members_of(@group)
+      @labels = LABELS.fetch(@group.id, [])
+      @label_names = LABEL_NAMES
       @parent_path = path_to(@group.parent_id)
       # 自分と自分の下位を上位にすると循環する
       @parent_options = parent_options(excluded: [@group.id] + descendants_of(@group).map(&:id))
@@ -89,6 +110,13 @@ module Management
     def set_group
       @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
       raise ActiveRecord::RecordNotFound unless @group
+    end
+
+    # [メンバー, グループ管理者か] の組。グループ管理者を先に並べる
+    def members_of(group)
+      MEMBERS.fetch(group.id, [])
+        .map { |member| [member, LEADERS.fetch(group.id, []).include?(member.email)] }
+        .sort_by { |_, leader| leader ? 0 : 1 }
     end
 
     # 同じ人が複数の下位グループにいれば1行にまとめる

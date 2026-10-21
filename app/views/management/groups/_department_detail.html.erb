@@ -14,6 +14,17 @@
         <% end %>
       <% end %>
     </dd>
+
+    <dt class="text-sm text-slate-500"><%= t(".fields.labels") %></dt>
+    <dd id="group-labels" class="mb-2 flex flex-wrap gap-1.5 sm:mb-0">
+      <% if @labels.empty? %>
+        <span class="text-slate-500"><%= t(".no_labels") %></span>
+      <% else %>
+        <% @labels.each do |label| %>
+          <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-sm text-slate-700"><%= label %></span>
+        <% end %>
+      <% end %>
+    </dd>
   </dl>
 
   <section id="direct-members" class="mb-6">
@@ -23,10 +34,15 @@
     <% else %>
       <table class="w-full">
         <tbody>
-          <% @members.each do |member| %>
+          <% @members.each do |member, leader| %>
             <tr class="border-t border-slate-200">
               <td class="py-2">
-                <span class="block truncate"><%= member.display_name %></span>
+                <span class="flex items-center gap-2">
+                  <span class="truncate"><%= member.display_name %></span>
+                  <% if leader %>
+                    <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
+                  <% end %>
+                </span>
                 <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
               </td>
             </tr>

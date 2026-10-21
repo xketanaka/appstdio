@@ -137,6 +137,38 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "詳細ではラベルをチップで出し、グループ管理者を先頭に印を付けて並べる" do
+    login(@admin)
+
+    get management_group_path(2)
+    assert_select "#group-labels span", 2
+    assert_select "#group-labels", text: /営業\s*本部/
+    assert_select "#direct-members tr:first-child", text: /佐藤 花子\s*管理者/
+    assert_select "#direct-members tr:last-child", text: /管理者/, count: 0
+
+    get management_group_path(1)
+    assert_select "#group-labels", text: "本社"
+
+    get management_group_path(5)
+    assert_select "#direct-members", text: /管理者/, count: 0
+  end
+
+  test "編集と追加の画面にラベルの入力欄を置き、編集ではグループ管理者を切り替えられる" do
+    login(@admin)
+
+    get edit_management_group_path(2)
+    assert_select "#group-form label-input" do |elements|
+      suggestions = JSON.parse(elements.first["data-suggestions"])
+      assert_includes suggestions, "プロジェクト"
+      assert_select "input[name=group_labels][value=?]", "営業, 本部"
+    end
+    assert_select "input[type=checkbox][name='leaders[]'][value='sato@example.com'][checked]"
+    assert_select "input[type=checkbox][name='leaders[]'][value='yamada@example.com']:not([checked])"
+
+    get new_management_group_path(parent_id: 2)
+    assert_select "#group-form label-input input[name=group_labels][value='']"
+  end
+
   test "上位グループは階層をたどって表示する" do
     login(@admin)
 
