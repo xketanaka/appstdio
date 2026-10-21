@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from "vue"
-import { api, ForbiddenError, ValidationError, type FolderLink, type FolderPayload, type FolderSource } from "../api"
+import { api, NotFoundError, type FolderLink, type FolderPayload, type FolderSource } from "../api"
 import { t } from "../i18n"
-import { moveItems } from "../store"
+import { moveErrorMessages, moveItems } from "../store"
 import FileIcon from "./FileIcon.vue"
 
 type Item = { id: number, name: string }
@@ -39,8 +39,11 @@ const show = async (source: FolderSource | null) => {
   try {
     location.value = await api.folder(source)
   } catch (error) {
-    errors.value = [t("move.failed")]
-    console.error(error)
+    if (error instanceof NotFoundError) errors.value = [t("load.not_found")]
+    else {
+      errors.value = [t("load.error")]
+      console.error(error)
+    }
   } finally {
     busy.value = false
   }
@@ -68,12 +71,7 @@ const submit = async () => {
     close()
     emit("moved")
   } catch (error) {
-    if (error instanceof ValidationError) errors.value = error.messages
-    else if (error instanceof ForbiddenError) errors.value = [t("move.forbidden")]
-    else {
-      errors.value = [t("move.failed")]
-      console.error(error)
-    }
+    errors.value = moveErrorMessages(error)
   } finally {
     busy.value = false
   }

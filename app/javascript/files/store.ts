@@ -1,5 +1,5 @@
 import { reactive } from "vue"
-import { api, ForbiddenError, ValidationError, type FolderPayload, type SectionKey, type Tree, type TreeFolder } from "./api"
+import { api, ForbiddenError, NotFoundError, ValidationError, type FolderPayload, type SectionKey, type Tree, type TreeFolder } from "./api"
 import { setMessages, t, type Messages } from "./i18n"
 
 // 入れ物のページ（app/views/files/app/show.html.erb）が data-config で渡すもの
@@ -40,13 +40,17 @@ export function notify(message: string, { error = false, action }: Omit<Partial<
   noticeTimer = setTimeout(() => (state.notice = null), action ? 10000 : 6000)
 }
 
-export function notifyMoveError(error: unknown) {
-  if (error instanceof ValidationError) notify(error.messages.join(" "), { error: true })
-  else if (error instanceof ForbiddenError) notify(t("move.forbidden"), { error: true })
-  else {
-    notify(t("move.failed"), { error: true })
-    console.error(error)
-  }
+// 移せなかった理由の文。「時間をおいて」と促すのは、それで直りうる失敗（サーバの誤りや通信）だけにする
+export function moveErrorMessages(error: unknown, { undo = false } = {}) {
+  if (error instanceof ValidationError) return error.messages
+  if (error instanceof ForbiddenError) return [t("move.forbidden")]
+  if (error instanceof NotFoundError) return [t(undo ? "move.undo_not_found" : "move.not_found")]
+  console.error(error)
+  return [t("move.failed")]
+}
+
+export function notifyMoveError(error: unknown, options: { undo?: boolean } = {}) {
+  notify(moveErrorMessages(error, options).join(" "), { error: true })
 }
 
 export function loadConfig(element: HTMLElement) {
@@ -110,7 +114,7 @@ async function undoMove(items: Item[], from: number) {
     notify(t("move.undone"))
     await changed()
   } catch (error) {
-    notifyMoveError(error)
+    notifyMoveError(error, { undo: true })
   }
 }
 
