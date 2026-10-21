@@ -1,16 +1,5 @@
 <%# locals: (class_name:) %>
 <div class="<%= class_names("min-h-0 overflow-y-auto px-2 py-3", class_name) %>">
-  <div class="mb-2 flex justify-end border-b border-slate-100 pb-3">
-    <%= link_to new_management_group_path(parent_id: (@group.id if @group && @group.kind != :everyone)),
-          id: "new-group",
-          class: "btn btn-primary btn-sm" do %>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
-        <path stroke-linecap="round" d="M12 5v14M5 12h14" />
-      </svg>
-      <%= t(".create") %>
-    <% end %>
-  </div>
-
   <nav id="group-tree" aria-label="<%= t(".label") %>">
     <% current = @group&.id == @everyone.id %>
     <div id="everyone-group" class="flex items-center">
@@ -20,4 +9,11 @@
     </div>
     <%= render "tree", parent_id: nil %>
   </nav>
+
+  <%= link_to new_management_group_path, id: "new-group", class: "nav-item mt-1 pl-2 text-slate-500 hover:text-slate-800" do %>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0" aria-hidden="true">
+      <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+    </svg>
+    <%= t(".create") %>
+  <% end %>
 </div>

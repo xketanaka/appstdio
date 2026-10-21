@@ -3,19 +3,28 @@
   <% current = @group&.id == group.id %>
   <% link = link_to group.name, management_group_path(group),
               "aria-current": (current ? "page" : nil),
-              class: "truncate" %>
+              class: "min-w-0 truncate" %>
+  <%# マウスを載せた行にだけ出す。スマホ幅では出さない（下位グループは詳細の画面から作れる） %>
+  <% add = link_to new_management_group_path(parent_id: group.id),
+                   "aria-label": t(".add_child", name: group.name), title: t(".add_child", name: group.name),
+                   class: "ml-auto flex size-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-0 hover:bg-slate-900/10 hover:text-slate-800 focus-visible:opacity-100 group-hover/row:opacity-100 max-md:hidden" do %>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
+      <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+    </svg>
+  <% end %>
   <% if @children.key?(group.id) %>
     <details class="group" open>
-      <summary class="<%= class_names("nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden", "nav-item-current": current) %>">
+      <summary class="<%= class_names("group/row nav-item cursor-pointer list-none pr-1.5 pl-2.5 [&::-webkit-details-marker]:hidden", "nav-item-current": current) %>">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
              class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
           <path d="M8 4l10 8-10 8V4Z" />
         </svg>
         <%= link %>
+        <%= add %>
       </summary>
       <div class="pl-4"><%= render "tree", parent_id: group.id %></div>
     </details>
   <% else %>
-    <div class="<%= class_names("nav-item pl-7", "nav-item-current": current) %>"><%= link %></div>
+    <div class="<%= class_names("group/row nav-item pr-1.5 pl-7", "nav-item-current": current) %>"><%= link %><%= add %></div>
   <% end %>
 <% end %>

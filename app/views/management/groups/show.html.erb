@@ -12,8 +12,17 @@
       <div class="mb-5 flex items-center justify-between gap-4">
         <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
         <% if @group.kind != :everyone %>
-          <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group",
-                class: "btn btn-secondary btn-sm" %>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <%= link_to new_management_group_path(parent_id: @group.id), id: "add-child-group",
+                  class: "btn btn-secondary btn-sm" do %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4" aria-hidden="true">
+                <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+              </svg>
+              <%= t(".add_child") %>
+            <% end %>
+            <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group",
+                  class: "btn btn-secondary btn-sm" %>
+          </div>
         <% end %>
       </div>
       <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>
