@@ -6,9 +6,11 @@ import { login, scenario, type User } from "./support"
 
 type FilesScenario = { owner: User, member: User, folders: { sales: number, estimates: number, hr: number } }
 
+// ファイルの中のテストは1つのワーカーで順に流れ、このデータを共有する。
+// 他のテストの結果に左右されないよう、データを変えるテストは他のテストが見るものに触れないこと
 let data: FilesScenario
 
-test.beforeEach(() => {
+test.beforeAll(() => {
   data = scenario<FilesScenario>("files")
 })
 

@@ -8,7 +8,6 @@ export default defineConfig({
   testDir: "test/e2e",
   // 失敗時のトレース（zip）は vboxsf の上に書くと壊れるので、開発用のコンテナでは /tmp に出す
   outputDir: process.env.E2E_OUTPUT_DIR ?? "test-results",
-  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
