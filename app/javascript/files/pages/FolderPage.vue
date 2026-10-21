@@ -9,7 +9,7 @@ import MoveDialog from "../components/MoveDialog.vue"
 import NewFolderDialog from "../components/NewFolderDialog.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
-import { reloadTree, showSection } from "../store"
+import { reloadTree, showFolder } from "../store"
 import { useLoad } from "../useLoad"
 import { useSelection } from "../useSelection"
 
@@ -18,7 +18,7 @@ const props = defineProps<{ source: FolderSource }>()
 const { data, status, reload } = useLoad(
   () => api.folder(props.source),
   () => props.source,
-  (payload) => showSection(payload.section, payload.folder.label),
+  showFolder,
 )
 
 const rows = computed(() => data.value?.entries.map(entryRow) ?? [])

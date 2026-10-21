@@ -2,9 +2,12 @@
 
 export type SectionKey = "shared_drive" | "shared_with_me" | "my_drive" | "trash"
 
-export type TreeFolder = { id: number, name: string, readable: boolean }
+export type TreeFolder = { id: number, name: string, readable: boolean, has_children: boolean }
 
-export type Tree = { shared_drive: TreeFolder[], my_drive: TreeFolder[] }
+// ドライブのルートの id と直下のフォルダ。マイドライブは初めて開くまで無い
+export type TreeRoot = { id: number, folders: TreeFolder[] }
+
+export type Tree = { shared_drive: TreeRoot | null, my_drive: TreeRoot | null }
 
 export type Entry = {
   id: number
@@ -72,6 +75,11 @@ async function request<T>(method: string, path: string, body?: object): Promise<
 
 export const api = {
   tree: () => request<Tree>("GET", "/files/api/tree"),
+  // 閲覧できない親は応答に含まれない
+  treeChildren: (parentIds: number[]) =>
+    request<Record<string, TreeFolder[]>>(
+      "GET", `/files/api/tree/children?${parentIds.map((id) => `parent_ids[]=${id}`).join("&")}`,
+    ),
   folder: (source: FolderSource) =>
     request<FolderPayload>("GET", "id" in source ? `/files/api/folders/${source.id}` : `/files/api/drives/${source.drive}`),
   createFolder: (parentId: number, name: string) =>
