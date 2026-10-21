@@ -3,53 +3,116 @@ import { RouterLink } from "vue-router"
 import { formatSize, formatTime } from "../format"
 import { t } from "../i18n"
 import type { Row } from "../rows"
+import type { SelectModifiers } from "../useSelection"
 import FileIcon from "./FileIcon.vue"
 
-const props = defineProps<{ rows: Row[], empty: string, trash?: boolean }>()
+// selectable のときは Google ドライブと同じく、行のクリックで選び、ダブルクリック（Enter）で開く。
+// 指で操作する端末ではダブルクリックしにくいので、タップで開く
+const props = defineProps<{
+  rows: Row[]
+  empty: string
+  trash?: boolean
+  selectable?: boolean
+  selected?: ReadonlySet<number>
+  canMove?: boolean
+}>()
+
+const emit = defineEmits<{
+  select: [id: number, modifiers: SelectModifiers]
+  open: [row: Row]
+  clear: []
+  move: [row: Row]
+}>()
 
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
-const rowActions = props.trash ? ["restore", "purge"] : ["download", "rename", "destroy"]
+const rowActions = props.trash ? ["restore", "purge"] : ["download", "rename", "move", "destroy"]
+const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches
 
 const size = (row: Row) => (row.byteSize === null ? "-" : formatSize(row.byteSize))
 const time = (row: Row) => (row.time === null ? "" : formatTime(row.time))
 const person = (row: Row) => row.person ?? "-"
+const isSelected = (row: Row) => props.selected?.has(row.id) ?? false
+
+const click = (row: Row, event: MouseEvent) => {
+  if (!props.selectable) return
+  if (touch) emit("open", row)
+  else emit("select", row.id, { toggle: event.ctrlKey || event.metaKey, range: event.shiftKey })
+}
+
+const open = (row: Row) => {
+  if (props.selectable) emit("open", row)
+}
+
+// 行の外（見出しや一覧の下の余白）を押したら選択を解く
+const clickOutside = (event: MouseEvent) => {
+  if (props.selectable && !(event.target as Element).closest("tbody tr")) emit("clear")
+}
+
+const closeMenu = (event: Event) => {
+  const menu = (event.target as Element).closest("details")
+  if (menu) menu.open = false
+}
 </script>
 
 <template>
-  <div class="min-h-0 flex-1 overflow-auto px-3">
+  <div
+    class="min-h-0 flex-1 overflow-auto px-3"
+    @click="clickOutside"
+  >
     <table
       id="file-list"
       class="w-full"
     >
-      <thead class="sticky top-0 bg-white text-xs text-slate-500">
-        <tr class="border-b border-slate-200">
-          <th class="px-3 py-2.5 text-left font-medium">
-            {{ t("list.columns.name") }}
+      <!-- 選択中は見出しの行を操作の帯（toolbar）に差し替える。帯を別の行に出すと一覧が下へずれ、
+           ダブルクリックの2回目が別の行に当たる -->
+      <thead class="sticky top-0 z-1 bg-white text-xs text-slate-500">
+        <tr class="h-11 border-b border-slate-200">
+          <th
+            v-if="$slots.toolbar"
+            colspan="5"
+            class="px-1 text-left font-normal"
+          >
+            <slot name="toolbar" />
           </th>
-          <th class="hidden px-3 py-2.5 text-left font-medium lg:table-cell">
-            {{ t(`list.columns.${personColumn}`) }}
-          </th>
-          <th class="hidden px-3 py-2.5 text-left font-medium md:table-cell">
-            {{ t(`list.columns.${timeColumn}`) }}
-          </th>
-          <th class="hidden px-3 py-2.5 text-right font-medium sm:table-cell">
-            {{ t("list.columns.size") }}
-          </th>
-          <th class="w-10" />
+          <template v-else>
+            <th class="px-3 text-left font-medium">
+              {{ t("list.columns.name") }}
+            </th>
+            <th class="hidden px-3 text-left font-medium lg:table-cell">
+              {{ t(`list.columns.${personColumn}`) }}
+            </th>
+            <th class="hidden px-3 text-left font-medium md:table-cell">
+              {{ t(`list.columns.${timeColumn}`) }}
+            </th>
+            <th class="hidden px-3 text-right font-medium sm:table-cell">
+              {{ t("list.columns.size") }}
+            </th>
+            <th class="w-10" />
+          </template>
         </tr>
       </thead>
       <tbody>
         <tr
           v-for="row in rows"
           :key="row.id"
-          class="border-b border-slate-100 hover:bg-canvas"
+          :tabindex="selectable ? 0 : undefined"
+          :aria-selected="selectable ? isSelected(row) : undefined"
+          :class="[
+            'border-b border-slate-100',
+            isSelected(row) ? 'bg-primary-100' : 'hover:bg-canvas',
+            { 'cursor-default select-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-600': selectable },
+          ]"
+          @click="click(row, $event)"
+          @dblclick="open(row)"
+          @keydown.enter="open(row)"
+          @keydown.space.prevent="selectable && emit('select', row.id, { toggle: true, range: false })"
         >
           <td class="px-3 py-2.5">
             <span class="flex items-center gap-2">
               <FileIcon :folder="row.kind === 'folder'" />
               <RouterLink
-                v-if="row.folderId !== null"
+                v-if="!selectable && row.folderId !== null"
                 :to="{ name: 'folder', params: { id: row.folderId } }"
                 class="truncate hover:text-primary-700 hover:underline"
               >{{ row.name }}</RouterLink>
@@ -87,7 +150,12 @@ const person = (row: Row) => row.person ?? "-"
               {{ size(row) }}
             </template>
           </td>
-          <td class="py-2.5 pr-1">
+          <td
+            class="py-2.5 pr-1"
+            @click.stop
+            @dblclick.stop
+            @keydown.stop
+          >
             <!-- data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.ts が拾っている） -->
             <details
               class="relative"
@@ -107,11 +175,23 @@ const person = (row: Row) => row.person ?? "-"
                 </svg>
               </summary>
               <div class="absolute right-0 z-10 mt-1 w-44 rounded-xl bg-white py-1.5 text-sm shadow-lg ring-1 ring-slate-900/10">
-                <span
+                <template
                   v-for="action in rowActions"
                   :key="action"
-                  class="block px-4 py-2 text-slate-400"
-                >{{ t(`list.row_actions.${action}`) }}</span>
+                >
+                  <button
+                    v-if="action === 'move' && canMove"
+                    type="button"
+                    class="block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100"
+                    @click="closeMenu($event); emit('move', row)"
+                  >
+                    {{ t(`list.row_actions.${action}`) }}
+                  </button>
+                  <span
+                    v-else
+                    class="block px-4 py-2 text-slate-400"
+                  >{{ t(`list.row_actions.${action}`) }}</span>
+                </template>
               </div>
             </details>
           </td>

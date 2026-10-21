@@ -40,6 +40,8 @@ export type FolderSource = { drive: "shared" | "mine" } | { id: string }
 
 export class NotFoundError extends Error {}
 
+export class ForbiddenError extends Error {}
+
 // 入力の誤り（422）。messages はそのまま画面に出せる文
 export class ValidationError extends Error {
   constructor(readonly messages: string[]) {
@@ -60,6 +62,7 @@ async function request<T>(method: string, path: string, body?: object): Promise<
     window.location.reload()
     return new Promise(() => {})
   }
+  if (response.status === 403) throw new ForbiddenError(path)
   if (response.status === 404) throw new NotFoundError(path)
   if (response.status === 422) throw new ValidationError((await response.json()).errors)
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status}`)
@@ -73,6 +76,8 @@ export const api = {
     request<FolderPayload>("GET", "id" in source ? `/files/api/folders/${source.id}` : `/files/api/drives/${source.drive}`),
   createFolder: (parentId: number, name: string) =>
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
+  move: (nodeIds: number[], destinationId: number) =>
+    request<void>("POST", "/files/api/moves", { node_ids: nodeIds, destination_id: destinationId }),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),
   trash: () => request<{ entries: TrashEntry[] }>("GET", "/files/api/trash"),
   enterPrivilegedMode: () => request<void>("POST", "/files/api/privileged_mode"),

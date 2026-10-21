@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
-import { RouterLink } from "vue-router"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { RouterLink, useRouter } from "vue-router"
 import { api, type FolderSource } from "../api"
 import FileIcon from "../components/FileIcon.vue"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
+import MoveDialog from "../components/MoveDialog.vue"
 import NewFolderDialog from "../components/NewFolderDialog.vue"
 import { t } from "../i18n"
-import { entryRow } from "../rows"
+import { entryRow, type Row } from "../rows"
 import { reloadTree, showSection } from "../store"
 import { useLoad } from "../useLoad"
+import { useSelection } from "../useSelection"
 
 const props = defineProps<{ source: FolderSource }>()
 
@@ -20,6 +22,28 @@ const { data, status, reload } = useLoad(
 )
 
 const rows = computed(() => data.value?.entries.map(entryRow) ?? [])
+const router = useRouter()
+const { selected, select, clear } = useSelection(() => rows.value.map((row) => row.id))
+
+watch(() => props.source, clear)
+
+const open = (row: Row) => {
+  if (row.folderId !== null) router.push({ name: "folder", params: { id: row.folderId } })
+}
+
+// ダイアログが開いているときの Esc はダイアログを閉じるだけにする
+const clearOnEscape = (event: KeyboardEvent) => {
+  if (event.key === "Escape" && !document.querySelector("dialog[open]")) clear()
+}
+onMounted(() => document.addEventListener("keydown", clearOnEscape))
+onBeforeUnmount(() => document.removeEventListener("keydown", clearOnEscape))
+
+const moveDialog = ref<InstanceType<typeof MoveDialog> | null>(null)
+const moveSelected = () => moveDialog.value?.open(rows.value.filter((row) => selected.has(row.id)))
+const moveRow = (row: Row) => {
+  select(row.id, { toggle: false, range: false })
+  moveDialog.value?.open([row])
+}
 
 const createMenu = ref<HTMLDetailsElement | null>(null)
 const newFolderDialog = ref<InstanceType<typeof NewFolderDialog> | null>(null)
@@ -30,7 +54,7 @@ const openNewFolder = () => {
 }
 
 // 左ペインのツリーにはドライブ直下のフォルダが出るので、そちらも読み直す
-const created = () => Promise.all([reload(), reloadTree()])
+const changed = () => Promise.all([reload(), reloadTree()])
 </script>
 
 <template>
@@ -114,12 +138,65 @@ const created = () => Promise.all([reload(), reloadTree()])
     <FileList
       :rows="rows"
       :empty="t('folder.empty')"
-    />
+      selectable
+      :selected="selected"
+      :can-move="data.can_edit"
+      @select="select"
+      @open="open"
+      @clear="clear"
+      @move="moveRow"
+    >
+      <template
+        v-if="selected.size > 0"
+        #toolbar
+      >
+        <div
+          role="toolbar"
+          :aria-label="t('selection.count', { count: selected.size })"
+          class="flex items-center gap-2 text-sm text-slate-800"
+        >
+          <button
+            type="button"
+            class="cursor-pointer rounded-full p-1.5 text-slate-600 hover:bg-slate-900/5"
+            :aria-label="t('selection.clear')"
+            @click="clear"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="size-4"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                d="M6 6l12 12M18 6L6 18"
+              />
+            </svg>
+          </button>
+          <span class="mr-2">{{ t("selection.count", { count: selected.size }) }}</span>
+          <button
+            v-if="data.can_edit"
+            type="button"
+            class="btn btn-secondary btn-sm"
+            @click="moveSelected"
+          >
+            {{ t("selection.move") }}
+          </button>
+        </div>
+      </template>
+    </FileList>
 
     <NewFolderDialog
       ref="newFolderDialog"
       :parent-id="data.folder.id"
-      @created="created"
+      @created="changed"
+    />
+    <MoveDialog
+      ref="moveDialog"
+      :from="data.folder"
+      @moved="changed"
     />
   </template>
   <LoadMessage
