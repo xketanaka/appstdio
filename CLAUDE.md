@@ -68,13 +68,13 @@ JavaScript と CSS は Vite でビルドする。`vite` サービスが開発サ
 
 CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルはビューの `class` に直接書く。詳細は `doc/architecture.md` の「CSS」を参照。
 
-**画面の見た目は `doc/design.md` の決まりに従う。** 色・文字・角丸は決まった範囲から選び、ボタン・入力欄・左ペインの項目は `UiHelper` を使う。新しい画面を作るときも同じ。
+**画面の見た目は `doc/design.md` の決まりに従う。** 色・文字・角丸は決まった範囲から選び、ボタン・入力欄・左ペインの項目は `UiHelper`（Vue の画面では `app/javascript/files/ui.ts`）を使う。新しい画面を作るときも同じ。
 
 **文言はソースコードに直接書かず、`config/locales` に置くこと。** ビューでは lazy lookup（`t(".title")`）を使う。詳細は `doc/architecture.md` の「国際化」を参照。
 
 テストの `assert_select` にユーティリティクラスを書かないこと。`id` / 要素の構造 / `role` 属性 / テキストで書く。
 
-運営者画面（`/ops`）は同じコードベースを別プロセスとしてデプロイする。所有者ロールで接続し（`DB_USER=appstdio_owner`）、`OPS_CONSOLE=1` でルーティングが切り替わる。テストも分かれるので、両方を走らせるときは `bin/rails test:full` を使う（Rails 本体の `test:all` は運営者画面側を skip するので使わない）。
+運営者画面（`/ops`）は同じコードベースを別プロセスとしてデプロイする。所有者ロールで接続し（`DB_USER=appstdio_owner`）、`OPS_CONSOLE=1` でルーティングが切り替わる。テストも分かれるので、すべてを走らせるときは `bin/rails test:full` を使う（system test も含む。Rails 本体の `test:all` は運営者画面側を skip するので使わない）。
 
 ## テーブルを追加するとき
 

@@ -138,6 +138,10 @@ server {
   どちらを通っても同じものが返る
 * 繋がらなくても画面は動く。保存した変更の自動反映が効かず、手で再読み込みが要るだけ
 
+**画面の CSS や JavaScript が読み込まれず、`/vite-dev/` が 502 になるとき**は、
+`docker compose restart vite` で直る。Vite の導入前のブランチへ切り替えるなどで
+`vite.config.ts` が一時的に無くなると、Vite が設定なしで再起動し、別のポートで待ち受けてしまう。
+
 **npm のパッケージを足すときも `vite` コンテナの中で行う。** `node_modules` は Docker の
 名前付きボリュームにあり、ホスト側からは見えない（vboxsf ではシンボリックリンクを作れないため）。
 
@@ -161,9 +165,12 @@ docker compose exec app sh -c "bin/rails test"
 `bin/rails test` では skip される。
 
 ```bash
-docker compose exec app sh -c "bin/rails test:ops"   # 運営者画面のみ
-docker compose exec app sh -c "bin/rails test:full"  # 両方
+docker compose exec app sh -c "bin/rails test:ops"     # 運営者画面のみ
+docker compose exec app sh -c "bin/rails test:system"  # ブラウザを動かすテスト（system test）のみ
+docker compose exec app sh -c "bin/rails test:full"    # すべて
 ```
+
+system test はコンテナの Chromium（headless）で動く。失敗したときの画面は `tmp/screenshots/` に残る。
 
 コンテナが起動してない場合
 

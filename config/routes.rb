@@ -30,12 +30,22 @@ Rails.application.routes.draw do
     resource :profile, only: [:show, :update]
 
     namespace :files do
-      root "folders#show"
-      get "my_drive" => "folders#show", defaults: { drive: "personal" }, as: :my_drive
-      resources :folders, only: [:show]
-      get "shared" => "shared_items#index", as: :shared_items
-      get "trash" => "trash#index", as: :trash
-      resource :privileged_mode, only: [:create, :destroy]
+      # 画面はすべて同じ入れ物のページ。URL は app/javascript/files/router.ts と揃えること
+      root "app#show"
+      get "my_drive" => "app#show", as: :my_drive
+      get "folders/:id" => "app#show", as: :folder
+      get "shared" => "app#show", as: :shared_items
+      get "trash" => "app#show", as: :trash
+
+      namespace :api, defaults: { format: :json } do
+        get "tree" => "trees#show"
+        get "drives/shared" => "folders#show", defaults: { drive: "shared" }
+        get "drives/mine" => "folders#show", defaults: { drive: "personal" }
+        get "folders/:id" => "folders#show", as: :folder
+        get "shared" => "shared_items#index"
+        get "trash" => "trash#index"
+        resource :privileged_mode, only: [:create, :destroy]
+      end
     end
 
     namespace :management do

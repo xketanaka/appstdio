@@ -1,5 +1,7 @@
 require "test_helper"
 
+# 画面の表示は Vue（app/javascript/files）が受け持つので、ここでは入れ物のページと
+# API の応答を確かめる。表示のしかたは Vitest、通しの動きは system test で確かめる
 class FilesTest < ActionDispatch::IntegrationTest
   PASSWORD = "password1234".freeze
 
@@ -30,232 +32,29 @@ class FilesTest < ActionDispatch::IntegrationTest
     TenantContext.clear
   end
 
-  describe "フォルダ" do
-    test "組織共有ドライブのルートを一覧する" do
-      login(@member_user)
-      get files_root_path
+  describe "入れ物のページ" do
+    test "どの URL でも同じページを返し、Vue に設定を渡す" do
+      login(@owner_user)
 
-      assert_response :success
-      assert_select "h1", "組織共有ドライブ"
-      assert_select "#file-list tbody tr", 3
-      assert_select "#file-list tbody tr:nth-child(1) td:first-child", /営業/
-      assert_select "#file-list tbody tr:nth-child(2) td:first-child", /人事/
-      assert_select "#file-list tbody tr:nth-child(3) td", "24.5 KB"
-      assert_select "#file-list tbody tr:nth-child(1) td", "-"
-      assert_select "#file-list tbody tr:nth-child(3) td", "管理者さん"
+      [files_root_path, files_my_drive_path, files_folder_path(@sales), files_shared_items_path, files_trash_path].each do |path|
+        get path
+        assert_response :success
+        assert_select "#files-app[data-config]", 1
+      end
+
+      config = JSON.parse(css_select("#files-app").first["data-config"])
+      assert_equal "組織共有ドライブ", config.dig("messages", "sections", "shared_drive")
+      assert config["admin_or_owner"]
+      assert_not config["privileged"]
     end
 
-    test "権限の無いフォルダは名前だけ出して開けない" do
+    test "フォルダが無くても入れ物は返す。見つからない旨は API の応答を受けて Vue が出す" do
       login(@member_user)
-      get files_root_path
-
-      assert_select "#file-list a[href=?]", files_folder_path(@sales)
-      assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
-      assert_select "#file-list span[title=?]", "権限がないため開けません", text: "人事"
-    end
-
-    test "権限の無いファイルも名前だけは出し、付帯情報は出さない" do
-      TenantContext.switch(tenant: @tenant) { grant(@minutes, @everyone, :none) }
-      login(@member_user)
-      get files_root_path
-
-      assert_select "#file-list tbody tr", 3
-      assert_select "#file-list span[title=?]", "権限がないため開けません", text: "議事録.docx"
-      assert_select "#file-list tbody tr:nth-child(3) td", text: "管理者さん", count: 0
-      assert_select "#file-list tbody tr:nth-child(3) td", text: "24.5 KB", count: 0
-      assert_select "#file-list tbody tr:nth-child(3) td:nth-child(2)", ""
-    end
-
-    test "サブフォルダではパンくずに上位のフォルダが出る" do
-      login(@member_user)
-      get files_folder_path(@estimates)
-
-      assert_select "h1", "見積"
-      assert_select "nav[aria-label=?] a", "現在の場所", 2
-      assert_select "nav[aria-label=?] a[href=?]", "現在の場所", files_folder_path(@root), text: "組織共有ドライブ"
-      assert_select "nav[aria-label=?] a[href=?]", "現在の場所", files_folder_path(@sales), text: "営業"
-      assert_select "#file-list + p", "このフォルダには何もありません"
-    end
-
-    test "権限の無いフォルダを開くと404" do
-      login(@member_user)
-      get files_folder_path(@hr)
-
-      assert_response :not_found
-    end
-
-    test "存在しないフォルダやファイルを開くと404" do
-      login(@member_user)
-
       get files_folder_path(0)
-      assert_response :not_found
-
-      get files_folder_path(@minutes)
-      assert_response :not_found
-    end
-
-    test "編集者にだけ作成ボタンを出す" do
-      login(@member_user)
-      get files_folder_path(@sales)
-      assert_select "button", text: "作成", count: 0
-
-      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
-      get files_folder_path(@sales)
-      assert_select "button", text: "作成"
-    end
-  end
-
-  describe "特権モード" do
-    test "管理者は特権モードにすると権限の無いフォルダも開ける" do
-      login(@owner_user)
-      get files_root_path
-      assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
-      assert_select "[role=status]", text: /特権モード/, count: 0
-      assert_select "aside button[role=switch][aria-checked=false]", text: /特権モード/
-
-      post files_privileged_mode_path
-      follow_redirect!
-
-      assert_select "#file-list a[href=?]", files_folder_path(@hr)
-      assert_select "[role=status]", text: /特権モードです/
-      assert_select "aside button[role=switch][aria-checked=true]"
-      assert_select "aside form input[name=_method][value=delete]"
-      get files_folder_path(@hr)
-      assert_response :success
-    end
-
-    test "終えると付与された権限での表示に戻る" do
-      login(@owner_user)
-      post files_privileged_mode_path
-
-      delete files_privileged_mode_path
-      assert_redirected_to files_root_path
-      follow_redirect!
-
-      assert_select "#file-list a[href=?]", files_folder_path(@hr), 0
-      assert_select "[role=status]", text: /特権モード/, count: 0
-    end
-
-    test "一般の利用者には入口を出さず、切り替えもできない" do
-      login(@member_user)
-      get files_root_path
-      assert_select "aside button[role=switch]", 0
-
-      post files_privileged_mode_path
-      assert_response :not_found
-    end
-
-    test "テナントを切り替えると解除される" do
-      other = Tenant.setup!(name: "テナントB")
-      TenantContext.switch(tenant: other) do
-        TenantUser.create!(tenant: other, user: @owner_user, display_name: "管理者さん", role: :owner, status: :active)
-      end
-      post login_path, params: { email: @owner_user.email, password: PASSWORD }
-      post select_tenant_path, params: { tenant_id: @tenant.id }
-      post files_privileged_mode_path
-
-      post select_tenant_path, params: { tenant_id: other.id }
-      post select_tenant_path, params: { tenant_id: @tenant.id }
-      get files_root_path
-
-      assert_select "[role=status]", text: /特権モード/, count: 0
-      assert_select "aside button[role=switch][aria-checked=false]"
-    end
-  end
-
-  describe "マイドライブ" do
-    test "初めて開いたときに作られ、他の利用者は開けない" do
-      login(@member_user)
-      get files_my_drive_path
 
       assert_response :success
-      assert_select "h1", "マイドライブ"
-      assert_select "button", text: "作成"
-
-      root = TenantContext.switch(tenant: @tenant) { Files::Drive.personal.find_by!(owner: @member).root }
-      delete logout_path
-      login(@owner_user)
-      get files_folder_path(root)
-      assert_response :not_found
-    end
-  end
-
-  describe "左ペイン" do
-    test "ドライブの直下のフォルダを並べ、開いている場所を示す" do
-      login(@member_user)
-      get files_folder_path(@sales)
-
-      assert_select "aside", text: /\Aファイル\s*組織共有ドライブ.*共有されたアイテム.*マイドライブ.*ゴミ箱/m
-      assert_select "aside details[open]", 1
-      assert_select "aside details[open] a[aria-current=page]", "組織共有ドライブ"
-      assert_select "aside details[open] a[href=?]", files_folder_path(@sales), text: "営業"
-      assert_select "aside details[open] a[href=?]", files_folder_path(@hr), 0
-    end
-  end
-
-  describe "共有されたアイテム" do
-    test "親が見えず自分に共有されたものを並べる" do
-      TenantContext.switch(tenant: @tenant) { grant(@review, @member, :viewer) }
-      login(@member_user)
-      get files_shared_items_path
-
-      assert_response :success
-      assert_select "h1", "共有されたアイテム"
-      assert_select "#file-list tbody tr", 1
-      assert_select "#file-list td", text: /評価\.xlsx/
     end
 
-    test "共有されたフォルダを開くと、パンくずは共有されたアイテムから始まる" do
-      shared = TenantContext.switch(tenant: @tenant) do
-        node(:folder, "面談", @hr).tap { |folder| grant(folder, @member, :viewer) }
-      end
-      login(@member_user)
-      get files_folder_path(shared)
-
-      assert_response :success
-      assert_select "nav[aria-label=?] a", "現在の場所", 1
-      assert_select "nav[aria-label=?] a[href=?]", "現在の場所", files_shared_items_path
-      assert_select "nav[aria-label=?]", "現在の場所", text: /人事/, count: 0
-    end
-
-    test "無ければその旨を出す" do
-      login(@member_user)
-      get files_shared_items_path
-
-      assert_select "#file-list + p", "共有されたアイテムはありません"
-    end
-  end
-
-  describe "ゴミ箱" do
-    test "親フォルダの編集者には削除したものが出る" do
-      TenantContext.switch(tenant: @tenant) do
-        grant(@sales, @member, :editor)
-        trashed = node(:file, "古い見積.pdf", @sales)
-        trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id, deleted_by: @owner)
-      end
-      login(@member_user)
-      get files_trash_path
-
-      assert_response :success
-      assert_select "#file-list tbody tr", 1
-      assert_select "#file-list td", text: /古い見積\.pdf/
-      assert_select "#file-list td", "管理者さん"
-      assert_select "#file-list a", 0
-    end
-
-    test "閲覧者には出ない" do
-      TenantContext.switch(tenant: @tenant) do
-        trashed = node(:file, "古い見積.pdf", @sales)
-        trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id)
-      end
-      login(@member_user)
-      get files_trash_path
-
-      assert_select "#file-list + p", "ゴミ箱は空です"
-    end
-  end
-
-  describe "入口" do
     test "メニューの「ファイル」から開ける" do
       login(@member_user)
       get top_page_path
@@ -277,10 +76,222 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_redirected_to files_root_path
     end
 
-    test "未ログインでは開けない" do
+    test "未ログインではログイン画面へ転送する" do
       get files_root_path
 
       assert_redirected_to login_path
+    end
+  end
+
+  describe "API の入口" do
+    test "未ログインでは転送せず 401 を返す" do
+      get files_api_tree_path
+
+      assert_response :unauthorized
+    end
+  end
+
+  describe "フォルダ" do
+    test "組織共有ドライブのルートを一覧する" do
+      login(@member_user)
+      get files_api_drives_shared_path
+
+      assert_response :success
+      assert_equal({ "id" => @root.id, "label" => "組織共有ドライブ" }, json["folder"])
+      assert_equal "shared_drive", json["section"]
+      assert_equal ["営業", "人事", "議事録.docx"], json["entries"].pluck("name")
+      assert_equal(
+        { "kind" => "file", "readable" => true, "owner" => "管理者さん", "byte_size" => 25_088 },
+        json["entries"].last.slice("kind", "readable", "owner", "byte_size"),
+      )
+      assert_nil json["entries"].first["byte_size"], "フォルダにサイズは無い"
+    end
+
+    test "権限の無い項目は名前だけを返し、付帯情報は返さない" do
+      TenantContext.switch(tenant: @tenant) { grant(@minutes, @everyone, :none) }
+      login(@member_user)
+      get files_api_drives_shared_path
+
+      hr, minutes = json["entries"].values_at(1, 2)
+      [hr, minutes].each do |entry|
+        assert_not entry["readable"]
+        assert_nil entry["owner"]
+        assert_nil entry["updated_at"]
+        assert_nil entry["byte_size"]
+      end
+      assert_equal "議事録.docx", minutes["name"]
+    end
+
+    test "サブフォルダではパンくずに上位のフォルダが出る" do
+      login(@member_user)
+      get files_api_folder_path(@estimates)
+
+      assert_equal "見積", json.dig("folder", "label")
+      assert_equal ["組織共有ドライブ", "営業"], json["breadcrumbs"].pluck("label")
+      assert_not json["via_shared"]
+      assert_empty json["entries"]
+    end
+
+    test "権限の無いフォルダは 404" do
+      login(@member_user)
+      get files_api_folder_path(@hr)
+
+      assert_response :not_found
+    end
+
+    test "存在しないフォルダやファイルは 404" do
+      login(@member_user)
+
+      get files_api_folder_path(0)
+      assert_response :not_found
+
+      get files_api_folder_path(@minutes)
+      assert_response :not_found
+    end
+
+    test "編集できるかを返す" do
+      login(@member_user)
+      get files_api_folder_path(@sales)
+      assert_not json["can_edit"]
+
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
+      get files_api_folder_path(@sales)
+      assert json["can_edit"]
+    end
+  end
+
+  describe "特権モード" do
+    test "管理者は特権モードにすると権限の無いフォルダも開ける" do
+      login(@owner_user)
+      get files_api_folder_path(@hr)
+      assert_response :not_found
+
+      post files_api_privileged_mode_path
+      assert_response :no_content
+
+      get files_api_folder_path(@hr)
+      assert_response :success
+      get files_root_path
+      assert JSON.parse(css_select("#files-app").first["data-config"])["privileged"]
+    end
+
+    test "終えると付与された権限での表示に戻る" do
+      login(@owner_user)
+      post files_api_privileged_mode_path
+
+      delete files_api_privileged_mode_path
+      assert_response :no_content
+
+      get files_api_folder_path(@hr)
+      assert_response :not_found
+    end
+
+    test "一般の利用者は切り替えられない" do
+      login(@member_user)
+      post files_api_privileged_mode_path
+
+      assert_response :not_found
+      get files_root_path
+      assert_not JSON.parse(css_select("#files-app").first["data-config"])["admin_or_owner"]
+    end
+
+    test "テナントを切り替えると解除される" do
+      other = Tenant.setup!(name: "テナントB")
+      TenantContext.switch(tenant: other) do
+        TenantUser.create!(tenant: other, user: @owner_user, display_name: "管理者さん", role: :owner, status: :active)
+      end
+      post login_path, params: { email: @owner_user.email, password: PASSWORD }
+      post select_tenant_path, params: { tenant_id: @tenant.id }
+      post files_api_privileged_mode_path
+
+      post select_tenant_path, params: { tenant_id: other.id }
+      post select_tenant_path, params: { tenant_id: @tenant.id }
+
+      get files_api_folder_path(@hr)
+      assert_response :not_found
+    end
+  end
+
+  describe "マイドライブ" do
+    test "初めて開いたときに作られ、他の利用者は開けない" do
+      login(@member_user)
+      get files_api_drives_mine_path
+
+      assert_response :success
+      assert_equal "マイドライブ", json.dig("folder", "label")
+      assert_equal "my_drive", json["section"]
+      assert json["can_edit"]
+
+      root_id = json.dig("folder", "id")
+      delete logout_path
+      login(@owner_user)
+      get files_api_folder_path(root_id)
+      assert_response :not_found
+    end
+  end
+
+  describe "左ペインのツリー" do
+    test "ドライブの直下のフォルダを、開けるかどうかと一緒に返す" do
+      login(@member_user)
+      get files_api_tree_path
+
+      assert_equal(
+        [{ "id" => @sales.id, "name" => "営業", "readable" => true }, { "id" => @hr.id, "name" => "人事", "readable" => false }],
+        json["shared_drive"],
+      )
+      assert_empty json["my_drive"], "マイドライブはまだ作られていない"
+    end
+  end
+
+  describe "共有されたアイテム" do
+    test "親が見えず自分に共有されたものを並べる" do
+      TenantContext.switch(tenant: @tenant) { grant(@review, @member, :viewer) }
+      login(@member_user)
+      get files_api_shared_path
+
+      assert_equal ["評価.xlsx"], json["entries"].pluck("name")
+    end
+
+    test "共有されたフォルダを開くと、パンくずは共有されたアイテムから始まる" do
+      shared = TenantContext.switch(tenant: @tenant) do
+        node(:folder, "面談", @hr).tap { |folder| grant(folder, @member, :viewer) }
+      end
+      login(@member_user)
+      get files_api_folder_path(shared)
+
+      assert_response :success
+      assert json["via_shared"]
+      assert_empty json["breadcrumbs"], "閲覧できない人事・ルートは出さない"
+      assert_equal "shared_drive", json["section"]
+    end
+  end
+
+  describe "ゴミ箱" do
+    test "親フォルダの編集者には削除したものが、削除した人と一緒に出る" do
+      TenantContext.switch(tenant: @tenant) do
+        grant(@sales, @member, :editor)
+        trashed = node(:file, "古い見積.pdf", @sales, byte_size: 2048)
+        trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id, deleted_by: @owner)
+      end
+      login(@member_user)
+      get files_api_trash_path
+
+      assert_equal 1, json["entries"].size
+      assert_equal(
+        { "name" => "古い見積.pdf", "deleted_by" => "管理者さん", "byte_size" => 2048 },
+        json["entries"].first.slice("name", "deleted_by", "byte_size"),
+      )
+    end
+
+    test "閲覧者には出ない" do
+      TenantContext.switch(tenant: @tenant) do
+        trashed = node(:file, "古い見積.pdf", @sales)
+        trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id)
+      end
+      login(@member_user)
+      get files_api_trash_path
+
+      assert_empty json["entries"]
     end
   end
 
@@ -289,13 +300,13 @@ class FilesTest < ActionDispatch::IntegrationTest
       TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(enabled: false) }
     end
 
-    test "メニューに「ファイル」を出さず、画面を開くと404" do
+    test "メニューに「ファイル」を出さず、画面も API も 404" do
       login(@owner_user)
 
       get top_page_path
       assert_select "dialog[data-drawer] a[href=?]", files_root_path, 0
 
-      [files_root_path, files_folder_path(@sales), files_my_drive_path, files_trash_path].each do |path|
+      [files_root_path, files_folder_path(@sales), files_my_drive_path, files_trash_path, files_api_tree_path].each do |path|
         get path
         assert_response :not_found
       end
@@ -303,6 +314,10 @@ class FilesTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def json
+    response.parsed_body
+  end
 
   def login(user)
     post login_path, params: { email: user.email, password: PASSWORD }

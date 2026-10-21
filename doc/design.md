@@ -73,6 +73,9 @@ CSS の書き方の仕組み（Tailwind の構成、開閉する UI の作り方
 <%= link_to label, path, class: ui_nav_item_class(current) %>                   <%# 左ペインの項目 %>
 ```
 
+Vue の画面（ファイル画面）では、同じクラスを `app/javascript/files/ui.ts` の `buttonClass` /
+`navItemClass` が返す。**`UiHelper` を変えたら `ui.ts` も直すこと**（逆も同じ）。
+
 - 主要なボタンは、1つの画面（パネル）に1つまで
 - 左ペインの項目を字下げするときは、`ui_nav_item_class(current, extra: "ml-5")` のように
   **margin** でずらす。padding で字下げすると、ヘルパーの `px-4` とぶつかる

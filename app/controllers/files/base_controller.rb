@@ -1,55 +1,19 @@
 module Files
   class BaseController < ApplicationController
-    layout "files"
-
     before_action :files_enabled_required
-
-    helper_method :tree, :node_label, :privileged_mode?
 
     private
 
     def files_enabled_required
-      return if current_tenant.files_setting&.enabled?
-
-      render file: Rails.root.join("public/404.html"), status: :not_found, layout: false
+      render_not_found unless current_tenant.files_setting&.enabled?
     end
 
-    def access
-      @access ||= Access.new(current_tenant_user, privileged: privileged_mode?)
+    def render_not_found
+      render file: Rails.root.join("public/404.html"), status: :not_found, layout: false
     end
 
     def privileged_mode?
       current_tenant_user.admin_or_owner? && session[:files_privileged_tenant_id] == current_tenant.id
-    end
-
-    # 描画時に呼ぶ。アクションの中でドライブを作った場合も反映される
-    def tree
-      @tree ||= begin
-        shared = Drive.shared.find_by(tenant: current_tenant)&.root
-        personal = Drive.personal.find_by(owner: current_tenant_user)&.root
-        tops = [shared, personal].compact.index_with { |root| root.children.kept.folder.order(:name).to_a }
-        permissions = access.effective_permissions(tops.values.flatten)
-        folders = tops.transform_values { |children| children.map { |node| [node, permissions[node].readable?] } }
-
-        [
-          { key: :shared_drive, path: files_root_path, folders: folders.fetch(shared, []) },
-          { key: :shared_with_me, path: files_shared_items_path },
-          { key: :my_drive, path: files_my_drive_path, folders: folders.fetch(personal, []) },
-          { key: :trash, path: files_trash_path },
-        ]
-      end
-    end
-
-    def node_label(node)
-      return node.name unless node.root?
-
-      if node.drive.shared?
-        t("files.drives.shared")
-      elsif node.drive.owner_id == current_tenant_user.id
-        t("files.drives.mine")
-      else
-        t("files.drives.others", name: node.drive.owner.display_name)
-      end
     end
   end
 end
