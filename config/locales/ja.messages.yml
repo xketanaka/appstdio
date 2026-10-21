@@ -34,6 +34,8 @@ ja:
     unknown_error: "予期せぬエラーが発生しました。"
     please_input: "%{name}を入力してください。"
   errors:
+    # 既定は "%{attribute} %{message}" で、「名前 が入力されていません。」と間が空く
+    format: "%{attribute}%{message}"
     messages:
       blank: "が入力されていません。"
       required: "が指定されていません。"
