@@ -65,14 +65,16 @@ test("特権モードにすると権限の無いフォルダも開け、終え�
   const list = page.locator("#file-list")
   await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
 
+  // 移動などの知らせも status なので、特権モードの帯は文言で絞る
+  const banner = page.getByRole("status").filter({ hasText: "特権モードです" })
   await page.locator("#side-pane").getByRole("switch", { name: "特権モード" }).click()
-  await expect(page.getByRole("status")).toContainText("特権モードです")
+  await expect(banner).toBeVisible()
   await expect(list.getByTitle("権限がないため開けません")).toHaveCount(0)
   await list.getByRole("row", { name: /人事/ }).dblclick()
   await expect(page.getByRole("heading", { name: "人事" })).toBeVisible()
 
-  await page.getByRole("status").getByRole("button", { name: "特権モードを終える" }).click()
-  await expect(page.getByRole("status")).toBeHidden()
+  await banner.getByRole("button", { name: "特権モードを終える" }).click()
+  await expect(banner).toBeHidden()
   await expect(page).toHaveURL("/files")
   await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
 })
@@ -98,4 +100,21 @@ test("複数を選んで、別のフォルダへまとめて移す", async ({ pa
   await list.getByRole("row", { name: /保管/ }).dblclick()
   await expect(page.getByRole("heading", { name: "保管" })).toBeVisible()
   await expect(list.getByRole("row", { name: /下書き|メモ\.txt/ })).toHaveCount(2)
+})
+
+test("ドラッグして、一覧のフォルダや左ペインのドライブへ移す", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+  const notice = page.getByRole("status").filter({ hasText: "移動しました" })
+
+  await list.getByRole("row", { name: /議事録\.txt/ }).dragTo(list.getByRole("row", { name: /資料/ }))
+  await expect(notice).toHaveText("「議事録.txt」を「資料」に移動しました")
+  await expect(list.getByRole("row", { name: /議事録\.txt/ })).toHaveCount(0)
+
+  await list.getByRole("row", { name: /資料/ }).dblclick()
+  await expect(page.getByRole("heading", { name: "資料" })).toBeVisible()
+  await list.getByRole("row", { name: /議事録\.txt/ }).dragTo(page.locator("#side-pane summary", { hasText: "マイドライブ" }))
+  await expect(notice).toHaveText("「議事録.txt」を「マイドライブ」に移動しました")
+  await expect(list.getByRole("row", { name: /議事録\.txt/ })).toHaveCount(0)
 })

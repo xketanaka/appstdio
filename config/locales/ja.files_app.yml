@@ -63,11 +63,16 @@ ja:
       submit: "ここに移動"
       cancel: "キャンセル"
       forbidden: "このフォルダには移動できません。移動元と移動先の両方の編集権限が必要です"
+      done_one: "「%{name}」を「%{destination}」に移動しました"
+      done_other: "%{count}件を「%{destination}」に移動しました"
+      dragging: "%{count}件"
       failed: "移動できませんでした。時間をおいてもう一度お試しください"
     shared_items:
       empty: "共有されたアイテムはありません"
     trash:
       empty: "ゴミ箱は空です"
+    notice:
+      close: "閉じる"
     load:
       not_found: "フォルダが見つからないか、開く権限がありません"
       error: "読み込めませんでした。時間をおいてページを読み直してください"

@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue"
 import { RouterView, useRoute, useRouter } from "vue-router"
 import { api } from "./api"
 import FileTree from "./components/FileTree.vue"
+import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
 import { t } from "./i18n"
 import { reloadTree, state } from "./store"
@@ -87,5 +88,6 @@ const leavePrivilegedMode = async () => {
         <RouterView />
       </section>
     </div>
+    <NoticeBar />
   </div>
 </template>

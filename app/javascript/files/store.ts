@@ -1,6 +1,6 @@
 import { reactive } from "vue"
 import { api, type FolderPayload, type SectionKey, type Tree, type TreeFolder } from "./api"
-import { setMessages, type Messages } from "./i18n"
+import { setMessages, t, type Messages } from "./i18n"
 
 // 入れ物のページ（app/views/files/app/show.html.erb）が data-config で渡すもの
 type Config = {
@@ -23,7 +23,19 @@ export const state = reactive({
   children: new Map<number, TreeFolder[]>(),
   openSections: new Set<SectionKey>(),
   openFolders: new Set<number>(),
+  // 作成・移動などで中身が変わるたびに増える。開いている画面はこれを見て読み直す
+  revision: 0,
+  // 画面の下に一時的に出す知らせ（移動した、移せなかった、など）
+  notice: null as { message: string, error: boolean } | null,
 })
+
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
+
+export function notify(message: string, { error = false } = {}) {
+  state.notice = { message, error }
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => (state.notice = null), 6000)
+}
 
 export function loadConfig(element: HTMLElement) {
   const value: Config = JSON.parse(element.dataset.config ?? "{}")
@@ -56,6 +68,23 @@ export async function reloadTree() {
 
   const loaded = [...state.children.keys()].filter((id) => !rootIds().includes(id))
   await loadChildren(loaded, { force: true })
+}
+
+// 中身が変わったことを、開いている画面とツリーに知らせる
+export async function changed() {
+  state.revision++
+  await reloadTree()
+}
+
+type Item = { id: number, name: string }
+
+// 移す。失敗したら例外をそのまま投げるので、理由の出し方は呼び出し側で決める
+export async function moveItems(items: Item[], destination: { id: number, label: string }) {
+  await api.move(items.map((item) => item.id), destination.id)
+  notify(items.length === 1
+    ? t("move.done_one", { name: items[0].name, destination: destination.label })
+    : t("move.done_other", { count: items.length, destination: destination.label }))
+  await changed()
 }
 
 export async function toggleFolder(id: number) {

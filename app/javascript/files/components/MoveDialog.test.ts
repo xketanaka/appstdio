@@ -6,7 +6,7 @@ import MoveDialog from "./MoveDialog.vue"
 
 vi.mock("../api", async (original) => ({
   ...(await original<typeof import("../api")>()),
-  api: { folder: vi.fn(), move: vi.fn() },
+  api: { folder: vi.fn(), move: vi.fn(), tree: vi.fn(async () => ({ shared_drive: null, my_drive: null })), treeChildren: vi.fn() },
 }))
 
 const folder = (id: number, label: string, children: { id: number, name: string }[], overrides: Partial<FolderPayload> = {}): FolderPayload => ({

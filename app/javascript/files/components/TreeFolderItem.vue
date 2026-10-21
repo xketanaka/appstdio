@@ -2,6 +2,7 @@
 import { computed } from "vue"
 import { RouterLink } from "vue-router"
 import type { TreeFolder } from "../api"
+import { useDropTargets } from "../dnd"
 import { t } from "../i18n"
 import { state, toggleFolder } from "../store"
 import FileIcon from "./FileIcon.vue"
@@ -12,13 +13,17 @@ const props = defineProps<{ folder: TreeFolder, depth: number }>()
 const open = computed(() => state.openFolders.has(props.folder.id))
 const current = computed(() => state.currentFolderId === props.folder.id)
 const children = computed(() => state.children.get(props.folder.id) ?? [])
+
+const { over, handlers } = useDropTargets()
+const dropTarget = computed(() => (props.folder.readable ? handlers({ id: props.folder.id, label: props.folder.name }) : {}))
 </script>
 
 <template>
   <div
     class="nav-item gap-1 pr-3 pl-1"
-    :class="{ 'nav-item-current': current }"
+    :class="{ 'nav-item-current': current, 'bg-primary-50 outline-2 -outline-offset-2 outline-primary-600': over === folder.id }"
     :style="{ marginLeft: `${(depth + 1) * 1}rem` }"
+    v-on="dropTarget"
   >
     <button
       v-if="folder.has_children"

@@ -9,13 +9,14 @@ import MoveDialog from "../components/MoveDialog.vue"
 import NewFolderDialog from "../components/NewFolderDialog.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
-import { reloadTree, showFolder } from "../store"
+import { endDrag, startDrag, useDropTargets } from "../dnd"
+import { changed, showFolder } from "../store"
 import { useLoad } from "../useLoad"
 import { useSelection } from "../useSelection"
 
 const props = defineProps<{ source: FolderSource }>()
 
-const { data, status, reload } = useLoad(
+const { data, status } = useLoad(
   () => api.folder(props.source),
   () => props.source,
   showFolder,
@@ -38,6 +39,16 @@ const clearOnEscape = (event: KeyboardEvent) => {
 onMounted(() => document.addEventListener("keydown", clearOnEscape))
 onBeforeUnmount(() => document.removeEventListener("keydown", clearOnEscape))
 
+// 選んでいない行をドラッグしたら、その行だけを選び直して動かす（Google ドライブと同じ）
+const dragRows = (row: Row, event: DragEvent) => {
+  if (!data.value) return
+  if (!selected.has(row.id)) select(row.id, { toggle: false, range: false })
+  startDrag(event, rows.value.filter((each) => selected.has(each.id)), data.value.folder.id)
+}
+
+// パンくずの祖先へも落とせる
+const { over: overCrumb, handlers: crumbTarget } = useDropTargets()
+
 const moveDialog = ref<InstanceType<typeof MoveDialog> | null>(null)
 const moveSelected = () => moveDialog.value?.open(rows.value.filter((row) => selected.has(row.id)))
 const moveRow = (row: Row) => {
@@ -53,8 +64,6 @@ const openNewFolder = () => {
   newFolderDialog.value?.open()
 }
 
-// 左ペインのツリーにはドライブ直下のフォルダが出るので、そちらも読み直す
-const changed = () => Promise.all([reload(), reloadTree()])
 </script>
 
 <template>
@@ -81,7 +90,9 @@ const changed = () => Promise.all([reload(), reloadTree()])
           >
             <RouterLink
               :to="{ name: 'folder', params: { id: crumb.id } }"
-              class="hover:underline"
+              class="-mx-1 rounded-full px-1 hover:underline"
+              :class="{ 'bg-primary-100 text-primary-900 outline-2 outline-primary-600': overCrumb === crumb.id }"
+              v-on="crumbTarget(crumb)"
             >
               {{ crumb.label }}
             </RouterLink>
@@ -141,10 +152,13 @@ const changed = () => Promise.all([reload(), reloadTree()])
       selectable
       :selected="selected"
       :can-move="data.can_edit"
+      :draggable="data.can_edit"
       @select="select"
       @open="open"
       @clear="clear"
       @move="moveRow"
+      @dragstart="dragRows"
+      @dragend="endDrag"
     >
       <template
         v-if="selected.size > 0"
@@ -196,7 +210,6 @@ const changed = () => Promise.all([reload(), reloadTree()])
     <MoveDialog
       ref="moveDialog"
       :from="data.folder"
-      @moved="changed"
     />
   </template>
   <LoadMessage

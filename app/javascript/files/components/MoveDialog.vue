@@ -2,6 +2,7 @@
 import { computed, ref, shallowRef } from "vue"
 import { api, ForbiddenError, ValidationError, type FolderLink, type FolderPayload, type FolderSource } from "../api"
 import { t } from "../i18n"
+import { moveItems } from "../store"
 import FileIcon from "./FileIcon.vue"
 
 type Item = { id: number, name: string }
@@ -63,7 +64,7 @@ const submit = async () => {
   if (!canSubmit.value || location.value === null) return
   busy.value = true
   try {
-    await api.move(items.value.map((item) => item.id), location.value.folder.id)
+    await moveItems(items.value, location.value.folder)
     close()
     emit("moved")
   } catch (error) {

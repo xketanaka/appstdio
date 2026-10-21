@@ -5,15 +5,27 @@ import type { SectionKey, TreeFolder } from "../api"
 import { t } from "../i18n"
 import { state } from "../store"
 import TreeFolderItem from "./TreeFolderItem.vue"
+import { useDropTargets } from "../dnd"
 
-type Section = { key: SectionKey, to: { name: string }, folders?: TreeFolder[] }
+// rootId は、そのドライブのルート（落とし先にできる）。マイドライブは初めて開くまで無い
+type Section = { key: SectionKey, to: { name: string }, folders?: TreeFolder[], rootId?: number }
 
 const sections = computed<Section[]>(() => [
-  { key: "shared_drive", to: { name: "shared_drive" }, folders: state.tree?.shared_drive?.folders ?? [] },
+  {
+    key: "shared_drive", to: { name: "shared_drive" },
+    folders: state.tree?.shared_drive?.folders ?? [], rootId: state.tree?.shared_drive?.id,
+  },
   { key: "shared_with_me", to: { name: "shared_with_me" } },
-  { key: "my_drive", to: { name: "my_drive" }, folders: state.tree?.my_drive?.folders ?? [] },
+  {
+    key: "my_drive", to: { name: "my_drive" },
+    folders: state.tree?.my_drive?.folders ?? [], rootId: state.tree?.my_drive?.id,
+  },
   { key: "trash", to: { name: "trash" } },
 ])
+
+const { over, handlers } = useDropTargets()
+const dropTarget = (section: Section) =>
+  section.rootId === undefined ? {} : handlers({ id: section.rootId, label: t(`sections.${section.key}`) })
 
 // フォルダを開いているときは、区分ではなくそのフォルダを選択中として示す
 const current = (key: SectionKey) => key === state.section && state.currentFolderId === null
@@ -38,7 +50,8 @@ const toggle = (key: SectionKey, event: Event) => {
       >
         <summary
           class="nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden"
-          :class="{ 'nav-item-current': current(section.key) }"
+          :class="{ 'nav-item-current': current(section.key), 'bg-primary-50 outline-2 -outline-offset-2 outline-primary-600': over !== null && over === section.rootId }"
+          v-on="dropTarget(section)"
         >
           <svg
             viewBox="0 0 24 24"

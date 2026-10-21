@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router"
+import { useDropTargets } from "../dnd"
 import { formatSize, formatTime } from "../format"
 import { t } from "../i18n"
 import type { Row } from "../rows"
@@ -15,6 +16,8 @@ const props = defineProps<{
   selectable?: boolean
   selected?: ReadonlySet<number>
   canMove?: boolean
+  // 行をドラッグして、フォルダの行へ落として移せるか
+  draggable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -22,7 +25,13 @@ const emit = defineEmits<{
   open: [row: Row]
   clear: []
   move: [row: Row]
+  dragstart: [row: Row, event: DragEvent]
+  dragend: []
 }>()
+
+const { over, handlers } = useDropTargets()
+const dropTarget = (row: Row) =>
+  props.draggable && row.folderId !== null ? handlers({ id: row.id, label: row.name }) : {}
 
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
@@ -98,15 +107,20 @@ const closeMenu = (event: Event) => {
           :key="row.id"
           :tabindex="selectable ? 0 : undefined"
           :aria-selected="selectable ? isSelected(row) : undefined"
+          :draggable="draggable && !touch"
           :class="[
             'border-b border-slate-100',
-            isSelected(row) ? 'bg-primary-100' : 'hover:bg-canvas',
+            over === row.id ? 'bg-primary-50 outline-2 -outline-offset-2 outline-primary-600'
+            : isSelected(row) ? 'bg-primary-100' : 'hover:bg-canvas',
             { 'cursor-default select-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-600': selectable },
           ]"
           @click="click(row, $event)"
           @dblclick="open(row)"
           @keydown.enter="open(row)"
           @keydown.space.prevent="selectable && emit('select', row.id, { toggle: true, range: false })"
+          @dragstart="emit('dragstart', row, $event)"
+          @dragend="emit('dragend')"
+          v-on="dropTarget(row)"
         >
           <td class="px-3 py-2.5">
             <span class="flex items-center gap-2">

@@ -4,8 +4,8 @@ import { state } from "./store"
 
 export type LoadStatus = "loading" | "ready" | "not_found" | "error"
 
-// 画面の中身を API から読む。source が変わったとき（別のフォルダへ移ったとき）と、
-// 特権モードを切り替えたとき（見える範囲が変わる）に読み直す
+// 画面の中身を API から読む。source が変わったとき（別のフォルダへ移ったとき）、
+// 特権モードを切り替えたとき（見える範囲が変わる）、作成・移動などで中身が変わったときに読み直す
 export function useLoad<T>(load: () => Promise<T>, source: WatchSource, onLoaded: (value: T) => void = () => {}) {
   const data = shallowRef<T | null>(null)
   const status = ref<LoadStatus>("loading")
@@ -27,7 +27,7 @@ export function useLoad<T>(load: () => Promise<T>, source: WatchSource, onLoaded
     }
   }
 
-  watch([source, () => state.privileged], run, { immediate: true })
+  watch([source, () => state.privileged, () => state.revision], run, { immediate: true })
 
   // 作成などの操作のあとに、今の場所を読み直す
   return { data, status, reload: run }
