@@ -4,7 +4,6 @@ import { RouterLink } from "vue-router"
 import type { SectionKey, TreeFolder } from "../api"
 import { t } from "../i18n"
 import { state } from "../store"
-import { navItemClass } from "../ui"
 import FileIcon from "./FileIcon.vue"
 
 type Section = { key: SectionKey, to: { name: string }, folders?: TreeFolder[] }
@@ -34,7 +33,10 @@ const toggle = (key: SectionKey, event: Event) => {
         :open="state.openSections.has(section.key)"
         @toggle="toggle(section.key, $event)"
       >
-        <summary :class="[navItemClass(section.key === state.section), 'cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden']">
+        <summary
+          class="nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden"
+          :class="{ 'nav-item-current': section.key === state.section }"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="currentColor"
@@ -55,7 +57,7 @@ const toggle = (key: SectionKey, event: Event) => {
         <div
           v-for="folder in section.folders"
           :key="folder.id"
-          :class="[navItemClass(false), 'ml-5 py-1.5']"
+          class="nav-item ml-5"
         >
           <FileIcon folder />
           <RouterLink
@@ -73,7 +75,8 @@ const toggle = (key: SectionKey, event: Event) => {
       </details>
       <div
         v-else
-        :class="[navItemClass(section.key === state.section), 'pl-7.5']"
+        class="nav-item pl-7.5"
+        :class="{ 'nav-item-current': section.key === state.section }"
       >
         <RouterLink
           :to="section.to"

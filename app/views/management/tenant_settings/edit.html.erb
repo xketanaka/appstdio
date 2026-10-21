@@ -11,7 +11,7 @@
 
       <div class="mb-5">
         <%= f.label :title_label, class: "mb-1.5 block text-sm font-semibold" %>
-        <%= f.text_field :title_label, placeholder: Settings.system_title, class: ui_input_class %>
+        <%= f.text_field :title_label, placeholder: Settings.system_title, class: "input" %>
         <p class="mt-1 text-xs text-slate-500"><%= t(".hints.title_label", title: Settings.system_title) %></p>
       </div>
 
@@ -56,7 +56,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
-        <%= f.submit t("actions.save"), class: ui_button_class %>
+        <%= f.submit t("actions.save"), class: "btn btn-primary" %>
         <%= link_to t(".cancel"), management_tenant_setting_path, class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
       </div>
     <% end %>

@@ -15,14 +15,14 @@
         <div class="mb-5">
           <%= label_tag :group_name, t(".name"), class: "mb-1.5 block text-sm font-semibold" %>
           <%= text_field_tag :group_name, nil, autofocus: true,
-                class: ui_input_class %>
+                class: "input" %>
         </div>
 
         <%= render "parent_field" %>
 
         <div class="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
           <%= button_tag t(".submit"), type: "button",
-                class: ui_button_class %>
+                class: "btn btn-primary" %>
           <%= link_to t(".cancel"), (@parent_path.any? ? management_group_path(@parent_path.last) : management_groups_path),
                 class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
         </div>

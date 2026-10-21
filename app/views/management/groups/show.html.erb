@@ -13,7 +13,7 @@
         <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
         <% if @group.kind != :everyone %>
           <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group",
-                class: ui_button_class(:secondary, size: :sm) %>
+                class: "btn btn-secondary btn-sm" %>
         <% end %>
       </div>
       <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>

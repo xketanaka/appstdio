@@ -12,12 +12,12 @@
           <% end %>
         <% end %>
       </span>
-      <span class="<%= ui_button_class(:secondary, size: :sm, extra: "group-open:hidden") %>"><%= t(".change") %></span>
+      <span class="btn btn-secondary btn-sm group-open:hidden"><%= t(".change") %></span>
     </span>
   </summary>
   <%= label_tag :group_parent_id, t(".label"), class: "sr-only" %>
   <%= select_tag :group_parent_id,
         options_for_select(@parent_options, @parent_path.last&.id),
         include_blank: t(".no_parent"),
-        class: class_names(ui_input_class, "mt-2") %>
+        class: "input mt-2" %>
 </details>

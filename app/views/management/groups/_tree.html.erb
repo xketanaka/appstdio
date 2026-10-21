@@ -6,7 +6,7 @@
               class: "truncate" %>
   <% if @children.key?(group.id) %>
     <details class="group" open>
-      <summary class="<%= ui_nav_item_class(current, extra: "cursor-pointer list-none gap-1.5 py-1.5 pl-2.5 [&::-webkit-details-marker]:hidden") %>">
+      <summary class="<%= class_names("nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden", "nav-item-current": current) %>">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
              class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
           <path d="M8 4l10 8-10 8V4Z" />
@@ -16,6 +16,6 @@
       <div class="pl-4"><%= render "tree", parent_id: group.id %></div>
     </details>
   <% else %>
-    <div class="<%= ui_nav_item_class(current, extra: "py-1.5 pl-7") %>"><%= link %></div>
+    <div class="<%= class_names("nav-item pl-7", "nav-item-current": current) %>"><%= link %></div>
   <% end %>
 <% end %>
