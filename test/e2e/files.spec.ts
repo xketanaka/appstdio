@@ -51,7 +51,7 @@ test("フォルダを作ると、一覧と左ペインに出る", async ({ page 
   await dialog.getByRole("button", { name: "作成" }).click()
 
   await expect(dialog).toBeHidden()
-  await expect(page.locator("#file-list").getByRole("link", { name: "企画" })).toBeVisible()
+  await expect(page.locator("#file-list").getByRole("row", { name: /企画/ })).toBeVisible()
   await expect(page.locator("#side-pane").getByRole("link", { name: "企画" })).toBeVisible()
 })
 
@@ -59,16 +59,39 @@ test("特権モードにすると権限の無いフォルダも開け、終え�
   await login(page, data.owner)
   await page.goto("/files")
   const list = page.locator("#file-list")
-  await expect(list.getByText("人事")).toBeVisible()
-  await expect(list.getByRole("link", { name: "人事" })).toHaveCount(0)
+  await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
 
   await page.locator("#side-pane").getByRole("switch", { name: "特権モード" }).click()
   await expect(page.getByRole("status")).toContainText("特権モードです")
-  await list.getByRole("link", { name: "人事" }).click()
+  await expect(list.getByTitle("権限がないため開けません")).toHaveCount(0)
+  await list.getByRole("row", { name: /人事/ }).dblclick()
   await expect(page.getByRole("heading", { name: "人事" })).toBeVisible()
 
   await page.getByRole("status").getByRole("button", { name: "特権モードを終える" }).click()
   await expect(page.getByRole("status")).toBeHidden()
   await expect(page).toHaveURL("/files")
-  await expect(list.getByRole("link", { name: "人事" })).toHaveCount(0)
+  await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
+})
+
+test("複数を選んで、別のフォルダへまとめて移す", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+
+  await list.getByRole("row", { name: /下書き/ }).click()
+  await list.getByRole("row", { name: /メモ\.txt/ }).click({ modifiers: ["ControlOrMeta"] })
+  const toolbar = page.getByRole("toolbar")
+  await expect(toolbar).toContainText("2件を選択中")
+  await toolbar.getByRole("button", { name: "移動" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "2件を移動" })
+  await dialog.getByRole("button", { name: "保管 を開く" }).click()
+  await expect(dialog.locator("#move-location")).toHaveText("保管")
+  await dialog.getByRole("button", { name: "ここに移動" }).click()
+
+  await expect(dialog).toBeHidden()
+  await expect(list.getByRole("row", { name: /下書き|メモ\.txt/ })).toHaveCount(0)
+  await list.getByRole("row", { name: /保管/ }).dblclick()
+  await expect(page.getByRole("heading", { name: "保管" })).toBeVisible()
+  await expect(list.getByRole("row", { name: /下書き|メモ\.txt/ })).toHaveCount(2)
 })

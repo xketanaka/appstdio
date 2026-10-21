@@ -6,7 +6,8 @@ module E2eScenarios
   module_function
 
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
-  # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない
+  # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない。
+  # オーナーのマイドライブ: 下書き、メモ.txt、保管（移動の流れで使う）
   def files
     key = SecureRandom.hex(4)
     tenant = Tenant.setup!(name: "E2E #{key}")
@@ -22,7 +23,9 @@ module E2eScenarios
       estimates = Files::Node.create_folder!(parent: sales, name: "見積", creator: owner)
       hr = Files::Node.create_folder!(parent: root, name: "人事", creator: member)
       Files::Permission.create!(tenant:, node: hr, group: Group.everyone_of(tenant), role: :none)
-      Files::Drive.personal_root(owner)
+      my_drive = Files::Drive.personal_root(owner)
+      %w[下書き 保管].each { Files::Node.create_folder!(parent: my_drive, name: it, creator: owner) }
+      Files::Node.create!(tenant:, drive_id: my_drive.drive_id, parent: my_drive, kind: :file, name: "メモ.txt", creator: owner)
 
       {
         owner: { email: owner_user.email, password: PASSWORD },
