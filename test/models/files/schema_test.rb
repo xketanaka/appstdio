@@ -153,6 +153,26 @@ class Files::SchemaTest < ActiveSupport::TestCase
     assert_equal [@root.id, b.id, a.id, child.id], grandchild.reload.ancestor_ids
   end
 
+  test "別のドライブへ移すと、配下までドライブが付け替わる" do
+    personal = Files::Drive.create!(tenant: @tenant, kind: :personal, owner: @member)
+    personal_root = Files::Node.create!(tenant: @tenant, drive: personal, kind: :folder, name: "root")
+    a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
+    child = Files::Node.create!(tenant: @tenant, drive: @drive, parent: a, kind: :file, name: "c.txt")
+
+    a.update_column(:parent_id, personal_root.id)
+
+    assert_equal personal.id, a.reload.drive_id
+    assert_equal personal.id, child.reload.drive_id
+    assert_equal [personal_root.id, a.id], child.ancestor_ids
+  end
+
+  test "親と違うドライブを指定して作っても、親のドライブになる" do
+    personal = Files::Drive.create!(tenant: @tenant, kind: :personal, owner: @member)
+    a = Files::Node.create!(tenant: @tenant, drive: personal, parent: @root, kind: :folder, name: "a")
+
+    assert_equal @drive.id, a.reload.drive_id
+  end
+
   test "経路を直接書き換えても親から求め直される" do
     a = Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "a")
 

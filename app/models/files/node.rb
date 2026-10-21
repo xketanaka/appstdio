@@ -1,5 +1,15 @@
 module Files
   class Node < ApplicationRecord
+    # 移動できなかった理由。messages はそのまま画面に出せる文
+    class MoveError < StandardError
+      attr_reader :messages
+
+      def initialize(messages)
+        @messages = messages
+        super(messages.join(" "))
+      end
+    end
+
     enum :kind, { folder: "folder", file: "file" }, validate: true
 
     belongs_to :tenant
@@ -36,6 +46,30 @@ module Files
         Permission.create!(tenant_id: folder.tenant_id, node: folder, tenant_user: creator, role: :manager)
         Activity.create!(tenant_id: folder.tenant_id, node: folder, actor: creator, action: :created)
         folder
+      end
+    end
+
+    # 1件でも移せなければ何も動かさない（doc/files.md の「移動」）。権限は呼び出し側で確かめておくこと。
+    # 移した先のドライブ・ancestor_ids は、配下の分も含めてトリガが付け替える
+    def self.move!(nodes, to:, actor:)
+      errors = ActiveModel::Errors.new(new)
+      nodes.each do |node|
+        errors.add(:base, :move_into_itself, name: node.name) if node.id == to.id || to.ancestor_ids.include?(node.id)
+      end
+      moving = nodes.reject { |node| node.parent_id == to.id }
+      names = moving.map(&:name)
+      taken = to.children.kept.where(name: names).pluck(:name) + names.tally.select { |_, count| count > 1 }.keys
+      taken.uniq.each { |name| errors.add(:base, :name_taken_at_destination, name:) }
+      raise MoveError, errors.full_messages if errors.any?
+
+      transaction do
+        moving.each do |node|
+          from = node.parent_id
+          node.update!(parent: to)
+          Activity.create!(
+            tenant_id: node.tenant_id, node:, actor:, action: :moved, detail: { from:, to: to.id },
+          )
+        end
       end
     end
 
