@@ -43,7 +43,7 @@
       <dt class="text-sm text-slate-500"><%= TenantSetting.human_attribute_name(:logo) %></dt>
       <dd class="mb-2 sm:mb-0">
         <% if @setting.logo.attached? %>
-          <%= image_tag @setting.logo, alt: TenantSetting.human_attribute_name(:logo),
+          <%= image_tag rails_storage_proxy_path(@setting.logo), alt: TenantSetting.human_attribute_name(:logo),
                 class: "h-10 w-auto rounded-lg border border-slate-200 bg-canvas p-1" %>
         <% else %>
           <span class="text-slate-500"><%= t(".no_logo") %></span>
