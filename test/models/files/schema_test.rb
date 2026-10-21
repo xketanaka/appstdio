@@ -26,8 +26,9 @@ class Files::SchemaTest < ActiveSupport::TestCase
   test "同一フォルダ内の同名は作れない" do
     Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :folder, name: "資料")
 
+    # モデルの検証より先に、同時に作られたときの最後の砦として DB が弾くこと
     assert_raises(ActiveRecord::RecordNotUnique) do
-      Files::Node.create!(tenant: @tenant, drive: @drive, parent: @root, kind: :file, name: "資料")
+      Files::Node.new(tenant: @tenant, drive: @drive, parent: @root, kind: :file, name: "資料").save!(validate: false)
     end
   end
 

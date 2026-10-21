@@ -33,8 +33,18 @@ ja:
         purge: "完全に削除"
     folder:
       create: "作成"
+      create_menu:
+        folder: "フォルダ"
+        upload: "ファイルをアップロード"
       breadcrumbs: "現在の場所"
       empty: "このフォルダには何もありません"
+    new_folder:
+      title: "新しいフォルダ"
+      name: "フォルダの名前"
+      default_name: "無題のフォルダ"
+      submit: "作成"
+      cancel: "キャンセル"
+      failed: "作成できませんでした。時間をおいてもう一度お試しください"
     shared_items:
       empty: "共有されたアイテムはありません"
     trash:

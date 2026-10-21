@@ -29,5 +29,6 @@ export function useLoad<T>(load: () => Promise<T>, source: WatchSource, onLoaded
 
   watch([source, () => state.privileged], run, { immediate: true })
 
-  return { data, status }
+  // 作成などの操作のあとに、今の場所を読み直す
+  return { data, status, reload: run }
 }

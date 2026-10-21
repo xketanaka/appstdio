@@ -23,6 +23,21 @@ module Files
     validates :byte_size, numericality: { equal_to: 0 }, if: :folder?
     validates :name, exclusion: { in: [".", ".."] }
     validates :name, format: { without: %r{/} }
+    # ゴミ箱の中のものとは重複してよい。DB の一意制約（deleted_at IS NULL の部分インデックス）と揃える
+    validates :name, uniqueness: { scope: :parent_id, conditions: -> { kept } }, if: :parent_id?
+
+    # 作った人を管理者にして、操作履歴を残す（doc/files.md の「権限の継承」「操作履歴」）
+    def self.create_folder!(parent:, name:, creator:)
+      transaction do
+        folder = create!(
+          tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :folder,
+          name: name.to_s.strip, creator:,
+        )
+        Permission.create!(tenant_id: folder.tenant_id, node: folder, tenant_user: creator, role: :manager)
+        Activity.create!(tenant_id: folder.tenant_id, node: folder, actor: creator, action: :created)
+        folder
+      end
+    end
 
     def root?
       parent_id.nil?

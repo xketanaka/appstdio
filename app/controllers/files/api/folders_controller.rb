@@ -33,6 +33,23 @@ module Files
           entries: entries.map { |node| entry_json(node, permissions[node].readable?) },
         }
       end
+
+      def create
+        parent = Node.kept.folder.find(params[:parent_id])
+        permission = access.effective_permission(parent)
+        raise ActiveRecord::RecordNotFound unless permission.readable?
+        return head :forbidden unless permission.editable?
+
+        folder = Node.create_folder!(parent: parent, name: params[:name], creator: current_tenant_user)
+        render json: { id: folder.id, name: folder.name }, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
+      rescue ActiveRecord::RecordNotUnique
+        # 同じ名前で同時に作られ、検証をすり抜けて DB の一意制約に当たったとき
+        errors = ActiveModel::Errors.new(Node.new)
+        errors.add(:name, :taken)
+        render json: { errors: errors.full_messages }, status: :unprocessable_content
+      end
     end
   end
 end
