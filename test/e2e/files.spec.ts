@@ -102,19 +102,24 @@ test("複数を選んで、別のフォルダへまとめて移す", async ({ pa
   await expect(list.getByRole("row", { name: /下書き|メモ\.txt/ })).toHaveCount(2)
 })
 
-test("ドラッグして、一覧のフォルダや左ペインのドライブへ移す", async ({ page }) => {
+test("ドラッグして一覧や左ペインのフォルダへ移し、知らせから元に戻せる", async ({ page }) => {
   await login(page, data.owner)
   await page.goto("/files/my_drive")
   const list = page.locator("#file-list")
-  const notice = page.getByRole("status").filter({ hasText: "移動しました" })
+  const notice = page.getByRole("status").filter({ hasText: "しました" })
+  const minutes = list.getByRole("row", { name: /議事録\.txt/ })
 
-  await list.getByRole("row", { name: /議事録\.txt/ }).dragTo(list.getByRole("row", { name: /資料/ }))
-  await expect(notice).toHaveText("「議事録.txt」を「資料」に移動しました")
-  await expect(list.getByRole("row", { name: /議事録\.txt/ })).toHaveCount(0)
+  await minutes.dragTo(list.getByRole("row", { name: /資料/ }))
+  await expect(notice).toContainText("「議事録.txt」を「資料」に移動しました")
+  await expect(minutes).toHaveCount(0)
 
-  await list.getByRole("row", { name: /資料/ }).dblclick()
+  await notice.getByRole("button", { name: "元に戻す" }).click()
+  await expect(notice).toContainText("移動を元に戻しました")
+  await expect(minutes).toHaveCount(1)
+
+  await minutes.dragTo(page.locator("#side-pane").getByRole("link", { name: "資料" }))
+  await expect(notice).toContainText("「議事録.txt」を「資料」に移動しました")
+  await page.locator("#side-pane").getByRole("link", { name: "資料" }).click()
   await expect(page.getByRole("heading", { name: "資料" })).toBeVisible()
-  await list.getByRole("row", { name: /議事録\.txt/ }).dragTo(page.locator("#side-pane summary", { hasText: "マイドライブ" }))
-  await expect(notice).toHaveText("「議事録.txt」を「マイドライブ」に移動しました")
-  await expect(list.getByRole("row", { name: /議事録\.txt/ })).toHaveCount(0)
+  await expect(minutes).toHaveCount(1)
 })

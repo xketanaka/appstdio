@@ -64,7 +64,7 @@ const submit = async () => {
   if (!canSubmit.value || location.value === null) return
   busy.value = true
   try {
-    await moveItems(items.value, location.value.folder)
+    await moveItems(items.value, location.value.folder, props.from.id)
     close()
     emit("moved")
   } catch (error) {

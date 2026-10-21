@@ -1,7 +1,6 @@
 import { ref } from "vue"
-import { ForbiddenError, ValidationError } from "./api"
 import { t } from "./i18n"
-import { moveItems, notify } from "./store"
+import { moveItems, notifyMoveError } from "./store"
 
 type Item = { id: number, name: string }
 
@@ -44,14 +43,9 @@ async function dropOn(destination: { id: number, label: string }) {
   if (current === null) return
 
   try {
-    await moveItems(current.items, destination)
+    await moveItems(current.items, destination, current.from)
   } catch (error) {
-    if (error instanceof ValidationError) notify(error.messages.join(" "), { error: true })
-    else if (error instanceof ForbiddenError) notify(t("move.forbidden"), { error: true })
-    else {
-      notify(t("move.failed"), { error: true })
-      console.error(error)
-    }
+    notifyMoveError(error)
   }
 }
 

@@ -53,7 +53,24 @@ test("落としたら移し、知らせる", async () => {
 
   expect(over.defaultPrevented).toBe(true)
   expect(api.move).toHaveBeenCalledWith([4, 5], 3)
-  expect(state.notice).toEqual({ message: "2件を「見積」に移動しました", error: false })
+  expect(state.notice?.message).toBe("2件を「見積」に移動しました")
+  expect(state.notice?.error).toBe(false)
+})
+
+test("知らせの「元に戻す」で、元のフォルダへ移し直す", async () => {
+  vi.mocked(api.move).mockResolvedValue(undefined)
+  const { handlers } = useDropTargets()
+  startDrag(dragEvent("dragstart"), [{ id: 4, name: "提案" }], 2)
+  handlers({ id: 3, label: "見積" }).drop(dragEvent("drop"))
+  await flushPromises()
+
+  expect(state.notice?.action?.label).toBe("元に戻す")
+  state.notice?.action?.run()
+  await flushPromises()
+
+  expect(api.move).toHaveBeenLastCalledWith([4], 2)
+  expect(state.notice).toMatchObject({ message: "移動を元に戻しました", error: false })
+  expect(state.notice?.action).toBeUndefined()
 })
 
 test("落とせない場所の上では、落とせる印（preventDefault）を出さない", () => {

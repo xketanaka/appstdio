@@ -66,6 +66,8 @@ ja:
       done_one: "「%{name}」を「%{destination}」に移動しました"
       done_other: "%{count}件を「%{destination}」に移動しました"
       dragging: "%{count}件"
+      undo: "元に戻す"
+      undone: "移動を元に戻しました"
       failed: "移動できませんでした。時間をおいてもう一度お試しください"
     shared_items:
       empty: "共有されたアイテムはありません"

@@ -17,6 +17,14 @@ import { state } from "../store"
     >
       <span>{{ state.notice.message }}</span>
       <button
+        v-if="state.notice.action"
+        type="button"
+        class="shrink-0 cursor-pointer rounded-full px-2 py-1 font-medium text-primary-200 hover:bg-white/10"
+        @click="state.notice.action.run"
+      >
+        {{ state.notice.action.label }}
+      </button>
+      <button
         type="button"
         class="shrink-0 cursor-pointer rounded-full p-1 text-white/80 hover:bg-white/10"
         :aria-label="t('notice.close')"
