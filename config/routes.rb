@@ -44,7 +44,11 @@ Rails.application.routes.draw do
         get "drives/mine" => "folders#show", defaults: { drive: "personal" }
         get "folders/:id" => "folders#show", as: :folder
         post "folders" => "folders#create", as: :folders
-        post "moves" => "moves#create", as: :moves
+        resources :nodes, only: [] do
+          collection do
+            post :move
+          end
+        end
         get "shared" => "shared_items#index"
         get "trash" => "trash#index"
         resource :privileged_mode, only: [:create, :destroy]

@@ -203,7 +203,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     test "移動元の親と移動先の両方を編集できれば移せ、移動先の一覧に出る" do
       TenantContext.switch(tenant: @tenant) { grant(@root, @member, :editor) }
       login(@member_user)
-      post files_api_moves_path, params: { node_ids: [@minutes.id, @estimates.id], destination_id: @sales.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [@minutes.id, @estimates.id], destination_id: @sales.id }, as: :json
 
       assert_response :no_content
       get files_api_folder_path(@sales)
@@ -214,10 +214,10 @@ class FilesTest < ActionDispatch::IntegrationTest
       TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
       login(@member_user)
 
-      post files_api_moves_path, params: { node_ids: [@estimates.id], destination_id: @root.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [@estimates.id], destination_id: @root.id }, as: :json
       assert_response :forbidden, "移動先のルートは閲覧のみ"
 
-      post files_api_moves_path, params: { node_ids: [@minutes.id], destination_id: @sales.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [@minutes.id], destination_id: @sales.id }, as: :json
       assert_response :forbidden, "移動元のルートは閲覧のみ"
     end
 
@@ -225,7 +225,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       TenantContext.switch(tenant: @tenant) { grant(@root, @member, :editor) }
       login(@member_user)
 
-      post files_api_moves_path, params: { node_ids: [@sales.id], destination_id: @estimates.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [@sales.id], destination_id: @estimates.id }, as: :json
 
       assert_response :unprocessable_content
       assert_equal ["「営業」は、それ自身やその中のフォルダへは移動できません。"], json["errors"]
@@ -235,10 +235,10 @@ class FilesTest < ActionDispatch::IntegrationTest
       TenantContext.switch(tenant: @tenant) { grant(@root, @member, :editor) }
       login(@member_user)
 
-      post files_api_moves_path, params: { node_ids: [@root.id], destination_id: @sales.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [@root.id], destination_id: @sales.id }, as: :json
       assert_response :not_found
 
-      post files_api_moves_path, params: { node_ids: [0], destination_id: @sales.id }, as: :json
+      post move_files_api_nodes_path, params: { node_ids: [0], destination_id: @sales.id }, as: :json
       assert_response :not_found
     end
   end
