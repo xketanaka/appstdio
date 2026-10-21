@@ -73,6 +73,9 @@ async function request<T>(method: string, path: string, body?: object): Promise<
   return response.status === 204 ? (undefined as T) : response.json()
 }
 
+// ダウンロードはサーバが保存先の期限付き URL へ転送するので、この URL へ移るだけでよい
+export const downloadUrl = (id: number) => `/files/api/nodes/${id}/download`
+
 export const api = {
   tree: () => request<Tree>("GET", "/files/api/tree"),
   // 閲覧できない親は応答に含まれない
@@ -84,6 +87,8 @@ export const api = {
     request<FolderPayload>("GET", "id" in source ? `/files/api/folders/${source.id}` : `/files/api/drives/${source.drive}`),
   createFolder: (parentId: number, name: string) =>
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
+  completeUpload: (parentId: number, signedBlobId: string) =>
+    request<{ id: number, name: string }>("POST", "/files/api/nodes/upload", { parent_id: parentId, signed_blob_id: signedBlobId }),
   move: (nodeIds: number[], destinationId: number) =>
     request<void>("POST", "/files/api/nodes/move", { node_ids: nodeIds, destination_id: destinationId }),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),

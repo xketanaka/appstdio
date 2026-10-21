@@ -8,9 +8,10 @@ type Config = {
   title_prefix: string
   admin_or_owner: boolean
   privileged: boolean
+  max_upload_bytes: number
 }
 
-export const config = { title_prefix: "", admin_or_owner: false }
+export const config = { title_prefix: "", admin_or_owner: false, max_upload_bytes: 0 }
 
 // 画面をまたいで保つ状態。左ペインはスマホとPCの2箇所に描くので、開閉もここに持って揃える
 export const state = reactive({
@@ -58,6 +59,7 @@ export function loadConfig(element: HTMLElement) {
   setMessages(value.messages)
   config.title_prefix = value.title_prefix
   config.admin_or_owner = value.admin_or_owner
+  config.max_upload_bytes = value.max_upload_bytes
   state.privileged = value.privileged
 }
 

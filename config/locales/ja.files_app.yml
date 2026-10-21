@@ -77,6 +77,18 @@ ja:
       empty: "共有されたアイテムはありません"
     trash:
       empty: "ゴミ箱は空です"
+    upload:
+      title: "アップロード"
+      summary: "%{done}/%{total}件 完了"
+      close: "アップロードの一覧を閉じる"
+      waiting: "待機中"
+      preparing: "準備中"
+      done: "「%{destination}」に保存しました"
+      too_large: "ファイルの大きさは %{max} までです"
+      forbidden: "このフォルダにアップロードする権限がありません"
+      not_found: "アップロード先のフォルダが見つからないか、開く権限がありません"
+      failed: "アップロードできませんでした。時間をおいてもう一度お試しください"
+      drop_here: "ここに落とすと「%{destination}」にアップロードします"
     notice:
       close: "閉じる"
     load:

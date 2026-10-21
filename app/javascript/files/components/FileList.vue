@@ -25,6 +25,7 @@ const emit = defineEmits<{
   open: [row: Row]
   clear: []
   move: [row: Row]
+  download: [row: Row]
   dragstart: [row: Row, event: DragEvent]
   dragend: []
 }>()
@@ -36,6 +37,15 @@ const dropTarget = (row: Row) =>
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
 const rowActions = props.trash ? ["restore", "purge"] : ["download", "rename", "move", "destroy"]
+// 行のメニューで押せる操作。まだ作っていない操作は押せない表示にする
+const available = (action: string, row: Row) =>
+  (action === "move" && props.canMove) || (action === "download" && !props.trash && row.kind === "file" && row.readable)
+
+const runAction = (action: string, row: Row) => {
+  if (action === "move") emit("move", row)
+  else emit("download", row)
+}
+
 const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches
 
 const size = (row: Row) => (row.byteSize === null ? "-" : formatSize(row.byteSize))
@@ -194,10 +204,10 @@ const closeMenu = (event: Event) => {
                   :key="action"
                 >
                   <button
-                    v-if="action === 'move' && canMove"
+                    v-if="available(action, row)"
                     type="button"
                     class="block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100"
-                    @click="closeMenu($event); emit('move', row)"
+                    @click="closeMenu($event); runAction(action, row)"
                   >
                     {{ t(`list.row_actions.${action}`) }}
                   </button>

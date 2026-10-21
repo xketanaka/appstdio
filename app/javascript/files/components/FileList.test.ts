@@ -101,9 +101,18 @@ describe("選べる一覧", () => {
   test("行のメニューの「移動」で、その行を知らせる。行の選択には響かない", async () => {
     const wrapper = await renderSelectable()
 
-    await wrapper.findAll("tbody tr")[1].find("details button").trigger("click")
+    await wrapper.findAll("tbody tr")[1].findAll("details button").find((button) => button.text() === "移動")!.trigger("click")
 
     expect(wrapper.emitted<[Row]>("move")?.[0][0].id).toBe(1)
     expect(wrapper.emitted("select")).toBeUndefined()
   })
+})
+
+test("閲覧できるファイルは、行のメニューからダウンロードできる", async () => {
+  const wrapper = await render([row({}), row({ id: 2, name: "人事.xlsx", readable: false })])
+  const menus = wrapper.findAll("tbody tr").map((tr) => tr.findAll("details button").map((button) => button.text()))
+
+  expect(menus).toEqual([["ダウンロード"], []])
+  await wrapper.find("details button").trigger("click")
+  expect(wrapper.emitted<[Row]>("download")?.[0][0].id).toBe(1)
 })
