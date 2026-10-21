@@ -64,6 +64,14 @@ class SiteHeaderTest < ActionDispatch::IntegrationTest
     assert_match(/max-age=\d{6,}/, response.headers["Cache-Control"])
   end
 
+  test "画面の枠は body に直接並べず、画面に固定した入れ物の中に組む" do
+    login
+    get top_page_path
+
+    assert_select "body > #app-shell > header#site-header"
+    assert_select "body > #app-shell main"
+  end
+
   test "テナントを選ぶ前の画面は既定のまま" do
     update_setting(title_label: "サンプル株式会社")
     get login_path
