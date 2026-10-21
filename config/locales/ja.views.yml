@@ -26,6 +26,8 @@ ja:
     app:
       show:
         title: "ファイル"
+    moves:
+      conflict: "移動先に同じ名前のものができました。もう一度お試しください。"
 
   profiles:
     show:

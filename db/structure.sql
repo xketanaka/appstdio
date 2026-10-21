@@ -59,7 +59,8 @@ BEGIN
   IF NEW.parent_id IS NULL THEN
     NEW.ancestor_ids := '{}';
   ELSE
-    SELECT ancestor_ids || id INTO NEW.ancestor_ids FROM files_nodes WHERE id = NEW.parent_id;
+    SELECT ancestor_ids || id, drive_id INTO NEW.ancestor_ids, NEW.drive_id
+    FROM files_nodes WHERE id = NEW.parent_id;
     IF NEW.id = ANY(NEW.ancestor_ids) THEN
       RAISE EXCEPTION 'files_nodes % cannot be moved under itself', NEW.id
         USING ERRCODE = 'check_violation';
@@ -1763,6 +1764,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261021120000'),
 ('20261012100000'),
 ('20261012064301'),
 ('20261006100000'),

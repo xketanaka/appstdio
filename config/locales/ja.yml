@@ -8,6 +8,8 @@ ja:
           has_many: "%{record}が存在しているため削除できません。"
       models:
         files/node:
+          move_into_itself: "「%{name}」は、それ自身やその中のフォルダへは移動できません。"
+          name_taken_at_destination: "移動先に「%{name}」と同じ名前のものがあります。"
           attributes:
             name:
               taken: "が同じフォルダの中のものと重複しています。"

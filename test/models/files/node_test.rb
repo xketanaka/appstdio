@@ -46,4 +46,56 @@ class Files::NodeTest < ActiveSupport::TestCase
       end
     end
   end
+
+  describe ".move!" do
+    setup do
+      @sales = Files::Node.create_folder!(parent: @root, name: "営業", creator: @member)
+      @general = Files::Node.create_folder!(parent: @root, name: "総務", creator: @member)
+      @estimate = Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @sales, kind: :file, name: "見積.xlsx")
+    end
+
+    test "移して、移した人と移動元・移動先を操作履歴に残す" do
+      Files::Node.move!([@estimate, @sales], to: @general, actor: @member)
+
+      assert_equal @general.id, @estimate.reload.parent_id
+      assert_equal @general.id, @sales.reload.parent_id
+      assert_equal(
+        [@estimate.id, @member.id, { "from" => @sales.id, "to" => @general.id }],
+        Files::Activity.moved.order(:id).pick(:node_id, :actor_id, :detail),
+      )
+    end
+
+    test "ドライブをまたいで移せる" do
+      personal_root = Files::Drive.personal_root(@member)
+
+      Files::Node.move!([@sales], to: personal_root, actor: @member)
+
+      assert_equal personal_root.drive_id, @estimate.reload.drive_id
+    end
+
+    test "移動先に同じ名前があれば、1件も移さない" do
+      Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @general, kind: :file, name: "見積.xlsx")
+      other = Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @sales, kind: :file, name: "価格表.xlsx")
+
+      error = assert_raises(Files::Node::MoveError) do
+        Files::Node.move!([other, @estimate], to: @general, actor: @member)
+      end
+      assert_equal ["移動先に「見積.xlsx」と同じ名前のものがあります。"], error.messages
+      assert_equal @sales.id, other.reload.parent_id
+      assert_empty Files::Activity.moved
+    end
+
+    test "それ自身や配下へは移せない" do
+      error = assert_raises(Files::Node::MoveError) do
+        Files::Node.move!([@root.children.find_by!(name: "営業")], to: @sales, actor: @member)
+      end
+      assert_equal ["「営業」は、それ自身やその中のフォルダへは移動できません。"], error.messages
+    end
+
+    test "今と同じ場所への移動は何もしない" do
+      Files::Node.move!([@estimate], to: @sales, actor: @member)
+
+      assert_empty Files::Activity.moved
+    end
+  end
 end
