@@ -9,6 +9,9 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   driven_by :selenium, using: :headless_chrome, screen_size: [1280, 800] do |options|
     options.binary = "/usr/bin/chromium" if File.exist?("/usr/bin/chromium")
     options.add_argument("--no-sandbox")
+    # 外部（Google Fonts など）へ取りに行かせない。届くのが遅いと、ページの読み込みが終わらず
+    # visit が Net::ReadTimeout で落ちる。名前を引けなくすれば即座に失敗し、端末のフォントで描かれる
+    options.add_argument("--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost")
   end
 
   setup do
