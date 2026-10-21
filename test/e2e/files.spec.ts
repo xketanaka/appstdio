@@ -19,14 +19,17 @@ test("ブックマークしたフォルダを開き、パンくずと左ペイ�
   await page.goto(`/files/folders/${data.folders.estimates}`)
   await expect(page.getByRole("heading", { name: "見積" })).toBeVisible()
   await expect(page).toHaveTitle(/見積$/)
+  // 左ペインは、開いているフォルダまでの祖先を開いてそのフォルダを示す
+  const sidePane = page.locator("#side-pane")
+  await expect(sidePane.getByRole("link", { name: "見積" })).toHaveAttribute("aria-current", "page")
 
   // ここから先はページを読み直さずに移る
   await page.evaluate(() => Object.assign(window, { notReloaded: true }))
-  const sidePane = page.locator("#side-pane")
   await sidePane.locator("summary", { hasText: "マイドライブ" }).locator("svg").click()
 
   await page.getByRole("navigation", { name: "現在の場所" }).getByRole("link", { name: "営業" }).click()
   await expect(page.getByRole("heading", { name: "営業" })).toBeVisible()
+  await expect(sidePane.getByRole("link", { name: "営業" })).toHaveAttribute("aria-current", "page")
   await page.getByRole("navigation", { name: "現在の場所" }).getByRole("link", { name: "組織共有ドライブ" }).click()
   await expect(page.getByRole("heading", { name: "組織共有ドライブ" })).toBeVisible()
 
@@ -37,6 +40,7 @@ test("ブックマークしたフォルダを開き、パンくずと左ペイ�
 
   expect(await page.evaluate(() => "notReloaded" in window)).toBe(true)
   await expect(sidePane.locator("details[open]")).toHaveCount(2)
+  await expect(sidePane.getByRole("link", { name: "組織共有ドライブ" })).toHaveAttribute("aria-current", "page")
 })
 
 test("フォルダを作ると、一覧と左ペインに出る", async ({ page }) => {

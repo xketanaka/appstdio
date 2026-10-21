@@ -4,16 +4,19 @@ import { RouterLink } from "vue-router"
 import type { SectionKey, TreeFolder } from "../api"
 import { t } from "../i18n"
 import { state } from "../store"
-import FileIcon from "./FileIcon.vue"
+import TreeFolderItem from "./TreeFolderItem.vue"
 
 type Section = { key: SectionKey, to: { name: string }, folders?: TreeFolder[] }
 
 const sections = computed<Section[]>(() => [
-  { key: "shared_drive", to: { name: "shared_drive" }, folders: state.tree?.shared_drive ?? [] },
+  { key: "shared_drive", to: { name: "shared_drive" }, folders: state.tree?.shared_drive?.folders ?? [] },
   { key: "shared_with_me", to: { name: "shared_with_me" } },
-  { key: "my_drive", to: { name: "my_drive" }, folders: state.tree?.my_drive ?? [] },
+  { key: "my_drive", to: { name: "my_drive" }, folders: state.tree?.my_drive?.folders ?? [] },
   { key: "trash", to: { name: "trash" } },
 ])
+
+// フォルダを開いているときは、区分ではなくそのフォルダを選択中として示す
+const current = (key: SectionKey) => key === state.section && state.currentFolderId === null
 
 const toggle = (key: SectionKey, event: Event) => {
   if ((event.target as HTMLDetailsElement).open) state.openSections.add(key)
@@ -35,7 +38,7 @@ const toggle = (key: SectionKey, event: Event) => {
       >
         <summary
           class="nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden"
-          :class="{ 'nav-item-current': section.key === state.section }"
+          :class="{ 'nav-item-current': current(section.key) }"
         >
           <svg
             viewBox="0 0 24 24"
@@ -47,40 +50,28 @@ const toggle = (key: SectionKey, event: Event) => {
           </svg>
           <RouterLink
             :to="section.to"
-            :aria-current="section.key === state.section ? 'page' : undefined"
+            :aria-current="current(section.key) ? 'page' : undefined"
             class="truncate"
           >
             {{ t(`sections.${section.key}`) }}
           </RouterLink>
         </summary>
 
-        <div
+        <TreeFolderItem
           v-for="folder in section.folders"
           :key="folder.id"
-          class="nav-item ml-5"
-        >
-          <FileIcon folder />
-          <RouterLink
-            v-if="folder.readable"
-            :to="{ name: 'folder', params: { id: folder.id } }"
-            class="truncate"
-          >
-            {{ folder.name }}
-          </RouterLink>
-          <span
-            v-else
-            class="truncate text-slate-400"
-          >{{ folder.name }}</span>
-        </div>
+          :folder="folder"
+          :depth="0"
+        />
       </details>
       <div
         v-else
         class="nav-item pl-7.5"
-        :class="{ 'nav-item-current': section.key === state.section }"
+        :class="{ 'nav-item-current': current(section.key) }"
       >
         <RouterLink
           :to="section.to"
-          :aria-current="section.key === state.section ? 'page' : undefined"
+          :aria-current="current(section.key) ? 'page' : undefined"
           class="truncate"
         >
           {{ t(`sections.${section.key}`) }}

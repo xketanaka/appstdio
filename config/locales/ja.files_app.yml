@@ -10,6 +10,8 @@ ja:
       trash: "ゴミ箱"
     tree:
       label: "ドライブ"
+      expand: "%{name} の中を表示"
+      collapse: "%{name} の中を隠す"
     privileged_mode:
       label: "特権モード"
       description: "すべてのファイル・フォルダに管理者としてアクセスできます"

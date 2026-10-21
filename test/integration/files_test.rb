@@ -314,15 +314,29 @@ class FilesTest < ActionDispatch::IntegrationTest
   end
 
   describe "左ペインのツリー" do
-    test "ドライブの直下のフォルダを、開けるかどうかと一緒に返す" do
+    test "ドライブのルートと直下のフォルダを、開けるか・子のフォルダがあるかと一緒に返す" do
       login(@member_user)
       get files_api_tree_path
 
+      assert_equal @root.id, json.dig("shared_drive", "id")
       assert_equal(
-        [{ "id" => @sales.id, "name" => "営業", "readable" => true }, { "id" => @hr.id, "name" => "人事", "readable" => false }],
-        json["shared_drive"],
+        [
+          { "id" => @sales.id, "name" => "営業", "readable" => true, "has_children" => true },
+          { "id" => @hr.id, "name" => "人事", "readable" => false, "has_children" => false },
+        ],
+        json.dig("shared_drive", "folders"),
       )
-      assert_empty json["my_drive"], "マイドライブはまだ作られていない"
+      assert_nil json["my_drive"], "マイドライブはまだ作られていない"
+    end
+
+    test "指定した親の直下のフォルダを返す。開けないフォルダの中は返さない" do
+      TenantContext.switch(tenant: @tenant) { node(:folder, "面談", @hr) }
+      login(@member_user)
+      get files_api_tree_children_path, params: { parent_ids: [@sales.id, @hr.id] }
+
+      assert_equal [@sales.id.to_s], json.keys
+      assert_equal ["見積"], json[@sales.id.to_s].pluck("name")
+      assert_not json[@sales.id.to_s].first["has_children"]
     end
   end
 

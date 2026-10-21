@@ -39,6 +39,7 @@ Rails.application.routes.draw do
 
       namespace :api, defaults: { format: :json } do
         get "tree" => "trees#show"
+        get "tree/children" => "trees#children"
         get "drives/shared" => "folders#show", defaults: { drive: "shared" }
         get "drives/mine" => "folders#show", defaults: { drive: "personal" }
         get "folders/:id" => "folders#show", as: :folder
