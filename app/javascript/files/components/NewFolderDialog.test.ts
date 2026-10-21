@@ -1,7 +1,7 @@
 import "../testing"
 import { flushPromises, mount } from "@vue/test-utils"
 import { beforeEach, expect, test, vi } from "vitest"
-import { api, ValidationError } from "../api"
+import { api, NotFoundError, ValidationError } from "../api"
 import NewFolderDialog from "./NewFolderDialog.vue"
 
 vi.mock("../api", async (original) => ({
@@ -51,4 +51,14 @@ test("入力の誤りはダイアログを開いたまま中に出す", async ()
   expect(wrapper.find("input").attributes("aria-invalid")).toBe("true")
   expect(wrapper.emitted("created")).toBeUndefined()
   expect((wrapper.find("dialog").element as HTMLDialogElement).open).toBe(true)
+})
+
+test("作成先が見つからないときは、時間をおいてとは言わずにそう伝える", async () => {
+  vi.mocked(api.createFolder).mockRejectedValue(new NotFoundError("/files/api/folders"))
+  const wrapper = await render()
+
+  await wrapper.find("form").trigger("submit")
+  await flushPromises()
+
+  expect(wrapper.find("[role=alert]").text()).toBe("作成先のフォルダが見つからないか、開く権限がありません")
 })

@@ -1,7 +1,7 @@
 import "./testing"
 import { flushPromises } from "@vue/test-utils"
 import { beforeEach, expect, test, vi } from "vitest"
-import { api, ValidationError } from "./api"
+import { api, NotFoundError, ValidationError } from "./api"
 import { canDropOn, endDrag, startDrag, useDropTargets } from "./dnd"
 import { state } from "./store"
 
@@ -93,4 +93,19 @@ test("移せなければ、理由を知らせる", async () => {
   await flushPromises()
 
   expect(state.notice).toEqual({ message: "移動先に「提案」と同じ名前のものがあります。", error: true })
+})
+
+test("元に戻す先が見つからないときは、元に戻せなかったと伝える", async () => {
+  vi.mocked(api.move).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new NotFoundError("/files/api/nodes/move"))
+  const { handlers } = useDropTargets()
+  startDrag(dragEvent("dragstart"), [{ id: 4, name: "提案" }], 2)
+  handlers({ id: 3, label: "見積" }).drop(dragEvent("drop"))
+  await flushPromises()
+
+  state.notice?.action?.run()
+  await flushPromises()
+
+  expect(state.notice).toMatchObject({
+    message: "元の場所が見つからないか、開く権限がなくなったため、元に戻せませんでした", error: true,
+  })
 })

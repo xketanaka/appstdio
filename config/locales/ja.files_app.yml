@@ -47,6 +47,8 @@ ja:
       default_name: "無題のフォルダ"
       submit: "作成"
       cancel: "キャンセル"
+      not_found: "作成先のフォルダが見つからないか、開く権限がありません"
+      forbidden: "このフォルダに作成する権限がありません"
       failed: "作成できませんでした。時間をおいてもう一度お試しください"
     selection:
       count: "%{count}件を選択中"
@@ -68,6 +70,8 @@ ja:
       dragging: "%{count}件"
       undo: "元に戻す"
       undone: "移動を元に戻しました"
+      not_found: "移動するものか移動先が見つからないか、開く権限がありません"
+      undo_not_found: "元の場所が見つからないか、開く権限がなくなったため、元に戻せませんでした"
       failed: "移動できませんでした。時間をおいてもう一度お試しください"
     shared_items:
       empty: "共有されたアイテムはありません"
