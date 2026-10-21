@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Active Storage 標準のダイレクトアップロードの受け口は、ログインも権限も確かめずに保存先への
+  # 書き込みを許す。ファイル機能は自前の受け口（files/api/nodes#prepare_upload）を使うので塞ぐ。
+  # Active Storage のルートより先に描くこと（先に一致したものが使われる）
+  post "/rails/active_storage/direct_uploads" => proc { [404, {}, []] }
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
@@ -47,6 +52,11 @@ Rails.application.routes.draw do
         resources :nodes, only: [] do
           collection do
             post :move
+            post :prepare_upload
+            post :upload
+          end
+          member do
+            get :download
           end
         end
         get "shared" => "shared_items#index"

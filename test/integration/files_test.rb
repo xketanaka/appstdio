@@ -243,6 +243,115 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "アップロード" do
+    setup do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
+      login(@member_user)
+    end
+
+    def prepare(name: "提案書.pdf", byte_size: 12, parent: @sales)
+      post prepare_upload_files_api_nodes_path, params: {
+        parent_id: parent.id, blob: { filename: name, byte_size:, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "application/pdf" },
+      }, as: :json
+    end
+
+    test "1段目は確かめてから、中身を送る先を返す" do
+      prepare
+
+      assert_response :success
+      assert json["signed_id"].present?
+      assert_match %r{/rails/active_storage/disk/}, json.dig("direct_upload", "url")
+    end
+
+    test "1段目で、大きすぎる・同じ名前がある・容量が足りないを断る" do
+      prepare(byte_size: Settings.files.max_upload_bytes + 1)
+      assert_response :unprocessable_content
+      assert_equal ["ファイルの大きさは 5 GB までです。"], json["errors"]
+
+      prepare(name: "見積")
+      assert_equal ["名前が同じフォルダの中のものと重複しています。"], json["errors"]
+
+      TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(storage_limit_bytes: 10) }
+      prepare
+      assert_equal ["ファイルを保存する容量の上限を超えるため、アップロードできません。"], json["errors"]
+    end
+
+    test "閲覧者は 403" do
+      prepare(parent: @root)
+
+      assert_response :forbidden
+    end
+
+    test "2段目で、中身の届いた blob をファイルとして登録する" do
+      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("提案の中身"), filename: "提案書.txt")
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
+
+      assert_response :created
+      get files_api_folder_path(@sales)
+      assert_equal ["見積", "提案書.txt"], json["entries"].pluck("name")
+      assert_equal blob.byte_size, json["entries"].last["byte_size"]
+    end
+
+    test "2段目で、中身が届いていない blob や、使い回しの blob は 404" do
+      waiting = ActiveStorage::Blob.create_before_direct_upload!(
+        filename: "a.txt", byte_size: 1, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "text/plain",
+      )
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: waiting.signed_id }, as: :json
+      assert_response :not_found
+
+      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("x"), filename: "b.txt")
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
+      assert_response :created
+      post upload_files_api_nodes_path, params: { parent_id: @estimates.id, signed_blob_id: blob.signed_id }, as: :json
+      assert_response :not_found
+    end
+
+    test "2段目で容量が埋まっていたら断り、届いた中身を消す" do
+      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("提案の中身"), filename: "提案書.txt")
+      TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(storage_limit_bytes: 1) }
+
+      assert_enqueued_with(job: ActiveStorage::PurgeJob) do
+        post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
+      end
+      assert_response :unprocessable_content
+      assert_equal ["ファイルを保存する容量の上限を超えるため、アップロードできません。"], json["errors"]
+    end
+
+    test "Active Storage 標準のダイレクトアップロードの受け口は塞いである" do
+      post "/rails/active_storage/direct_uploads", params: { blob: { filename: "a.txt", byte_size: 1 } }, as: :json
+
+      assert_response :not_found
+    end
+  end
+
+  describe "ダウンロード" do
+    setup do
+      @file = TenantContext.switch(tenant: @tenant) do
+        blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("評価の中身"), filename: "評価.txt")
+        Files::Node.create_file!(parent: @sales, blob:, creator: @owner)
+      end
+    end
+
+    test "閲覧できれば、期限付きの保存先の URL へ転送する" do
+      login(@member_user)
+      get download_files_api_node_path(@file)
+
+      assert_response :redirect
+      assert_match %r{/rails/active_storage/disk/.+/評価\.txt}, URI.decode_www_form_component(response.location)
+      follow_redirect!
+      assert_equal "評価の中身", response.body.force_encoding("UTF-8")
+      assert_match(/attachment/, response.headers["Content-Disposition"])
+    end
+
+    test "閲覧できなければ 404" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @everyone, :none) }
+      login(@member_user)
+      get download_files_api_node_path(@file)
+
+      assert_response :not_found
+    end
+  end
+
   describe "特権モード" do
     test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)

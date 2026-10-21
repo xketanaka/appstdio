@@ -98,4 +98,40 @@ class Files::NodeTest < ActiveSupport::TestCase
       assert_empty Files::Activity.moved
     end
   end
+
+  describe ".create_file!" do
+    setup do
+      @blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("見積の中身"), filename: "見積.txt")
+    end
+
+    test "版1を作って中身を付け、容量を数え、作った人を管理者にして操作履歴を残す" do
+      file = Files::Node.create_file!(parent: @root, blob: @blob, creator: @member)
+
+      assert_predicate file, :file?
+      assert_equal ["見積.txt", @blob.byte_size], [file.name, file.byte_size]
+      assert_equal [1, @blob.id], [file.current_version.number, file.current_version.body.blob.id]
+      assert_equal @blob.byte_size, @tenant.files_setting.reload.storage_used_bytes
+      assert_equal "manager", Files::Access.new(@member).effective_permission(file).role
+      assert_equal ["created"], Files::Activity.where(node: file).pluck(:action)
+    end
+
+    test "容量が足りなければ何も残さない" do
+      @tenant.files_setting.update!(storage_limit_bytes: @blob.byte_size - 1)
+
+      assert_raises(Files::Node::StorageFullError) do
+        Files::Node.create_file!(parent: @root, blob: @blob, creator: @member)
+      end
+      assert_equal 0, @tenant.files_setting.reload.storage_used_bytes
+      assert_not Files::Node.exists?(name: "見積.txt")
+    end
+
+    test "同じ名前があれば作らず、数えた容量も戻す" do
+      Files::Node.create_folder!(parent: @root, name: "見積.txt", creator: @member)
+
+      assert_raises(ActiveRecord::RecordInvalid) do
+        Files::Node.create_file!(parent: @root, blob: @blob, creator: @member)
+      end
+      assert_equal 0, @tenant.files_setting.reload.storage_used_bytes
+    end
+  end
 end

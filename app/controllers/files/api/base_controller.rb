@@ -1,7 +1,10 @@
 module Files
   module Api
     class BaseController < Files::BaseController
+      class Forbidden < StandardError; end
+
       rescue_from(ActiveRecord::RecordNotFound) { head :not_found }
+      rescue_from(Forbidden) { head :forbidden }
 
       private
 
@@ -21,6 +24,16 @@ module Files
 
       def access
         @access ||= Access.new(current_tenant_user, privileged: privileged_mode?)
+      end
+
+      # 中に作るフォルダ。閲覧できなければ 404、閲覧できても編集できなければ 403
+      def editable_folder!(id)
+        folder = Node.kept.folder.find(id)
+        permission = access.effective_permission(folder)
+        raise ActiveRecord::RecordNotFound unless permission.readable?
+        raise Forbidden unless permission.editable?
+
+        folder
       end
 
       def node_label(node)

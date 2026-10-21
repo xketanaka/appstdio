@@ -12,6 +12,9 @@ base: &base
   mailer:
     from_address: 'certs@example.com'
   host_name: localhost:3000
+  files:
+    # 1ファイルの大きさの上限。S3 に1回で送れるのが 5GB まで（ダイレクトアップロードは1回で送る）
+    max_upload_bytes: 5368709120
   protocol: https
 
 development:
