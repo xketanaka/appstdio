@@ -44,6 +44,9 @@ services:
       DB_PORT: "5432"
       # Vite の開発サーバ。Rails がアセットの要求をここへ中継する
       VITE_RUBY_HOST: "vite"
+      # Playwright のブラウザを node_modules のボリュームに置く（vite サービスが入れる）
+      PLAYWRIGHT_BROWSERS_PATH: "0"
+      E2E_OUTPUT_DIR: "/tmp/e2e-results"
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       DB_USER: "appstdio_app"
       DB_PASSWORD: "app_password"
@@ -78,6 +81,9 @@ services:
       DB_PORT: "5432"
       # Vite の開発サーバ。Rails がアセットの要求をここへ中継する
       VITE_RUBY_HOST: "vite"
+      # Playwright のブラウザを node_modules のボリュームに置く（vite サービスが入れる）
+      PLAYWRIGHT_BROWSERS_PATH: "0"
+      E2E_OUTPUT_DIR: "/tmp/e2e-results"
       OPS_CONSOLE: "1"
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       DB_USER: "appstdio_owner"
@@ -96,7 +102,7 @@ services:
       - "./docker/volumes/bundle:/usr/local/bundle"
       - "node_modules:/opt/app-root/appstdio/node_modules"
     working_dir: /opt/app-root/appstdio
-    command: sh -c "bundle install; npm install; bin/vite dev"
+    command: sh -c "bundle install; npm install; npx playwright install chromium; bin/vite dev"
     restart: always
     environment:
       HOME: ''
@@ -105,6 +111,7 @@ services:
       # Prism は mmap でソースを読み、vboxsf ではホストで書き換えても古い内容が残る
       RUBYOPT: "-W:deprecated --parser=parse.y"
       VITE_RUBY_HOST: "0.0.0.0"
+      PLAYWRIGHT_BROWSERS_PATH: "0"
       VITE_LISTEN_PORT: ${VITE_LISTEN_PORT:-3036}
       VITE_HMR_CLIENT_PORT: ${VITE_HMR_CLIENT_PORT:-}
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}

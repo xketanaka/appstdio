@@ -32,8 +32,9 @@ COPY --from=node:24-trixie-slim /usr/local/lib/node_modules /usr/local/lib/node_
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
-## system test 用のブラウザ。arm64 では Selenium が Chrome を取ってこられないので、OS のパッケージを使う
-RUN apt-get update && apt-get install -y chromium chromium-driver fonts-noto-cjk
+## E2E テスト（Playwright）のブラウザが使うライブラリ。ブラウザ本体は node_modules のボリュームに入れる。
+## 版は package.json の @playwright/test と揃える。日本語のフォントは失敗時のスクリーンショット用
+RUN npx -y playwright@1.64.1 install-deps chromium && apt-get install -y fonts-noto-cjk
 
 ## dockerコマンドインストール
 RUN mkdir -p /etc/apt/keyrings && \

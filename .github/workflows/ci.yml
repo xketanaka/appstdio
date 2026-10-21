@@ -118,5 +118,18 @@ jobs:
       - name: JavaScript と CSS をビルドする
         run: bin/vite build
 
+      - name: E2E テストのブラウザを入れる
+        run: npx playwright install --with-deps chromium
+
       - name: テストを実行する
         run: bin/rails test:full
+
+      - name: E2E テストの結果を残す
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

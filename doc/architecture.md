@@ -453,12 +453,8 @@ GET /files/...（どの URL でも）  Files::AppController#show   入れ物の�
   埋め込みは Rails と同じ `%{name}`。開発中とテストでは、無いキーは例外になる
 * 画面をまたいで保つ状態（特権モード・左ペインの開閉・ツリー）は `store.ts` に置く。
   左ペインはスマホと PC の2箇所に描くので、開閉もここで揃える
-* テストは3層。API は `test/integration/files_test.rb`、部品の表示は Vitest
-  （文言は本物の `ja.files_app.yml` を読むのでキーの漏れも拾う）、通しの動きは system test
-  （`test/system/files_test.rb`）
-* system test では、テストとアプリのサーバが DB の接続を共有する。サーバが要求を並行して
-  処理すると、先に終わった要求がテナントの指定（RLS のセッション変数）を消してしまうので、
-  サーバのスレッドを1本にしている（`test/application_system_test_case.rb`）
+* テストは API を `test/integration/files_test.rb`、部品の表示を Vitest（文言は本物の
+  `ja.files_app.yml` を読むのでキーの漏れも拾う）、主な流れを E2E で確かめる（「テスト」を参照）
 
 ### 開発サーバ
 
@@ -478,6 +474,45 @@ WebSocket だけは Rails を通せない（Rails の中継は WebSocket を扱�
 開発サーバが動いていないとき（`vite` サービスを止めているときなど）は、`vite_ruby` が
 要求のたびに変更を確かめてビルドし直す（`autoBuild`）。表示は遅くなるが画面は崩れない。
 
+## テスト
+
+### 層ごとの役割
+
+基準は「**そのテストが、どの層までそろわないと確かめられないか**」。下の層で確かめられるものは
+下の層で確かめ、上の層には持ち込まない。
+
+| 層 | 確かめること | 置き場所 |
+|---|---|---|
+| モデル | 規則そのもの（権限の継承、同名の判定、作成時に権限と履歴を残すこと） | `test/models` |
+| 結合 | サーバの約束事。401 / 403 / 404 の出し分け、API が返す中身、422 の文。ERB の画面は表示の中身まで（`assert_select`） | `test/integration` |
+| 部品（Vitest） | Vue の部品が、与えたデータでどう描き、どう反応するか | `app/javascript/**/*.test.ts` |
+| E2E（Playwright） | 利用者の主な流れを、実際の操作で端から端まで動かす | `test/e2e` |
+
+**E2E は網羅しない。** 権限の組み合わせや入力の誤りの種類は、結合テストと Vitest で尽くす。
+E2E は1つの操作につき主な流れを1本程度にする。遅く、落ちたときの原因も追いにくいため。
+
+### E2E（Playwright）
+
+Rails の system test（Capybara）ではなく、Playwright を TypeScript で使う。
+
+* Capybara の system test はテストとサーバが DB の接続を共有し、トランザクションの巻き戻しで
+  後片付けする。主な流れを動かすだけならその必要は無く、むしろ本番では起きない形で RLS の
+  指定が消える（要求を並行して処理すると、先に終わった要求が `TenantContext.clear` する）
+* ドラッグ＆ドロップ、修飾キー付きのクリックを本物の操作として起こせる（Selenium は苦手）
+
+仕組み。
+
+* テスト環境の Rails を、単体テストとは別の DB（`appstdio_e2e`、`DB_NAME` で切り替え）で起動する。
+  DB は流し始める前に作り直し（`playwright.config.ts` の `webServer`）、後片付けはしない
+* **テストごとに専用のテナントを作る**（`test/e2e/scenarios.rb`、`bin/rails e2e:scenario[名前]`）。
+  RLS で他のテナントの行は見えないので、テスト同士がデータで干渉しない。並行して流せる
+* データは rake タスクで作るので、1本あたり Rails の起動の1〜2秒がかかる。遅さが問題に
+  なったら、テスト環境だけの HTTP の入口に切り替える（本番で有効にならない守りが要る）
+* ブラウザには外部のホスト名を引かせない。Google Fonts の応答が遅いと、ページの読み込みが
+  終わらず落ちるため
+* 開発用のコンテナでは、失敗時のトレースを `/tmp/e2e-results` に出す。vboxsf の上に zip を
+  書くと壊れるため
+
 ## CI (GitHub Actions)
 
 すべてのブランチへの push で `.github/workflows/ci.yml` が動く。ジョブは3つ。
@@ -486,7 +521,7 @@ WebSocket だけは Rails を通せない（Rails の中継は WebSocket を扱�
 |---|---|
 | `lint` | main 以外のブランチでは `rubocop --autocorrect` と `npm run lint:fix`（ESLint）で直せるものを直し、差分があれば `style: rubocop と ESLint の自動修正を当てる` としてそのブランチにコミットして push する。そのあと両方とも違反が残っていないかを確かめる |
 | `frontend` | `npm run typecheck` で型を検査し、`npm test` で Vitest を実行する |
-| `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作り、`bin/vite build` でアセットをビルドしてから `bin/rails test:full` を実行する |
+| `test` | PostgreSQL 18 のサービスに `docker/files/db/initdb/01_roles.sql` でロールを作り、所有者ロールでテスト用の DB を作り、`bin/vite build` でアセットをビルドし、Playwright のブラウザを入れてから `bin/rails test:full` を実行する。失敗したら E2E のレポートとトレースを成果物として残す |
 
 注意すること。
 
