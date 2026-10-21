@@ -49,6 +49,21 @@ class SiteHeaderTest < ActionDispatch::IntegrationTest
     assert_select "#site-title span", 0
   end
 
+  test "ロゴは画面を移るたびに読み直さないよう、同じ URL で長くキャッシュさせる" do
+    update_setting(logo: png)
+    login
+
+    get top_page_path
+    src = css_select("#site-title img").first["src"]
+    get management_users_path
+    assert_equal src, css_select("#site-title img").first["src"]
+
+    get src
+    assert_response :success
+    assert_match(/public/, response.headers["Cache-Control"])
+    assert_match(/max-age=\d{6,}/, response.headers["Cache-Control"])
+  end
+
   test "テナントを選ぶ前の画面は既定のまま" do
     update_setting(title_label: "サンプル株式会社")
     get login_path

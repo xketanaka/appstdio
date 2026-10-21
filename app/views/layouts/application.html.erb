@@ -44,7 +44,7 @@
         <% title = setting&.title_label || Settings.system_title %>
         <div id="site-title" class="flex min-w-0 items-center gap-2.5">
           <% if setting&.logo&.attached? %>
-            <%= image_tag setting.logo, alt: title, class: "h-8 w-auto shrink-0" %>
+            <%= image_tag rails_storage_proxy_path(setting.logo), alt: title, class: "h-8 w-auto shrink-0" %>
           <% else %>
             <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm text-white" aria-hidden="true"><%= title.first %></span>
           <% end %>

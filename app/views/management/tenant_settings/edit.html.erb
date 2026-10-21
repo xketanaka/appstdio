@@ -32,7 +32,7 @@
         <%= f.label :logo, class: "mb-1.5 block text-sm font-semibold" %>
         <% if @setting.logo.attached? && !@setting.attachment_changes.key?("logo") %>
           <div class="mb-2 flex items-center gap-4">
-            <%= image_tag @setting.logo, alt: TenantSetting.human_attribute_name(:logo),
+            <%= image_tag rails_storage_proxy_path(@setting.logo), alt: TenantSetting.human_attribute_name(:logo),
                   class: "h-10 w-auto rounded-lg border border-slate-200 bg-canvas p-1" %>
             <label class="flex items-center gap-2 text-sm">
               <%= check_box_tag :remove_logo, "1", false, class: "accent-primary-600" %>
