@@ -1,0 +1,4 @@
+<%# locals: (url:) %>
+<%# data-load-more を application.ts が見張り、画面に見えたら url を読んでこの行と置き換える %>
+<li data-load-more="<%= url %>" data-load-error="<%= t(".failed") %>"
+    class="border-t border-slate-100 py-3 text-center text-sm text-slate-500"><%= t(".loading") %></li>
