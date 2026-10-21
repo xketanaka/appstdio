@@ -33,6 +33,35 @@
  * それ以外はユーティリティで書く。components の層はユーティリティより下なので、
  * class="btn btn-primary w-full" のように足したユーティリティが必ず勝つ
  */
+/* 印刷するときは、画面に固定した枠と各部分のスクロールをやめ、中身を紙に流す。
+   画面では #app-shell が画面の大きさに固定され、はみ出しを隠しているので、そのままだと
+   画面1枚分しか印刷されない。ERB と Vue のどの画面にも効くよう、ここに1つだけ置く */
+@layer base {
+  @media print {
+    html,
+    body {
+      height: auto !important;
+      overflow: visible !important;
+    }
+
+    #app-shell {
+      position: static !important;
+      display: block !important;
+      overflow: visible !important;
+    }
+
+    #app-shell * {
+      overflow: visible !important;
+    }
+
+    /* 一覧の1行がページの境目で上下に分かれないようにする */
+    #app-shell tr,
+    #app-shell li {
+      break-inside: avoid;
+    }
+  }
+}
+
 @layer components {
   .btn {
     @apply inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-sm font-medium
