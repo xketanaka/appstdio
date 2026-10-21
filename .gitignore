@@ -48,6 +48,10 @@ vendor/bundle
 /docker-compose.override.yml
 
 
+# Playwright（E2E テスト）の結果
+/test-results/
+/playwright-report/
+
 # Vite Ruby
 /public/vite*
 /node_modules

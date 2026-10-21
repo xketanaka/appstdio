@@ -166,11 +166,17 @@ docker compose exec app sh -c "bin/rails test"
 
 ```bash
 docker compose exec app sh -c "bin/rails test:ops"     # 運営者画面のみ
-docker compose exec app sh -c "bin/rails test:system"  # ブラウザを動かすテスト（system test）のみ
+docker compose exec app sh -c "npx playwright test"  # E2E テスト（Playwright）のみ
 docker compose exec app sh -c "bin/rails test:full"    # すべて
 ```
 
-system test はコンテナの Chromium（headless）で動く。失敗したときの画面は `tmp/screenshots/` に残る。
+E2E テストは、テスト環境の Rails を別の DB（`appstdio_e2e`）で 3100 番に起動して動かす（開発用の
+サーバとは別）。失敗したときのトレースは `app` コンテナの `/tmp/e2e-results` に残る。
+取り出して https://trace.playwright.dev で開くと、操作ごとの画面と通信を見られる。
+
+```bash
+docker compose cp app:/tmp/e2e-results ./tmp/
+```
 
 コンテナが起動してない場合
 

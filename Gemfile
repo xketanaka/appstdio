@@ -45,7 +45,4 @@ end
 group :test do
   # Code coverage analysis with branch/condition coverage
   gem "simplecov", require: false
-  # system test（ブラウザを動かすテスト）
-  gem "capybara"
-  gem "selenium-webdriver"
 end

@@ -34,7 +34,8 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: appstdio_test
+  # E2E テスト（test/e2e）は appstdio_e2e を使う。巻き戻さずにデータを残すので、単体テストの DB と分ける
+  database: <%= ENV.fetch("DB_NAME") { "appstdio_test" } %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
