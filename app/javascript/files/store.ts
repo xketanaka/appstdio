@@ -1,6 +1,6 @@
 import { reactive } from "vue"
-import { api, type FolderPayload, type SectionKey, type Tree, type TreeFolder } from "./api"
-import { setMessages, type Messages } from "./i18n"
+import { api, ForbiddenError, ValidationError, type FolderPayload, type SectionKey, type Tree, type TreeFolder } from "./api"
+import { setMessages, t, type Messages } from "./i18n"
 
 // 入れ物のページ（app/views/files/app/show.html.erb）が data-config で渡すもの
 type Config = {
@@ -23,7 +23,31 @@ export const state = reactive({
   children: new Map<number, TreeFolder[]>(),
   openSections: new Set<SectionKey>(),
   openFolders: new Set<number>(),
+  // 作成・移動などで中身が変わるたびに増える。開いている画面はこれを見て読み直す
+  revision: 0,
+  // 画面の下に一時的に出す知らせ（移動した、移せなかった、など）
+  notice: null as Notice | null,
 })
+
+type Notice = { message: string, error: boolean, action?: { label: string, run: () => void } }
+
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
+
+// action（「元に戻す」など）がある知らせは、押す間があるよう長めに出す
+export function notify(message: string, { error = false, action }: Omit<Partial<Notice>, "message"> = {}) {
+  state.notice = { message, error, action }
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => (state.notice = null), action ? 10000 : 6000)
+}
+
+export function notifyMoveError(error: unknown) {
+  if (error instanceof ValidationError) notify(error.messages.join(" "), { error: true })
+  else if (error instanceof ForbiddenError) notify(t("move.forbidden"), { error: true })
+  else {
+    notify(t("move.failed"), { error: true })
+    console.error(error)
+  }
+}
 
 export function loadConfig(element: HTMLElement) {
   const value: Config = JSON.parse(element.dataset.config ?? "{}")
@@ -56,6 +80,38 @@ export async function reloadTree() {
 
   const loaded = [...state.children.keys()].filter((id) => !rootIds().includes(id))
   await loadChildren(loaded, { force: true })
+}
+
+// 中身が変わったことを、開いている画面とツリーに知らせる
+export async function changed() {
+  state.revision++
+  await reloadTree()
+}
+
+type Item = { id: number, name: string }
+
+// 移す。失敗したら例外をそのまま投げるので、理由の出し方は呼び出し側で決める。
+// 移したものは同じフォルダ（from）から来ているので、「元に戻す」はそこへ移し直す
+export async function moveItems(items: Item[], destination: { id: number, label: string }, from: number) {
+  await api.move(items.map((item) => item.id), destination.id)
+  const message = items.length === 1
+    ? t("move.done_one", { name: items[0].name, destination: destination.label })
+    : t("move.done_other", { count: items.length, destination: destination.label })
+  notify(message, { action: { label: t("move.undo"), run: () => undoMove(items, from) } })
+  await changed()
+}
+
+// 移し直すのにも、移したときと同じ権限が要る。その間に元の場所へ同じ名前のものが
+// 作られていれば戻せないので、理由を知らせる
+async function undoMove(items: Item[], from: number) {
+  state.notice = null
+  try {
+    await api.move(items.map((item) => item.id), from)
+    notify(t("move.undone"))
+    await changed()
+  } catch (error) {
+    notifyMoveError(error)
+  }
 }
 
 export async function toggleFolder(id: number) {

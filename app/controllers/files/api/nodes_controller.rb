@@ -1,8 +1,8 @@
 module Files
   module Api
-    class MovesController < BaseController
+    class NodesController < BaseController
       # 移動元の親フォルダと移動先の、両方の編集権限が要る（doc/files.md の「移動」）
-      def create
+      def move
         ids = Array(params[:node_ids]).map(&:to_i).uniq
         destination = Node.kept.folder.find(params[:destination_id])
         nodes = Node.kept.where(id: ids).includes(:parent).to_a
@@ -18,7 +18,7 @@ module Files
         render json: { errors: e.messages }, status: :unprocessable_content
       rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
         # 同じ名前のものが同時に移動先へ作られ、事前の確かめをすり抜けたとき
-        render json: { errors: [t("files.moves.conflict")] }, status: :unprocessable_content
+        render json: { errors: [t("files.nodes.move_conflict")] }, status: :unprocessable_content
       end
     end
   end

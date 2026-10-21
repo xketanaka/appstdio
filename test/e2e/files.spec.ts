@@ -65,14 +65,16 @@ test("特権モードにすると権限の無いフォルダも開け、終え�
   const list = page.locator("#file-list")
   await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
 
+  // 移動などの知らせも status なので、特権モードの帯は文言で絞る
+  const banner = page.getByRole("status").filter({ hasText: "特権モードです" })
   await page.locator("#side-pane").getByRole("switch", { name: "特権モード" }).click()
-  await expect(page.getByRole("status")).toContainText("特権モードです")
+  await expect(banner).toBeVisible()
   await expect(list.getByTitle("権限がないため開けません")).toHaveCount(0)
   await list.getByRole("row", { name: /人事/ }).dblclick()
   await expect(page.getByRole("heading", { name: "人事" })).toBeVisible()
 
-  await page.getByRole("status").getByRole("button", { name: "特権モードを終える" }).click()
-  await expect(page.getByRole("status")).toBeHidden()
+  await banner.getByRole("button", { name: "特権モードを終える" }).click()
+  await expect(banner).toBeHidden()
   await expect(page).toHaveURL("/files")
   await expect(list.getByTitle("権限がないため開けません")).toHaveText("人事")
 })
@@ -98,4 +100,26 @@ test("複数を選んで、別のフォルダへまとめて移す", async ({ pa
   await list.getByRole("row", { name: /保管/ }).dblclick()
   await expect(page.getByRole("heading", { name: "保管" })).toBeVisible()
   await expect(list.getByRole("row", { name: /下書き|メモ\.txt/ })).toHaveCount(2)
+})
+
+test("ドラッグして一覧や左ペインのフォルダへ移し、知らせから元に戻せる", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+  const notice = page.getByRole("status").filter({ hasText: "しました" })
+  const minutes = list.getByRole("row", { name: /議事録\.txt/ })
+
+  await minutes.dragTo(list.getByRole("row", { name: /資料/ }))
+  await expect(notice).toContainText("「議事録.txt」を「資料」に移動しました")
+  await expect(minutes).toHaveCount(0)
+
+  await notice.getByRole("button", { name: "元に戻す" }).click()
+  await expect(notice).toContainText("移動を元に戻しました")
+  await expect(minutes).toHaveCount(1)
+
+  await minutes.dragTo(page.locator("#side-pane").getByRole("link", { name: "資料" }))
+  await expect(notice).toContainText("「議事録.txt」を「資料」に移動しました")
+  await page.locator("#side-pane").getByRole("link", { name: "資料" }).click()
+  await expect(page.getByRole("heading", { name: "資料" })).toBeVisible()
+  await expect(minutes).toHaveCount(1)
 })

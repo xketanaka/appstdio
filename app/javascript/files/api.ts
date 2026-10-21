@@ -85,7 +85,7 @@ export const api = {
   createFolder: (parentId: number, name: string) =>
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
   move: (nodeIds: number[], destinationId: number) =>
-    request<void>("POST", "/files/api/moves", { node_ids: nodeIds, destination_id: destinationId }),
+    request<void>("POST", "/files/api/nodes/move", { node_ids: nodeIds, destination_id: destinationId }),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),
   trash: () => request<{ entries: TrashEntry[] }>("GET", "/files/api/trash"),
   enterPrivilegedMode: () => request<void>("POST", "/files/api/privileged_mode"),
