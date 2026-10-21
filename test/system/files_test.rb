@@ -44,6 +44,32 @@ class FilesSystemTest < ApplicationSystemTestCase
     assert_selector "h1", text: "組織共有ドライブ"
   end
 
+  test "フォルダを作ると、ページを読み直さずに一覧と左ペインに出る" do
+    visit files_my_drive_path
+    assert_selector "h1", text: "マイドライブ"
+    execute_script("window.notReloaded = true")
+
+    find("summary", text: "作成").click
+    click_on "フォルダ"
+    within("dialog[open]") do
+      fill_in "フォルダの名前", with: "企画"
+      click_on "作成"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_selector "#file-list a", text: "企画"
+    assert_selector "#side-pane a", text: "企画"
+    assert evaluate_script("window.notReloaded")
+
+    find("summary", text: "作成").click
+    click_on "フォルダ"
+    within("dialog[open]") do
+      fill_in "フォルダの名前", with: "企画"
+      click_on "作成"
+      assert_selector "[role=alert]", text: "名前が同じフォルダの中のものと重複しています。"
+    end
+  end
+
   test "URL を直接開いても同じ画面になる" do
     visit files_folder_path(@sales)
 

@@ -7,6 +7,12 @@ ja:
           has_one: "%{record}が存在しているため削除できません。"
           has_many: "%{record}が存在しているため削除できません。"
       models:
+        files/node:
+          attributes:
+            name:
+              taken: "が同じフォルダの中のものと重複しています。"
+              invalid: "に「/」は使えません。"
+              exclusion: "に「.」と「..」は使えません。"
         tenant_setting:
           attributes:
             logo:
@@ -19,6 +25,7 @@ ja:
       tenant_user: "テナントユーザ"
       tenant_setting: "組織設定"
       files/setting: "ファイル管理の設定"
+      files/node: "ファイル・フォルダ"
     attributes:
       tenant:
         id: "テナントID"
@@ -55,6 +62,8 @@ ja:
         logo: "ロゴ画像"
       files/setting:
         enabled: "ファイル管理"
+      files/node:
+        name: "名前"
       tenant_user:
         id: "ID"
         tenant: "テナント"

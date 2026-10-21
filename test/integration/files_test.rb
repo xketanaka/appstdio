@@ -160,6 +160,45 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "フォルダの作成" do
+    test "編集者はフォルダを作れ、作った人が管理者になる" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
+      login(@member_user)
+      post files_api_folders_path, params: { parent_id: @sales.id, name: "提案書" }, as: :json
+
+      assert_response :created
+      assert_equal "提案書", json["name"]
+      get files_api_folder_path(json["id"])
+      assert_response :success
+      assert_equal "提案書", json.dig("folder", "label")
+      assert json["can_edit"]
+    end
+
+    test "同じ名前や空の名前は 422 で理由を返す" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
+      login(@member_user)
+
+      post files_api_folders_path, params: { parent_id: @sales.id, name: "見積" }, as: :json
+      assert_response :unprocessable_content
+      assert_equal ["名前が同じフォルダの中のものと重複しています。"], json["errors"]
+
+      post files_api_folders_path, params: { parent_id: @sales.id, name: "  " }, as: :json
+      assert_response :unprocessable_content
+      assert_equal ["名前が入力されていません。"], json["errors"]
+    end
+
+    test "閲覧者は 403、閲覧できないフォルダは 404" do
+      login(@member_user)
+
+      post files_api_folders_path, params: { parent_id: @sales.id, name: "提案書" }, as: :json
+      assert_response :forbidden
+
+      post files_api_folders_path, params: { parent_id: @hr.id, name: "提案書" }, as: :json
+      assert_response :not_found
+      assert_equal 0, TenantContext.switch(tenant: @tenant) { Files::Node.where(name: "提案書").count }
+    end
+  end
+
   describe "特権モード" do
     test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)
