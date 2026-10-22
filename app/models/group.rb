@@ -5,9 +5,16 @@ class Group < ApplicationRecord
 
   belongs_to :tenant
   belongs_to :parent, class_name: "Group", optional: true
+  belongs_to :suspended_by, class_name: "TenantUser", optional: true
+  belongs_to :suspension_root, class_name: "Group", optional: true
   has_many :children, class_name: "Group", foreign_key: :parent_id, dependent: :destroy
   has_many :group_members, dependent: :destroy
   has_many :tenant_users, through: :group_members
+  has_many :labelings, class_name: "GroupLabeling", dependent: :destroy
+  has_many :labels, through: :labelings, source: :group_label
+
+  scope :active, -> { where(suspended_at: nil) }
+  scope :suspended, -> { where.not(suspended_at: nil) }
 
   validates :name, presence: true, length: { maximum: 255 }
   validate :parent_must_not_be_self_or_descendant
