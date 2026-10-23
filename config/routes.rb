@@ -58,10 +58,14 @@ Rails.application.routes.draw do
     namespace :management do
       resources :users, only: [:index]
       resources :groups do
+        get :suspended, on: :collection
         member do
           get :sub_members
           get :member_candidates
           get :confirm_destroy
+          get :confirm_suspend
+          post :suspend
+          post :reactivate
         end
       end
       resource :tenant_setting, only: [:show, :edit, :update]

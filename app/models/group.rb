@@ -60,6 +60,48 @@ class Group < ApplicationRecord
     end
   end
 
+  def suspended?
+    suspended_at.present?
+  end
+
+  # 利用停止にする。自分（起点）と、まだ有効な下位のすべての行に、停止日時・停止した人・
+  # その時点の上位の名前の並び・起点を書き込む。先に別の操作で停止していた下位は、その起点のまま残す
+  def suspend!(by:)
+    descendants = Group.where(id: Group.descendant_ids_of(id)).to_a
+    by_id = descendants.index_by(&:id).merge(id => self)
+    paths = { id => self_and_ancestors.drop(1).reverse.map(&:name) }
+    path_of = ->(group) { paths[group.id] ||= path_of.(by_id[group.parent_id]) + [by_id[group.parent_id].name] }
+    now = Time.current
+
+    transaction do
+      [self, *descendants.reject(&:suspended?)].each do |group|
+        group.update_columns(suspended_at: now, suspended_by_id: by.id, suspended_path: path_of.(group),
+          suspension_root_id: id, updated_at: now)
+      end
+    end
+  end
+
+  # 再開できないわけ。[訳のキー, 差し込む値] か、再開できるなら nil
+  def reactivation_blocker
+    return [:not_root, { name: suspension_root.name }] if suspension_root_id != id
+
+    suspended_ancestor = self_and_ancestors.drop(1).find(&:suspended?)
+    return [:ancestor_suspended, { name: suspended_ancestor.name }] if suspended_ancestor
+    return [:name_taken, {}] if Group.active.where(tenant_id:, parent_id:, name:).exists?
+
+    nil
+  end
+
+  # 起点を再開する。この停止の操作で一緒に止まった行だけを有効に戻す。再開できなければ false
+  def reactivate
+    return false if reactivation_blocker
+
+    Group.where(suspension_root_id: id).update_all(suspended_at: nil, suspended_by_id: nil, suspended_path: nil,
+      suspension_root_id: nil, updated_at: Time.current)
+    reload
+    true
+  end
+
   def self_and_ancestors
     chain = [self]
     node = parent
@@ -75,7 +117,7 @@ class Group < ApplicationRecord
   # 停止中のグループとは重なってよい（停止した部署と同じ名前で作り直せるように）。
   # 所有者ロール（運営者画面）は RLS を素通りするので、テナントでも絞る
   def name_must_be_unique_among_active_siblings
-    return if suspended_at
+    return if suspended?
 
     errors.add(:name, :taken) if Group.active.where(tenant_id:, parent_id:, name:).where.not(id:).exists?
   end
@@ -85,6 +127,6 @@ class Group < ApplicationRecord
     return if parent.nil?
 
     cyclic = persisted? && parent.self_and_ancestors.include?(self)
-    errors.add(:parent, :invalid) if parent.everyone? || parent.suspended_at || cyclic
+    errors.add(:parent, :invalid) if parent.everyone? || parent.suspended? || cyclic
   end
 end

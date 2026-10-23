@@ -1,0 +1,23 @@
+<%# 停止中のグループの詳細の上に出す。再開できるのは起点だけで、できないときはわけを添える %>
+<div id="suspension" class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+  <p class="font-medium"><%= t(".status") %></p>
+  <p class="mt-1">
+    <% if @group.suspended_by %>
+      <%= t(".suspended_at_by", at: time_to_s(@group.suspended_at), name: @group.suspended_by.display_name) %>
+    <% else %>
+      <%= t(".suspended_at", at: time_to_s(@group.suspended_at)) %>
+    <% end %>
+  </p>
+  <% if @reactivation_blocker %>
+    <% key, values = @reactivation_blocker %>
+    <p class="mt-2"><%= t(".blockers.#{key}", **values) %></p>
+    <% if key == :not_root %>
+      <%= link_to t(".open_root", name: @group.suspension_root.name), management_group_path(@group.suspension_root),
+            class: "mt-1 inline-block text-primary-700 hover:underline" %>
+    <% end %>
+  <% end %>
+  <% if @group.suspension_root_id == @group.id %>
+    <%= button_to t(".reactivate"), reactivate_management_group_path(@group), disabled: @reactivation_blocker.present?,
+          form: { class: "mt-3" }, class: "btn btn-primary btn-sm disabled:cursor-not-allowed disabled:opacity-50" %>
+  <% end %>
+</div>

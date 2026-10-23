@@ -54,8 +54,12 @@
         <%= f.submit t("actions.save"), class: "btn btn-primary" %>
         <%= link_to t(".cancel"), management_group_path(@group), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
       </div>
-      <%= link_to t(".destroy"), confirm_destroy_management_group_path(@group), id: "destroy-group",
-            class: "btn btn-danger" %>
+      <div class="flex flex-wrap items-center gap-2">
+        <%= link_to t(".suspend"), confirm_suspend_management_group_path(@group), id: "suspend-group",
+              class: "btn btn-secondary" %>
+        <%= link_to t(".destroy"), confirm_destroy_management_group_path(@group), id: "destroy-group",
+              class: "btn btn-danger" %>
+      </div>
     </div>
   <% end %>
 <% end %>

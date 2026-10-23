@@ -3,9 +3,11 @@ module Management
     PER_PAGE = 30
 
     before_action :load_tree
-    before_action :set_group, except: [:index, :new, :create]
+    before_action :set_group, except: [:index, :new, :create, :suspended]
     # 「全員」は名前もメンバーも変えられず、消せない
-    before_action :reject_everyone, except: [:index, :new, :create, :show]
+    before_action :reject_everyone, except: [:index, :new, :create, :suspended, :show]
+    # 停止中は詳細を見て再開するだけ。編集・削除・停止はできない
+    before_action :reject_suspended, except: [:index, :new, :create, :suspended, :show, :sub_members, :reactivate]
 
     def index
     end
@@ -21,6 +23,40 @@ module Management
       @parent_path = @group.self_and_ancestors.drop(1).reverse
       @has_children = Group.exists?(parent_id: @group.id)
       @sub_members_count = sub_members_of(@group).count
+      @reactivation_blocker = @group.reactivation_blocker if @group.suspended?
+    end
+
+    # 利用停止中のグループの一覧。既定は起点だけを出し、include_descendants で一緒に止まった下位も出す。
+    # キーワードはグループ名と、停止した時点の上位の名前の並びに当てる
+    def suspended
+      @query = params[:q].to_s.strip
+      @include_descendants = params[:include_descendants] == "1"
+      page = [params[:page].to_i, 1].max
+
+      groups = Group.suspended
+      if @query.present?
+        groups = groups.where("groups.name ILIKE :pattern OR array_to_string(groups.suspended_path, ' ') ILIKE :pattern",
+          pattern: "%#{Group.sanitize_sql_like(@query)}%")
+      end
+      unless @include_descendants
+        roots = groups.where("groups.suspension_root_id = groups.id")
+        # 起点には見つからず、一緒に止まった下位に当てはまるものがあれば、チェックを入れるよう誘う
+        @hidden_count = groups.count if @query.present? && page == 1 && !roots.exists?
+        groups = roots
+      end
+
+      # 同じ停止の操作で止まった行は、起点から上位の並びの短い順（ツリーの浅い順）に並べる
+      @groups = groups.includes(:suspended_by, :suspension_root)
+        .order(suspended_at: :desc, suspension_root_id: :desc)
+        .order(Arel.sql("cardinality(groups.suspended_path)"), :name, :id)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if @groups.size > PER_PAGE)
+      @groups = @groups.first(PER_PAGE)
+      root_ids = @groups.select { it.suspension_root_id == it.id }.map(&:id)
+      @co_suspended_counts = Group.where(suspension_root_id: root_ids).where("groups.id <> groups.suspension_root_id")
+        .group(:suspension_root_id).count
+
+      render partial: "suspended_rows", layout: false if page > 1
     end
 
     # 下位グループのメンバーの一覧を1ページ分だけ返す。詳細の画面がスクロールに合わせて読み足す
@@ -97,6 +133,25 @@ module Management
       @files_enabled = Files::Setting.find_by!(tenant: current_tenant).enabled?
     end
 
+    def confirm_suspend
+      @descendants_count = Group.active.where(id: Group.descendant_ids_of(@group.id)).count
+    end
+
+    def suspend
+      @group.suspend!(by: current_tenant_user)
+      redirect_to management_group_path(@group), notice: t(".done")
+    end
+
+    def reactivate
+      raise ActiveRecord::RecordNotFound unless @group.suspended?
+
+      if @group.reactivate
+        redirect_to management_group_path(@group), notice: t(".done")
+      else
+        redirect_to management_group_path(@group)
+      end
+    end
+
     # 下位（停止中も）は children の dependent: :destroy でたどって消す。ファイルの共有設定は外部キーの
     # ON DELETE CASCADE で消える
     def destroy
@@ -118,6 +173,10 @@ module Management
 
     def reject_everyone
       raise ActiveRecord::RecordNotFound if @group.everyone?
+    end
+
+    def reject_suspended
+      raise ActiveRecord::RecordNotFound if @group.suspended?
     end
 
     def label_names_param

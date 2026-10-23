@@ -9,7 +9,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     @tenant = Tenant.setup!(name: "テナントA")
     @admin = User.create!(email: "admin@example.com", password: PASSWORD)
     TenantContext.switch(tenant: @tenant) do
-      admin = TenantUser.create!(tenant: @tenant, user: @admin, display_name: "管理者さん", role: :admin, status: :active)
+      @admin_member = admin = TenantUser.create!(tenant: @tenant, user: @admin, display_name: "管理者さん", role: :admin, status: :active)
       @people = people = { "佐藤" => "sato", "山田" => "yamada", "田中" => "tanaka", "鈴木" => "suzuki", "高橋" => "takahashi" }
         .to_h do |name, account|
         user = User.create!(email: "#{account}@example.com", password: PASSWORD)
@@ -386,6 +386,149 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     delete management_group_path(@everyone)
     assert_response :not_found
+  end
+
+  test "利用停止の確認を経て停止すると、下位ごとツリーから消え、停止中の詳細に移る" do
+    login(@admin)
+    get edit_management_group_path(@sales)
+    assert_select "#suspend-group[href=?]", confirm_suspend_management_group_path(@sales)
+
+    get confirm_suspend_management_group_path(@sales)
+    assert_select "#suspend-confirmation", text: /「営業本部」を利用停止にします。/
+    assert_select "#suspend-confirmation", text: /下位グループ 2件も一緒に停止されます。/
+
+    post suspend_management_group_path(@sales)
+    assert_redirected_to management_group_path(@sales)
+    follow_redirect!
+    assert_select "[role=status]", text: "利用停止にしました。"
+    assert_select "#group-tree", text: /営業本部|第一営業部/, count: 0
+    assert_select "#suspension", text: /利用停止中です.*管理者さん/m
+    assert_select "#suspension form[action=?] button:not([disabled])", reactivate_management_group_path(@sales)
+    assert_select "#edit-group, #add-child-group", 0
+
+    TenantContext.switch(tenant: @tenant) do
+      assert_equal [@sales.id] * 3, [@sales, @sales1, @sales2].map { it.reload.suspension_root_id }
+      assert_equal @admin_member, @sales.suspended_by
+    end
+  end
+
+  test "停止中のグループは編集・削除・停止ができない" do
+    login(@admin)
+    [edit_management_group_path(@planning), confirm_destroy_management_group_path(@planning),
+     confirm_suspend_management_group_path(@planning), member_candidates_management_group_path(@planning)].each do |path|
+      get path
+      assert_response :not_found
+    end
+    patch management_group_path(@planning), params: { group: { name: "新企画部", parent_id: @company.id } }
+    assert_response :not_found
+    delete management_group_path(@planning)
+    assert_response :not_found
+    post suspend_management_group_path(@planning)
+    assert_response :not_found
+    post reactivate_management_group_path(@sales)
+    assert_response :not_found
+  end
+
+  test "起点を再開すると一緒に止まった下位も戻る。下位からは再開できず、起点へ案内する" do
+    TenantContext.switch(tenant: @tenant) { @sales.suspend!(by: @admin_member) }
+    login(@admin)
+
+    get management_group_path(@sales1)
+    assert_select "#suspension", text: /「営業本部」と一緒に停止されています。再開は「営業本部」から/
+    assert_select "#suspension a[href=?]", management_group_path(@sales)
+    assert_select "#suspension form", 0
+
+    post reactivate_management_group_path(@sales)
+    assert_redirected_to management_group_path(@sales)
+    follow_redirect!
+    assert_select "[role=status]", text: "再開しました。"
+    assert_select "#group-tree a", text: "第一営業部"
+  end
+
+  test "上位が停止中か、同じ名前の有効なグループがあるときは、再開を押せずにわけを出す" do
+    TenantContext.switch(tenant: @tenant) do
+      @sales1.suspend!(by: @admin_member)
+      @sales.suspend!(by: @admin_member)
+    end
+    login(@admin)
+
+    get management_group_path(@sales1)
+    assert_select "#suspension", text: /上位の「営業本部」が停止中のため再開できません/
+    assert_select "#suspension button[disabled]", text: "再開する"
+    post reactivate_management_group_path(@sales1)
+    TenantContext.switch(tenant: @tenant) { assert @sales1.reload.suspended? }
+
+    post reactivate_management_group_path(@sales)
+    post management_groups_path, params: { group: { name: "第一営業部", parent_id: @sales.id } }
+    get management_group_path(@sales1)
+    assert_select "#suspension", text: /同じ名前の有効なグループがあるため再開できません/
+    assert_select "#suspension button[disabled]"
+  end
+
+  test "停止中の一覧は停止日時の新しい順に起点だけを出し、チェックで一緒に止まった下位も出す" do
+    TenantContext.switch(tenant: @tenant) do
+      @planning.update_columns(suspended_at: 2.days.ago)
+      @sales.suspend!(by: @admin_member)
+    end
+    login(@admin)
+
+    get management_groups_path
+    assert_select "#suspended-groups-link[href=?]", suspended_management_groups_path
+
+    get suspended_management_groups_path
+    assert_response :success
+    assert_select "#suspended-groups tbody tr", 2
+    assert_select "#suspended-groups tbody tr:first-child", text: /営業本部\s*下位グループ 2件も一緒に停止\s*全社.*管理者さん/m
+    assert_select "#suspended-groups tbody tr:last-child", text: /旧企画部/
+    assert_select "#suspended-groups", text: /第一営業部/, count: 0
+
+    get suspended_management_groups_path(include_descendants: 1)
+    # 同じ操作で止まった行は、起点からツリーの浅い順に並ぶ
+    assert_equal %w[営業本部 第一営業部 第二営業部 旧企画部], css_select("#suspended-groups tbody tr td:first-child a").map(&:text)
+    assert_select "#suspended-groups tbody tr", text: /第一営業部\s*「営業本部」と一緒に停止\s*全社 > 営業本部/
+    assert_select "#include_descendants[checked]"
+  end
+
+  test "停止中の一覧はグループ名と停止した時点の上位で探し、下位にだけ当たるときはチェックへ誘う" do
+    TenantContext.switch(tenant: @tenant) do
+      @sales.suspend!(by: @admin_member)
+      # 停止した後に上位の名前が変わっても、停止した時点の名前で探せる
+      @company.update!(name: "本社")
+    end
+    login(@admin)
+
+    get suspended_management_groups_path(q: "全社")
+    assert_select "#suspended-groups tbody tr", 2
+    assert_select "input#q[value=?]", "全社"
+
+    get suspended_management_groups_path(q: "第一")
+    assert_select "#suspended-groups", 0
+    assert_select "#hidden-matches", text: /一緒に停止された下位グループに 1件あります/
+    assert_select "#hidden-matches a[href=?]", suspended_management_groups_path(q: "第一", include_descendants: 1)
+
+    get suspended_management_groups_path(q: "第一", include_descendants: 1)
+    assert_select "#suspended-groups tbody tr", 1
+
+    get suspended_management_groups_path(q: "%")
+    assert_select "#suspended-groups", 0
+    assert_select "#hidden-matches", 0
+  end
+
+  test "停止中の一覧は30件ずつ返し、続きは条件を付けて読み足す" do
+    TenantContext.switch(tenant: @tenant) do
+      31.times { |i| Group.create!(tenant: @tenant, name: format("旧プロジェクト%02d", i)).suspend!(by: @admin_member) }
+    end
+    login(@admin)
+
+    get suspended_management_groups_path(q: "旧")
+    assert_select "#suspended-groups tbody tr:not([data-load-more])", 30
+    assert_select "tr[data-load-more=?]", suspended_management_groups_path(q: "旧", page: 2)
+
+    get suspended_management_groups_path(q: "旧", page: 2)
+    # 表の外の tr は assert_select の解析で落ちるので、文字列で数える（旧企画部と、31件の残り1件）
+    assert_not_includes response.body, "<html"
+    assert_equal 2, response.body.scan("<tr").size
+    assert_not_includes response.body, "data-load-more"
   end
 
   test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do

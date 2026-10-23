@@ -25,6 +25,13 @@ document.addEventListener("click", (event) => {
   }
 })
 
+// 絞り込みのチェックボックスなど、変えたらすぐ送るもの
+document.addEventListener("change", (event) => {
+  if (event.target instanceof HTMLInputElement && event.target.matches("[data-auto-submit]")) {
+    event.target.form?.requestSubmit()
+  }
+})
+
 document.addEventListener("keydown", (event) => {
   // dialog の Esc は showModal が面倒を見るので、ここはプルダウンだけ
   if (event.key === "Escape") closeDropdowns(null)

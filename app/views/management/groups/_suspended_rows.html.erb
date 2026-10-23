@@ -1,0 +1,23 @@
+<% @groups.each do |group| %>
+  <tr class="border-t border-slate-100 first:border-t-0 hover:bg-canvas">
+    <td class="px-3 py-2.5">
+      <%= link_to group.name, management_group_path(group), class: "text-primary-700 hover:underline" %>
+      <% if group.suspension_root_id == group.id %>
+        <% if @co_suspended_counts[group.id].to_i.positive? %>
+          <span class="block text-xs text-slate-500"><%= t(".with_descendants", count: @co_suspended_counts[group.id]) %></span>
+        <% end %>
+      <% else %>
+        <span class="block text-xs text-slate-500"><%= t(".with_root", name: group.suspension_root.name) %></span>
+      <% end %>
+    </td>
+    <td class="hidden px-3 py-2.5 text-slate-600 md:table-cell">
+      <%= group.suspended_path.empty? ? t(".no_parent") : group.suspended_path.join(" > ") %>
+    </td>
+    <td class="px-3 py-2.5 whitespace-nowrap"><%= time_to_s(group.suspended_at) %></td>
+    <td class="hidden px-3 py-2.5 sm:table-cell"><%= group.suspended_by&.display_name %></td>
+  </tr>
+<% end %>
+<% if @next_page %>
+  <%= render "load_more", colspan: 4,
+        url: suspended_management_groups_path(q: @query.presence, include_descendants: (1 if @include_descendants), page: @next_page) %>
+<% end %>
