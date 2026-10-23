@@ -24,15 +24,15 @@
       <% else %>
         <table class="w-full">
           <tbody>
-            <% @members.each_with_index do |(member, leader), index| %>
+            <% @members.each do |member| %>
               <tr class="border-t border-slate-200">
                 <td class="py-2 pr-3">
-                  <span class="block truncate"><%= member.display_name %></span>
-                  <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+                  <span class="block truncate"><%= member.tenant_user.display_name %></span>
+                  <span class="block truncate text-xs text-slate-500"><%= member.tenant_user.user.email %></span>
                 </td>
                 <td class="w-px py-2 pr-2 whitespace-nowrap">
                   <label class="flex items-center gap-1.5 text-sm text-slate-600">
-                    <%= check_box_tag "leaders[]", member.email, leader, id: "leader_#{index}", class: "accent-primary-600" %>
+                    <%= check_box_tag "leaders[]", member.tenant_user_id, member.leader?, id: "leader_#{member.tenant_user_id}", class: "accent-primary-600" %>
                     <%= t(".members.leader") %>
                   </label>
                 </td>

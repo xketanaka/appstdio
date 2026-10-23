@@ -3,7 +3,7 @@
   <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline lg:hidden" %>
   <div class="mb-5 flex items-center justify-between gap-4">
     <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
-    <% if @group.kind != :everyone %>
+    <% unless @group.everyone? %>
       <div class="flex flex-wrap items-center justify-end gap-2">
         <%= link_to new_management_group_path(parent_id: @group.id), id: "add-child-group",
               class: "btn btn-secondary btn-sm" do %>
@@ -17,6 +17,6 @@
       </div>
     <% end %>
   </div>
-  <%= render(@group.kind == :everyone ? "everyone_detail" : "department_detail") %>
+  <%= render(@group.everyone? ? "everyone_detail" : "department_detail") %>
 <% end %>
 <%= render "frame" %>

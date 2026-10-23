@@ -34,16 +34,16 @@
     <% else %>
       <table class="w-full">
         <tbody>
-          <% @members.each do |member, leader| %>
+          <% @members.each do |member| %>
             <tr class="border-t border-slate-200">
               <td class="py-2">
                 <span class="flex items-center gap-2">
-                  <span class="truncate"><%= member.display_name %></span>
-                  <% if leader %>
+                  <span class="truncate"><%= member.tenant_user.display_name %></span>
+                  <% if member.leader? %>
                     <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
                   <% end %>
                 </span>
-                <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+                <span class="block truncate text-xs text-slate-500"><%= member.tenant_user.user.email %></span>
               </td>
             </tr>
           <% end %>
@@ -52,7 +52,7 @@
     <% end %>
   </section>
 
-  <% if @children.key?(@group.id) %>
+  <% if @has_children %>
     <details id="sub-members" class="group mb-6">
       <summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"

@@ -23,6 +23,18 @@ class Group < ApplicationRecord
     everyone.find_by!(tenant: tenant)
   end
 
+  # 下位のグループの id（自分は含まない）。停止中も含む
+  def self.descendant_ids_of(id)
+    connection.select_values(sanitize_sql([<<~SQL.squish, id]))
+      WITH RECURSIVE descendants(id) AS (
+        SELECT id FROM groups WHERE parent_id = ?
+        UNION
+        SELECT groups.id FROM groups JOIN descendants ON groups.parent_id = descendants.id
+      )
+      SELECT id FROM descendants
+    SQL
+  end
+
   def self_and_ancestors
     chain = [self]
     node = parent

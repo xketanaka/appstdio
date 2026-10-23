@@ -5,16 +5,31 @@ module E2eScenarios
 
   module_function
 
-  # オーナーが1人だけのテナント。管理の画面を開くだけのテストに使う
-  def owner
+  # オーナーと、全社 > 開発部。開発部のメンバーは 70人。ログインしない人たちなので、
+  # パスワードを1つだけ作って使い回す（1人ずつ作るとハッシュの計算で遅くなる）
+  def groups
     key = SecureRandom.hex(4)
     tenant = Tenant.setup!(name: "E2E #{key}")
-    user = User.create!(email: "owner-#{key}@example.com", password: PASSWORD)
-    TenantContext.switch(tenant: tenant) do
-      TenantUser.create!(tenant:, user:, display_name: "管理者さん", role: :owner, status: :active)
-    end
+    owner_user = User.create!(email: "owner-#{key}@example.com", password: PASSWORD)
+    digest = BCrypt::Password.create(PASSWORD, cost: BCrypt::Engine::MIN_COST)
+    user_ids = User.insert_all!(
+      Array.new(70) { |i| { email: "dev#{i}-#{key}@example.com", password_digest: digest } }, returning: :id
+    ).rows.flatten
 
-    { owner: { email: user.email, password: PASSWORD } }
+    TenantContext.switch(tenant: tenant) do
+      TenantUser.create!(tenant:, user: owner_user, display_name: "管理者さん", role: :owner, status: :active)
+      company = Group.create!(tenant:, name: "全社")
+      dev = Group.create!(tenant:, parent: company, name: "開発部")
+      tenant_user_ids = TenantUser.insert_all!(
+        user_ids.each_with_index.map do |user_id, i|
+          { tenant_id: tenant.id, user_id:, display_name: format("開発 %02d", i), role: "member", status: "active" }
+        end,
+        returning: :id
+      ).rows.flatten
+      GroupMember.insert_all!(tenant_user_ids.map { { tenant_id: tenant.id, group_id: dev.id, tenant_user_id: it } })
+
+      { owner: { email: owner_user.email, password: PASSWORD }, groups: { company: company.id } }
+    end
   end
 
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
