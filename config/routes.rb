@@ -59,6 +59,7 @@ Rails.application.routes.draw do
       resources :users, only: [:index]
       resources :groups, only: [:index, :show, :new, :create, :edit, :update] do
         get :sub_members, on: :member
+        get :member_candidates, on: :member
       end
       resource :tenant_setting, only: [:show, :edit, :update]
       root to: redirect("/management/users")

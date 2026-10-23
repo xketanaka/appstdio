@@ -1,18 +1,18 @@
 module Management
   class GroupsController < BaseController
-    SUB_MEMBERS_PER_PAGE = 30
+    PER_PAGE = 30
 
     before_action :load_tree
-    before_action :set_group, only: [:show, :edit, :update, :sub_members]
+    before_action :set_group, only: [:show, :edit, :update, :sub_members, :member_candidates]
     # 「全員」は名前もメンバーも変えられない
-    before_action :reject_everyone, only: [:edit, :update, :sub_members]
+    before_action :reject_everyone, only: [:edit, :update, :sub_members, :member_candidates]
 
     def index
     end
 
     def show
       if @group.everyone?
-        @tenant_users_count = TenantUser.active.count
+        @tenant_users_count = TenantUser.active.where(tenant: current_tenant).count
         return
       end
 
@@ -27,14 +27,31 @@ module Management
     def sub_members
       page = [params[:page].to_i, 1].max
       users = sub_members_of(@group).includes(:user).order(:display_name, :id)
-        .offset((page - 1) * SUB_MEMBERS_PER_PAGE).limit(SUB_MEMBERS_PER_PAGE + 1).to_a
-      @next_page = (page + 1 if users.size > SUB_MEMBERS_PER_PAGE)
-      users = users.first(SUB_MEMBERS_PER_PAGE)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if users.size > PER_PAGE)
+      users = users.first(PER_PAGE)
       groups = GroupMember.where(group_id: Group.descendant_ids_of(@group.id), tenant_user_id: users.map(&:id))
         .includes(:group).group_by(&:tenant_user_id)
       # 同じ人が複数の下位グループにいれば1行にまとめ、所属する下位グループを並べる
       @rows = users.map { |user| [user, groups.fetch(user.id).map(&:group).sort_by(&:name)] }
       render partial: "sub_member_rows", layout: false
+    end
+
+    # メンバーの追加のダイアログの候補。テナントの所属のうち有効・招待中の人を、表示名か
+    # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す。
+    # tenant_users は RLS でも自分の他のテナントでの所属が見える（テナントの切り替えのため）ので、テナントで絞る
+    def member_candidates
+      page = [params[:page].to_i, 1].max
+      users = TenantUser.where(tenant: current_tenant, status: [:active, :invited]).joins(:user).includes(:user)
+      if params[:q].present?
+        pattern = "%#{TenantUser.sanitize_sql_like(params[:q].strip)}%"
+        users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
+      end
+      users = users.order(:display_name, :id)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if users.size > PER_PAGE)
+      @candidates = users.first(PER_PAGE)
+      render partial: "member_candidates", layout: false
     end
 
     def new
@@ -61,11 +78,15 @@ module Management
     def update
       @group.assign_attributes(params.expect(group: [:name, :parent_id]))
       @label_names = label_names_param
+      # 行を全部外すと members は送られてこない
+      roles = params.fetch(:group, {}).permit(members: {}).fetch(:members, nil).to_h.to_h { |id, role| [id.to_i, role] }
 
-      if save_group
+      if save_group { @group.replace_members!(roles) }
         redirect_to management_group_path(@group), notice: t("messages.saved")
       else
-        @members = members_of(@group)
+        # 送られてきたとおりに出し直す
+        users = TenantUser.includes(:user).where(tenant: current_tenant, id: roles.keys).index_by(&:id)
+        @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
         render :edit, status: :unprocessable_entity
       end
     end
@@ -94,6 +115,7 @@ module Management
       Group.transaction do
         @group.save!
         @group.replace_labels!(@label_names)
+        yield if block_given?
         true
       rescue ActiveRecord::RecordInvalid => e
         e.record.errors.full_messages.each { @group.errors.add(:base, it) } unless e.record == @group

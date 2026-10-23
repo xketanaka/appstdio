@@ -113,9 +113,20 @@ ja:
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"
-          leader: "管理者"
-          remove: "外す"
           empty: "直接所属しているメンバーはいません。"
+          dialog:
+            title: "メンバーを追加"
+            search: "名前かメールアドレスで探す"
+            candidates: "候補"
+            cancel: "キャンセル"
+            submit: "追加する"
+            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      member_row:
+        leader: "管理者"
+        remove: "外す"
+      member_candidates:
+        empty: "見つかりませんでした。"
+        invited: "招待中"
     tenant_settings:
       show:
         title: "組織設定"

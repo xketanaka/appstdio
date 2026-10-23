@@ -47,6 +47,19 @@ class Group < ApplicationRecord
     end
   end
 
+  # メンバーを付け直す。roles は { tenant_user_id => "member" / "leader" }。
+  # 新しく加える人は、テナントの所属のうち有効・招待中の人に限る
+  def replace_members!(roles)
+    added_ids = roles.keys - group_members.pluck(:tenant_user_id)
+    addable = TenantUser.where(tenant_id:, id: added_ids, status: [:active, :invited]).count
+    raise ActiveRecord::RecordNotFound, "tenant_user not addable" if addable != added_ids.size
+
+    group_members.where.not(tenant_user_id: roles.keys).delete_all
+    roles.each do |tenant_user_id, role|
+      group_members.find_or_initialize_by(tenant_user_id:).update!(tenant:, role:)
+    end
+  end
+
   def self_and_ancestors
     chain = [self]
     node = parent

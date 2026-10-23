@@ -10,7 +10,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     @admin = User.create!(email: "admin@example.com", password: PASSWORD)
     TenantContext.switch(tenant: @tenant) do
       admin = TenantUser.create!(tenant: @tenant, user: @admin, display_name: "管理者さん", role: :admin, status: :active)
-      people = { "佐藤" => "sato", "山田" => "yamada", "田中" => "tanaka", "鈴木" => "suzuki", "高橋" => "takahashi" }
+      @people = people = { "佐藤" => "sato", "山田" => "yamada", "田中" => "tanaka", "鈴木" => "suzuki", "高橋" => "takahashi" }
         .to_h do |name, account|
         user = User.create!(email: "#{account}@example.com", password: PASSWORD)
         [name, TenantUser.create!(tenant: @tenant, user:, display_name: "#{name}さん", role: :member, status: :active)]
@@ -156,9 +156,13 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
         assert_select "input#group_label_names[value=?]", "営業, 本部"
       end
 
-      assert_select "#direct-members tr", 2
-      assert_select "#direct-members tr:first-child input[type=checkbox][name='leaders[]'][checked]"
-      assert_select "#direct-members tr:last-child input[type=checkbox][name='leaders[]']:not([checked])"
+      assert_select "#direct-members tbody tr", 2
+      assert_select "#direct-members tbody tr:first-child", text: /佐藤さん/
+      assert_select "#direct-members tbody tr:first-child input[type=checkbox][name=?][value=leader][checked]",
+        "group[members][#{@people["佐藤"].id}]"
+      assert_select "#direct-members tbody tr:last-child input[type=checkbox][value=leader]:not([checked])"
+      assert_select "#add-members"
+      assert_select "dialog#member-dialog"
       assert_select "input[type=submit][value=?]", "保存する"
       assert_select "a[href=?]", management_group_path(@sales), text: "キャンセル"
     end
@@ -237,6 +241,101 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "メンバーを外す・足す・グループ管理者を切り替えるを、まとめて保存する" do
+    login(@admin)
+    patch management_group_path(@sales), params: { group: {
+      name: "営業本部", parent_id: @company.id, label_names: "",
+      members: { @people["山田"].id => "leader", @people["高橋"].id => "member" },
+    } }
+    assert_redirected_to management_group_path(@sales)
+
+    roles = TenantContext.switch(tenant: @tenant) do
+      @sales.group_members.includes(:tenant_user).to_h { [it.tenant_user.display_name, it.role] }
+    end
+    assert_equal({ "山田さん" => "leader", "高橋さん" => "member" }, roles)
+
+    # 行をすべて外すと members は送られてこない
+    patch management_group_path(@sales), params: { group: { name: "営業本部", parent_id: @company.id, label_names: "" } }
+    TenantContext.switch(tenant: @tenant) { assert_empty @sales.group_members }
+  end
+
+  test "保存できなかったときは、送ったメンバーのとおりに出し直す" do
+    login(@admin)
+    patch management_group_path(@sales), params: { group: {
+      name: "", parent_id: @company.id, label_names: "", members: { @people["高橋"].id => "leader" },
+    } }
+    assert_response :unprocessable_entity
+    assert_select "#direct-members tbody tr", 1
+    assert_select "#direct-members tbody tr", text: /高橋さん/
+    assert_select "#direct-members tbody tr input[type=checkbox][value=leader][checked]"
+    TenantContext.switch(tenant: @tenant) { assert_equal 2, @sales.group_members.count }
+  end
+
+  test "停止中の人と他のテナントの人はメンバーに足せない" do
+    other = Tenant.setup!(name: "テナントB")
+    stranger = TenantContext.switch(tenant: other) do
+      TenantUser.create!(tenant: other, user: User.create!(email: "stranger@example.com", password: PASSWORD),
+        display_name: "よその人", role: :member, status: :active)
+    end
+    TenantContext.switch(tenant: @tenant) { @people["高橋"].update!(status: :suspended) }
+    login(@admin)
+
+    [@people["高橋"], stranger].each do |tenant_user|
+      patch management_group_path(@sales1), params: { group: {
+        name: "第一営業部", parent_id: @sales.id, label_names: "", members: { tenant_user.id => "member" },
+      } }
+      assert_response :not_found
+    end
+    TenantContext.switch(tenant: @tenant) { assert_equal 2, @sales1.group_members.count }
+  end
+
+  test "メンバーの追加の候補は有効・招待中の人で、名前かメールアドレスで探せる" do
+    TenantContext.switch(tenant: @tenant) do
+      @people["鈴木"].update!(status: :invited)
+      @people["高橋"].update!(status: :suspended)
+    end
+    login(@admin)
+
+    get member_candidates_management_group_path(@sales)
+    assert_response :success
+    assert_not_includes response.body, "<html"
+    # 管理者さんと、高橋さんを除く4人
+    assert_select "li input[type=checkbox]", 5
+    assert_select "li", text: /鈴木さん.*招待中/m
+    assert_select "li", text: /高橋さん/, count: 0
+
+    get member_candidates_management_group_path(@sales, q: "yamada")
+    assert_select "li input[type=checkbox][value=?][data-name=?]", @people["山田"].id.to_s, "山田さん"
+    assert_select "li input[type=checkbox]", 1
+
+    get member_candidates_management_group_path(@sales, q: "佐藤")
+    assert_select "li input[type=checkbox]", 1
+
+    # LIKE の記号はそのままの文字として探す
+    get member_candidates_management_group_path(@sales, q: "%")
+    assert_select "li input[type=checkbox]", 0
+    assert_select "li", text: "見つかりませんでした。"
+  end
+
+  test "メンバーの追加の候補は30人ずつ返し、続きは検索の条件を付けて読み足す" do
+    TenantContext.switch(tenant: @tenant) do
+      30.times do |i|
+        user = User.create!(email: "dev#{i}@example.com", password: PASSWORD)
+        TenantUser.create!(tenant: @tenant, user:, display_name: format("開発%02d", i), role: :member, status: :active)
+      end
+    end
+    login(@admin)
+
+    get member_candidates_management_group_path(@sales, q: "dev")
+    assert_select "li input[type=checkbox]", 30
+    assert_select "li[data-load-more=?]", member_candidates_management_group_path(@sales, q: "dev", page: 2), count: 0
+    get member_candidates_management_group_path(@sales, q: "example")
+    assert_select "li[data-load-more=?]", member_candidates_management_group_path(@sales, q: "example", page: 2)
+    get member_candidates_management_group_path(@sales, q: "example", page: 2)
+    assert_select "li input[type=checkbox]", 6
+    assert_select "li", text: "見つかりませんでした。", count: 0
+  end
+
   test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do
     login(@admin)
 
@@ -284,6 +383,22 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
 
     get edit_management_group_path(@everyone)
     assert_response :not_found
+  end
+
+  test "自分の他のテナントでの所属は、候補にも「全員」の人数にも入れない" do
+    # tenant_users は RLS でも、ログインしている人の他のテナントでの所属が見える
+    other = Tenant.setup!(name: "テナントB")
+    TenantContext.switch(tenant: other) do
+      TenantUser.create!(tenant: other, user: @admin, display_name: "Bの管理者さん", role: :admin, status: :active)
+    end
+    post login_path, params: { email: @admin.email, password: PASSWORD }
+    post select_tenant_path, params: { tenant_id: @tenant.id }
+
+    get member_candidates_management_group_path(@sales)
+    assert_select "li input[type=checkbox]", 6
+    assert_select "li", text: /Bの管理者さん/, count: 0
+    get management_group_path(@everyone)
+    assert_select "p", text: /全員（6人）/
   end
 
   test "他のテナントのグループと存在しないグループは 404" do
