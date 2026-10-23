@@ -29,7 +29,16 @@ module Files
       def prepare_upload
         parent = editable_folder!(params[:parent_id])
         blob_params = params.expect(blob: [:filename, :byte_size, :checksum, :content_type])
-        errors = upload_errors(parent, name: blob_params[:filename].to_s, byte_size: blob_params[:byte_size].to_i)
+        byte_size = blob_params[:byte_size].to_i
+        max = Settings.files.max_upload_bytes
+        node = Node.new(
+          tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file, name: blob_params[:filename].to_s,
+        )
+        node.validate
+        errors = []
+        errors << t("files.nodes.too_large", max: helpers.number_to_human_size(max)) if byte_size > max
+        errors.concat(node.errors.full_messages_for(:name))
+        errors << t("files.nodes.storage_full") if byte_size > current_tenant.files_setting.remaining_bytes
         return render json: { errors: }, status: :unprocessable_content if errors.any?
 
         blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_params.to_h.symbolize_keys)
@@ -69,19 +78,6 @@ module Files
           expires_in: 5.minutes, disposition: :attachment, filename: ActiveStorage::Filename.new(file.name),
         )
         redirect_to url, allow_other_host: true
-      end
-
-      private
-
-      def upload_errors(parent, name:, byte_size:)
-        max = Settings.files.max_upload_bytes
-        errors = []
-        errors << t("files.nodes.too_large", max: helpers.number_to_human_size(max)) if byte_size > max
-        node = Node.new(tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file, name:)
-        node.validate
-        errors.concat(node.errors.full_messages_for(:name))
-        errors << t("files.nodes.storage_full") if byte_size > current_tenant.files_setting.remaining_bytes
-        errors
       end
     end
   end
