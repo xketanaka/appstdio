@@ -57,6 +57,20 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#user-list tbody", text: /メンバー/
   end
 
+  test "利用者管理には、自分の他のテナントでの所属を出さない" do
+    # tenant_users は RLS でも、ログインしている人の他のテナントでの所属が見える
+    other = Tenant.setup!(name: "テナントB")
+    TenantContext.switch(tenant: other) do
+      TenantUser.create!(tenant: other, user: @owner, display_name: "Bのオーナーさん", role: :owner, status: :active)
+    end
+    post login_path, params: { email: @owner.email, password: PASSWORD }
+    post select_tenant_path, params: { tenant_id: @tenant.id }
+
+    get management_users_path
+    assert_select "#user-list tbody tr", 3
+    assert_select "#user-list tbody", text: /Bのオーナーさん/, count: 0
+  end
+
   test "左ペインでグループ管理・組織管理に切り替えられる" do
     login(@admin)
     { management_groups_path => "グループ管理",
