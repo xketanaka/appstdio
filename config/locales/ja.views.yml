@@ -53,6 +53,8 @@ ja:
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"
+      frame:
+        heading: "グループ管理"
       tree_column:
         label: "グループ"
         create: "グループを追加"
@@ -71,14 +73,12 @@ ja:
         select: "左の一覧からグループを選んでください。"
       show:
         title: "%{name} - グループ管理"
-        heading: "グループ管理"
         detail: "グループ詳細"
         add_child: "下位グループを追加"
         edit: "編集"
         back: "« グループ一覧へ戻る"
       new:
         title: "グループを追加 - グループ管理"
-        heading: "グループ管理"
         detail: "グループを追加"
         back: "« グループ一覧へ戻る"
         name: "グループ名"
@@ -106,7 +106,6 @@ ja:
         failed: "読み込めませんでした。画面を開き直してください。"
       edit:
         title: "%{name}の編集 - グループ管理"
-        heading: "グループ管理"
         detail: "グループの編集"
         name: "グループ名"
         cancel: "キャンセル"

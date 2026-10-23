@@ -1,0 +1,15 @@
+<%# show / new / edit に共通の外枠。見出しと、PC 幅で左に出すツリー。
+    中身は :group_main に入れる（render layout: のブロックにすると、中の lazy lookup がこの部分テンプレートの名前で引かれる） %>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="flex min-h-0 flex-1 border-t border-slate-100">
+  <%= render "tree_column", class_name: "hidden w-64 shrink-0 border-r border-slate-100 lg:block" %>
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+      <%= yield :group_main %>
+    </div>
+  </div>
+</div>
