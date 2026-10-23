@@ -10,6 +10,8 @@ module Files
       end
     end
 
+    class StorageFullError < StandardError; end
+
     enum :kind, { folder: "folder", file: "file" }, validate: true
 
     belongs_to :tenant
@@ -46,6 +48,31 @@ module Files
         Permission.create!(tenant_id: folder.tenant_id, node: folder, tenant_user: creator, role: :manager)
         Activity.create!(tenant_id: folder.tenant_id, node: folder, actor: creator, action: :created)
         folder
+      end
+    end
+
+    # アップロードしたファイルを登録する。容量を数え、版1を作り、作った人を管理者にして、
+    # 操作履歴を残す。容量が足りなければ StorageFullError（何も残さない）
+    def self.create_file!(parent:, blob:, creator:)
+      transaction do
+        # 同時に上げても上限を超えないよう、足せるときだけ1つの UPDATE で足す
+        reserved = Setting.where(tenant_id: parent.tenant_id)
+          .where("storage_used_bytes + ? <= storage_limit_bytes", blob.byte_size)
+          .update_all(["storage_used_bytes = storage_used_bytes + ?", blob.byte_size])
+        raise StorageFullError if reserved.zero?
+
+        file = create!(
+          tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file,
+          name: blob.filename.to_s, byte_size: blob.byte_size, creator:,
+        )
+        version = Version.create!(
+          tenant_id: file.tenant_id, node: file, number: 1, byte_size: blob.byte_size,
+          content_type: blob.content_type, creator:, body: blob,
+        )
+        file.update!(current_version: version)
+        Permission.create!(tenant_id: file.tenant_id, node: file, tenant_user: creator, role: :manager)
+        Activity.create!(tenant_id: file.tenant_id, node: file, actor: creator, action: :created)
+        file
       end
     end
 

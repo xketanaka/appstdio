@@ -35,11 +35,7 @@ module Files
       end
 
       def create
-        parent = Node.kept.folder.find(params[:parent_id])
-        permission = access.effective_permission(parent)
-        raise ActiveRecord::RecordNotFound unless permission.readable?
-        return head :forbidden unless permission.editable?
-
+        parent = editable_folder!(params[:parent_id])
         folder = Node.create_folder!(parent: parent, name: params[:name], creator: current_tenant_user)
         render json: { id: folder.id, name: folder.name }, status: :created
       rescue ActiveRecord::RecordInvalid => e

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRouter } from "vue-router"
-import { api, type FolderSource } from "../api"
+import { api, downloadUrl, type FolderSource } from "../api"
 import FileIcon from "../components/FileIcon.vue"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
@@ -12,6 +12,7 @@ import { entryRow, type Row } from "../rows"
 import { endDrag, startDrag, useDropTargets } from "../dnd"
 import { changed, showFolder } from "../store"
 import { useLoad } from "../useLoad"
+import { uploadFiles } from "../uploads"
 import { useSelection } from "../useSelection"
 
 const props = defineProps<{ source: FolderSource }>()
@@ -28,8 +29,14 @@ const { selected, select, clear } = useSelection(() => rows.value.map((row) => r
 
 watch(() => props.source, clear)
 
+// プレビューはまだ無いので、ファイルを開く操作はダウンロードにする
 const open = (row: Row) => {
   if (row.folderId !== null) router.push({ name: "folder", params: { id: row.folderId } })
+  else if (row.kind === "file" && row.readable) download(row)
+}
+
+const download = (row: Row) => {
+  window.location.href = downloadUrl(row.id)
 }
 
 // ダイアログが開いているときの Esc はダイアログを閉じるだけにする
@@ -63,6 +70,21 @@ const openNewFolder = () => {
   if (createMenu.value) createMenu.value.open = false
   newFolderDialog.value?.open()
 }
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const chooseFiles = () => {
+  if (createMenu.value) createMenu.value.open = false
+  fileInput.value?.click()
+}
+const uploadChosen = () => {
+  if (!fileInput.value || !data.value) return
+  uploadFiles([...(fileInput.value.files ?? [])], data.value.folder)
+  // 同じファイルを続けて選んでも change が起きるよう、選んだものを空にする
+  fileInput.value.value = ""
+}
+
+// パソコンのファイルを一覧へ落とせば、今のフォルダへアップロードする（フォルダの行に落とせばそのフォルダへ）
+const { over: overFolder, handlers: folderTarget } = useDropTargets()
 
 </script>
 
@@ -135,18 +157,32 @@ const openNewFolder = () => {
             <FileIcon folder />
             {{ t("folder.create_menu.folder") }}
           </button>
-          <span
-            class="flex items-center gap-3 px-4 py-2 text-slate-400"
-            aria-disabled="true"
+          <button
+            type="button"
+            class="flex w-full cursor-pointer items-center gap-3 px-4 py-2 text-left hover:bg-slate-100"
+            @click="chooseFiles"
           >
             <FileIcon :folder="false" />
             {{ t("folder.create_menu.upload") }}
-          </span>
+          </button>
         </div>
       </details>
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        class="hidden"
+        :aria-label="t('folder.create_menu.upload')"
+        @change="uploadChosen"
+      >
     </div>
 
-    <FileList
+    <div
+      class="relative flex min-h-0 flex-1 flex-col"
+      :class="{ 'm-1 rounded-xl bg-primary-50 outline-2 -outline-offset-2 outline-primary-600': overFolder === data.folder.id }"
+      v-on="data.can_edit ? folderTarget(data.folder) : {}"
+    >
+      <FileList
       :rows="rows"
       :empty="t('folder.empty')"
       selectable
@@ -159,6 +195,7 @@ const openNewFolder = () => {
       @move="moveRow"
       @dragstart="dragRows"
       @dragend="endDrag"
+      @download="download"
     >
       <template
         v-if="selected.size > 0"
@@ -201,6 +238,13 @@ const openNewFolder = () => {
         </div>
       </template>
     </FileList>
+      <p
+        v-if="overFolder === data.folder.id"
+        class="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-full bg-primary-600 px-4 py-1.5 text-sm text-white shadow-lg"
+      >
+        {{ t("upload.drop_here", { destination: data.folder.label }) }}
+      </p>
+    </div>
 
     <NewFolderDialog
       ref="newFolderDialog"

@@ -472,6 +472,35 @@ GET /files/...（どの URL でも）  Files::AppController#show   入れ物の�
 * テストは API を `test/integration/files_test.rb`、部品の表示を Vitest（文言は本物の
   `ja.files_app.yml` を読むのでキーの漏れも拾う）、主な流れを E2E で確かめる（「テスト」を参照）
 
+### ファイルの保存（アップロード・ダウンロード）
+
+ファイルの中身は Active Storage で保存する。保存先は最終的に S3 にするので、アップロードは
+ダイレクトアップロード（ブラウザから保存先へ直接送る）にしてある。中身は Rails と nginx を通らない。
+
+```
+1. POST /files/api/nodes/prepare_upload   権限・大きさ・同名・容量を確かめ、blob と送り先の URL を作る
+2. PUT  <送り先>                          ブラウザが中身を直接送る（開発ではディスク用の受け口）
+3. POST /files/api/nodes/upload           中身の届いた blob をファイル（版1）として登録する
+```
+
+* 画面は `@rails/activestorage` の `DirectUpload` を使う（大きなファイルの MD5 を分けて計算する）。
+  1段目の応答は、Active Storage 標準の受け口と同じ形にしてある
+* **Active Storage 標準の受け口（`/rails/active_storage/direct_uploads`）は塞いである**
+  （`config/routes.rb` の先頭）。ログインも権限も確かめずに保存先への書き込みを許すため
+* 3段目でも、容量と同名を確かめ直す。1段目のあとに埋まりうるため。登録できなければ届いた中身を消す
+* 容量は `files_settings.storage_used_bytes` に、上限を超えないときだけ足す1つの UPDATE で数える
+* 送ったが登録まで進まなかった中身は、毎日 `Files::PurgeUnattachedBlobsJob` が消す（1日たったもの）
+* ダウンロードは、閲覧権限を確かめてから、5分だけ有効な保存先の URL へ転送する
+  （`files/api/nodes#download`）。Active Storage の公開ルートは使わない
+
+S3 へ移すときに要ること。
+
+* `config/storage.yml` に S3 を足し、`config.active_storage.service` を切り替える
+* **バケットに CORS を設定する**（アプリのオリジンからの PUT と、`Content-Type` / `Content-MD5`
+  などのヘッダを許す）。ブラウザから直接送るため
+* ディスク保存のあいだは、中身を送る2段目が Rails（と前段の nginx）を通る。
+  nginx の `client_max_body_size` を 5GB 以上にしておくこと
+
 ### 開発サーバ
 
 `vite` サービスが Vite の開発サーバを動かす。ブラウザはアセットを Rails から受け取り、

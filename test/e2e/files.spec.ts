@@ -123,3 +123,40 @@ test("ドラッグして一覧や左ペインのフォルダへ移し、知ら�
   await expect(page.getByRole("heading", { name: "資料" })).toBeVisible()
   await expect(minutes).toHaveCount(1)
 })
+
+test("ファイルを選んで、またはパソコンから落としてアップロードし、ダブルクリックでダウンロードする", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+  const panel = page.getByRole("region", { name: "アップロード" })
+
+  await page.locator("summary", { hasText: "作成" }).click()
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("button", { name: "ファイルをアップロード" }).click(),
+  ])
+  await chooser.setFiles({ name: "報告書.txt", mimeType: "text/plain", buffer: Buffer.from("報告の中身") })
+  await expect(panel).toContainText("1/1件 完了")
+  await expect(list.getByRole("row", { name: /報告書\.txt/ })).toBeVisible()
+
+  // パソコンから落とす操作は、ファイルを持った DataTransfer で dragover と drop を起こして再現する
+  const files = await page.evaluateHandle(() => {
+    const transfer = new DataTransfer()
+    transfer.items.add(new File(["受領の中身"], "受領書.txt", { type: "text/plain" }))
+    return transfer
+  })
+  await list.dispatchEvent("dragover", { dataTransfer: files })
+  await list.dispatchEvent("drop", { dataTransfer: files })
+  await expect(panel).toContainText("2/2件 完了")
+  await expect(list.getByRole("row", { name: /受領書\.txt/ })).toBeVisible()
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    list.getByRole("row", { name: /報告書\.txt/ }).dblclick(),
+  ])
+  expect(download.suggestedFilename()).toBe("報告書.txt")
+  const body = await download.createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of body) chunks.push(chunk as Buffer)
+  expect(Buffer.concat(chunks).toString()).toBe("報告の中身")
+})

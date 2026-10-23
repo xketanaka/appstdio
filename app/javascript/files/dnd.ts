@@ -1,6 +1,7 @@
 import { ref } from "vue"
 import { t } from "./i18n"
 import { moveItems, notifyMoveError } from "./store"
+import { uploadFiles } from "./uploads"
 
 type Item = { id: number, name: string }
 
@@ -49,15 +50,22 @@ async function dropOn(destination: { id: number, label: string }) {
   }
 }
 
-// 落とし先にする要素へ v-on で付ける。over は、今その上にあるかを id で持つ（見た目に使う）
+// パソコンから持ち込まれたファイルか。ファイルを持ち込むと、種類に "Files" が入る
+const carriesFiles = (event: DragEvent) => dragging.value === null && !!event.dataTransfer?.types.includes("Files")
+
+// 落とし先にする要素へ v-on で付ける。over は、今その上にあるかを id で持つ（見た目に使う）。
+// 画面の中のものを落とせば移動、パソコンのファイルを落とせばそのフォルダへアップロードする。
+// 入れ子の落とし先（一覧の中のフォルダの行と、一覧全体）では、内側が受けたら外側へは伝えない
 export function useDropTargets() {
   const over = ref<number | null>(null)
 
   const handlers = (destination: { id: number, label: string }) => ({
     dragover: (event: DragEvent) => {
-      if (!canDropOn(destination.id) || !event.dataTransfer?.types.includes(TYPE)) return
+      const moving = canDropOn(destination.id) && !!event.dataTransfer?.types.includes(TYPE)
+      if (!moving && !carriesFiles(event)) return
       event.preventDefault()
-      event.dataTransfer.dropEffect = "move"
+      event.stopPropagation()
+      if (event.dataTransfer) event.dataTransfer.dropEffect = moving ? "move" : "copy"
       over.value = destination.id
     },
     dragleave: (event: DragEvent) => {
@@ -66,8 +74,11 @@ export function useDropTargets() {
     },
     drop: (event: DragEvent) => {
       event.preventDefault()
+      event.stopPropagation()
       over.value = null
-      dropOn(destination)
+      const files = [...(event.dataTransfer?.files ?? [])]
+      if (dragging.value === null && files.length > 0) uploadFiles(files, destination)
+      else dropOn(destination)
     },
   })
 
