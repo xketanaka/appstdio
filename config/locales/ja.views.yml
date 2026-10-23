@@ -121,6 +121,15 @@ ja:
             cancel: "キャンセル"
             submit: "追加する"
             load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      confirm_destroy:
+        title: "%{name}の削除 - グループ管理"
+        detail: "グループの削除"
+        message: "「%{name}」を削除します。"
+        descendants: "下位グループ %{count}件も一緒に削除されます。"
+        files_warning: "このグループと下位グループへのファイルの共有設定も削除されます。閲覧を打ち消す設定が消えると、それまで見られなかったファイルが見られるようになることがあります。"
+        irreversible: "削除は元に戻せません。残しておきたいときは、削除せずに利用停止にしてください。"
+        submit: "削除する"
+        cancel: "キャンセル"
       member_row:
         leader: "管理者"
         remove: "外す"

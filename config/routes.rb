@@ -57,9 +57,12 @@ Rails.application.routes.draw do
 
     namespace :management do
       resources :users, only: [:index]
-      resources :groups, only: [:index, :show, :new, :create, :edit, :update] do
-        get :sub_members, on: :member
-        get :member_candidates, on: :member
+      resources :groups do
+        member do
+          get :sub_members
+          get :member_candidates
+          get :confirm_destroy
+        end
       end
       resource :tenant_setting, only: [:show, :edit, :update]
       root to: redirect("/management/users")

@@ -336,6 +336,58 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "見つかりませんでした。", count: 0
   end
 
+  test "削除の確認で、一緒に消える下位の数とファイルの共有設定が消えることを示す" do
+    login(@admin)
+    get edit_management_group_path(@sales)
+    assert_select "#destroy-group[href=?]", confirm_destroy_management_group_path(@sales)
+
+    get confirm_destroy_management_group_path(@sales)
+    assert_response :success
+    assert_select "#destroy-confirmation", text: /「営業本部」を削除します。/
+    assert_select "#destroy-confirmation", text: /下位グループ 2件も一緒に削除されます。/
+    assert_select "#files-warning"
+    assert_select "form[action=?] button", management_group_path(@sales), text: "削除する"
+
+    # 下位が無ければ数を出さない。ファイル管理を使っていなければ共有設定の注意を出さない
+    TenantContext.switch(tenant: @tenant) { Files::Setting.find_by!(tenant: @tenant).update!(enabled: false) }
+    get confirm_destroy_management_group_path(@sales1)
+    assert_select "#destroy-confirmation", text: /下位グループ/, count: 0
+    assert_select "#files-warning", 0
+  end
+
+  test "削除すると、停止中も含めて下位とメンバー・ファイルの共有設定ごと消え、上位の詳細に戻る" do
+    TenantContext.switch(tenant: @tenant) do
+      @planning.update_columns(parent_id: @sales1.id)
+      folder = Files::Node.create_folder!(parent: Files::Drive.shared_root(@tenant), name: "営業資料", creator: @people["佐藤"])
+      @permission = Files::Permission.create!(tenant: @tenant, node: folder, group: @sales1, role: :none)
+    end
+    login(@admin)
+
+    delete management_group_path(@sales)
+    assert_redirected_to management_group_path(@company)
+    follow_redirect!
+    assert_select "[role=status]", text: "削除しました。"
+
+    TenantContext.switch(tenant: @tenant) do
+      assert_equal %w[全員 全社 開発本部 開発部], Group.order(:id).pluck(:name)
+      assert_empty GroupMember.where(tenant_user: @people["田中"])
+      assert_not Files::Permission.exists?(@permission.id)
+      # ラベルはテナントの一覧に残る
+      assert GroupLabel.exists?(name: "営業")
+    end
+
+    delete management_group_path(@company)
+    assert_redirected_to management_groups_path
+  end
+
+  test "「全員」グループは削除できない" do
+    login(@admin)
+    get confirm_destroy_management_group_path(@everyone)
+    assert_response :not_found
+    delete management_group_path(@everyone)
+    assert_response :not_found
+  end
+
   test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do
     login(@admin)
 

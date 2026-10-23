@@ -3,9 +3,9 @@ module Management
     PER_PAGE = 30
 
     before_action :load_tree
-    before_action :set_group, only: [:show, :edit, :update, :sub_members, :member_candidates]
-    # 「全員」は名前もメンバーも変えられない
-    before_action :reject_everyone, only: [:edit, :update, :sub_members, :member_candidates]
+    before_action :set_group, except: [:index, :new, :create]
+    # 「全員」は名前もメンバーも変えられず、消せない
+    before_action :reject_everyone, except: [:index, :new, :create, :show]
 
     def index
     end
@@ -89,6 +89,20 @@ module Management
         @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
         render :edit, status: :unprocessable_entity
       end
+    end
+
+    # 削除の確認。一緒に消える下位の数と、ファイルの共有設定が消えることを示す
+    def confirm_destroy
+      @descendants_count = Group.descendant_ids_of(@group.id).size
+      @files_enabled = Files::Setting.find_by!(tenant: current_tenant).enabled?
+    end
+
+    # 下位（停止中も）は children の dependent: :destroy でたどって消す。ファイルの共有設定は外部キーの
+    # ON DELETE CASCADE で消える
+    def destroy
+      @group.destroy!
+      redirect_to (@group.parent ? management_group_path(@group.parent) : management_groups_path),
+        notice: t("messages.deleted")
     end
 
     private
