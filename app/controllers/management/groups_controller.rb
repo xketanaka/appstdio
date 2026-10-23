@@ -3,7 +3,9 @@ module Management
     SUB_MEMBERS_PER_PAGE = 30
 
     before_action :load_tree
-    before_action :set_group, only: [:show, :edit, :sub_members]
+    before_action :set_group, only: [:show, :edit, :update, :sub_members]
+    # 「全員」は名前もメンバーも変えられない
+    before_action :reject_everyone, only: [:edit, :update, :sub_members]
 
     def index
     end
@@ -23,8 +25,6 @@ module Management
 
     # 下位グループのメンバーの一覧を1ページ分だけ返す。詳細の画面がスクロールに合わせて読み足す
     def sub_members
-      raise ActiveRecord::RecordNotFound if @group.everyone?
-
       page = [params[:page].to_i, 1].max
       users = sub_members_of(@group).includes(:user).order(:display_name, :id)
         .offset((page - 1) * SUB_MEMBERS_PER_PAGE).limit(SUB_MEMBERS_PER_PAGE + 1).to_a
@@ -38,22 +38,36 @@ module Management
     end
 
     def new
-      parent = Group.department.active.find_by(id: params[:parent_id])
-      @parent_path = parent ? parent.self_and_ancestors.reverse : []
-      @parent_options = parent_options(excluded: [])
-      @labels = []
-      @label_names = GroupLabel.order(:name).pluck(:name)
+      @group = Group.new(parent: Group.department.active.find_by(id: params[:parent_id]))
+      @label_names = []
+    end
+
+    def create
+      @group = Group.new(tenant: current_tenant, **params.expect(group: [:name, :parent_id]))
+      @label_names = label_names_param
+
+      if save_group
+        redirect_to management_group_path(@group), notice: t("messages.created")
+      else
+        render :new, status: :unprocessable_entity
+      end
     end
 
     def edit
-      raise ActiveRecord::RecordNotFound if @group.everyone?
-
       @members = members_of(@group)
-      @labels = @group.labels.order(:name).pluck(:name)
-      @label_names = GroupLabel.order(:name).pluck(:name)
-      @parent_path = @group.self_and_ancestors.drop(1).reverse
-      # 自分と自分の下位を上位にすると循環する
-      @parent_options = parent_options(excluded: [@group.id, *Group.descendant_ids_of(@group.id)])
+      @label_names = @group.labels.order(:name).pluck(:name)
+    end
+
+    def update
+      @group.assign_attributes(params.expect(group: [:name, :parent_id]))
+      @label_names = label_names_param
+
+      if save_group
+        redirect_to management_group_path(@group), notice: t("messages.saved")
+      else
+        @members = members_of(@group)
+        render :edit, status: :unprocessable_entity
+      end
     end
 
     private
@@ -67,6 +81,26 @@ module Management
       @group = Group.find(params[:id])
     end
 
+    def reject_everyone
+      raise ActiveRecord::RecordNotFound if @group.everyone?
+    end
+
+    def label_names_param
+      params.dig(:group, :label_names).to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
+    end
+
+    # ラベルの名前が長すぎるときなどは GroupLabel の検証で落ちるので、グループの誤りとして出す
+    def save_group
+      Group.transaction do
+        @group.save!
+        @group.replace_labels!(@label_names)
+        true
+      rescue ActiveRecord::RecordInvalid => e
+        e.record.errors.full_messages.each { @group.errors.add(:base, it) } unless e.record == @group
+        raise ActiveRecord::Rollback
+      end
+    end
+
     # グループ管理者を先に、それぞれ表示名の順に並べる
     def members_of(group)
       group.group_members.includes(tenant_user: :user).to_a
@@ -75,21 +109,6 @@ module Management
 
     def sub_members_of(group)
       TenantUser.where(id: GroupMember.where(group_id: Group.descendant_ids_of(group.id)).select(:tenant_user_id))
-    end
-
-    # 有効な部署を、ツリーの順に字下げして並べる。「全員」と停止中は上位に選べない
-    def parent_options(excluded:)
-      options = []
-      walk = ->(parent_id, depth) do
-        @children.fetch(parent_id, []).each do |group|
-          next if excluded.include?(group.id)
-
-          options << ["\u00A0\u00A0" * depth + group.name, group.id]
-          walk.(group.id, depth + 1)
-        end
-      end
-      walk.(nil, 0)
-      options
     end
   end
 end

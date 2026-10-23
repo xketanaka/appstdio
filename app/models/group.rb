@@ -16,8 +16,11 @@ class Group < ApplicationRecord
   scope :active, -> { where(suspended_at: nil) }
   scope :suspended, -> { where.not(suspended_at: nil) }
 
+  normalizes :name, with: ->(name) { name.strip }
+
   validates :name, presence: true, length: { maximum: 255 }
-  validate :parent_must_not_be_self_or_descendant
+  validate :name_must_be_unique_among_active_siblings
+  validate :parent_must_be_selectable
 
   def self.everyone_of(tenant)
     everyone.find_by!(tenant: tenant)
@@ -35,6 +38,15 @@ class Group < ApplicationRecord
     SQL
   end
 
+  # ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える
+  def replace_labels!(names)
+    label_ids = names.map { |name| GroupLabel.find_or_create_by!(tenant:, name:).id }
+    labelings.where.not(group_label_id: label_ids).delete_all
+    (label_ids - labelings.pluck(:group_label_id)).each do |label_id|
+      labelings.create!(tenant:, group_label_id: label_id)
+    end
+  end
+
   def self_and_ancestors
     chain = [self]
     node = parent
@@ -47,10 +59,19 @@ class Group < ApplicationRecord
 
   private
 
-  def parent_must_not_be_self_or_descendant
-    return if parent.nil?
-    return unless persisted?
+  # 停止中のグループとは重なってよい（停止した部署と同じ名前で作り直せるように）。
+  # 所有者ロール（運営者画面）は RLS を素通りするので、テナントでも絞る
+  def name_must_be_unique_among_active_siblings
+    return if suspended_at
 
-    errors.add(:parent, :invalid) if parent.self_and_ancestors.include?(self)
+    errors.add(:name, :taken) if Group.active.where(tenant_id:, parent_id:, name:).where.not(id:).exists?
+  end
+
+  # 「全員」と停止中は上位にできない。自分と自分の下位を上位にすると循環する
+  def parent_must_be_selectable
+    return if parent.nil?
+
+    cyclic = persisted? && parent.self_and_ancestors.include?(self)
+    errors.add(:parent, :invalid) if parent.everyone? || parent.suspended_at || cyclic
   end
 end

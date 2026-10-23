@@ -57,7 +57,7 @@ Rails.application.routes.draw do
 
     namespace :management do
       resources :users, only: [:index]
-      resources :groups, only: [:index, :show, :new, :edit] do
+      resources :groups, only: [:index, :show, :new, :create, :edit, :update] do
         get :sub_members, on: :member
       end
       resource :tenant_setting, only: [:show, :edit, :update]

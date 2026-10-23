@@ -89,12 +89,13 @@ class Files::SchemaTest < ActiveSupport::TestCase
     parent = Group.create!(tenant: @tenant, name: "営業部")
     Group.create!(tenant: @tenant, parent: parent, name: "1課")
 
+    # 検証を通さずに入れて、DB が拒むことを確かめる
     assert_raises(ActiveRecord::RecordNotUnique) do
-      Group.create!(tenant: @tenant, parent: parent, name: "1課")
+      Group.new(tenant: @tenant, parent: parent, name: "1課").save!(validate: false)
     end
     # トップレベル同士も重複できない（NULL 同士が別物にならないこと）
     assert_raises(ActiveRecord::RecordNotUnique) do
-      Group.create!(tenant: @tenant, name: "営業部")
+      Group.new(tenant: @tenant, name: "営業部").save!(validate: false)
     end
   end
 

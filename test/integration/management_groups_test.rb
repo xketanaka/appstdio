@@ -144,24 +144,97 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
 
     assert_select "#group-tree a[aria-current=page]", text: "営業本部"
     assert_select "#group-form" do
-      assert_select "input[name=group_name][value=?]", "営業本部"
+      assert_select "input[name=?][value=?]", "group[name]", "営業本部"
       assert_select "#group-parent summary", text: /全社/
-      assert_select "select[name=group_parent_id] option[selected]", text: "全社"
-      assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
-      assert_select "select[name=group_parent_id] option", text: /開発部/
-      assert_select "select[name=group_parent_id] option", text: /全員|旧企画部/, count: 0
+      assert_select "select#group_parent_id option[selected]", text: "全社"
+      assert_select "select#group_parent_id option", text: /営業本部|第一営業部|第二営業部/, count: 0
+      assert_select "select#group_parent_id option", text: /開発部/
+      assert_select "select#group_parent_id option", text: /全員|旧企画部/, count: 0
 
       assert_select "label-input" do |elements|
         assert_includes JSON.parse(elements.first["data-suggestions"]), "プロジェクト"
-        assert_select "input[name=group_labels][value=?]", "営業, 本部"
+        assert_select "input#group_label_names[value=?]", "営業, 本部"
       end
 
       assert_select "#direct-members tr", 2
       assert_select "#direct-members tr:first-child input[type=checkbox][name='leaders[]'][checked]"
       assert_select "#direct-members tr:last-child input[type=checkbox][name='leaders[]']:not([checked])"
-      assert_select "button", text: "保存する"
+      assert_select "input[type=submit][value=?]", "保存する"
       assert_select "a[href=?]", management_group_path(@sales), text: "キャンセル"
     end
+  end
+
+  test "グループを作ると、詳細の画面に移る。一覧に無いラベルはテナントのラベルに加わる" do
+    login(@admin)
+    post management_groups_path, params: { group: { name: " 第三営業部 ", parent_id: @sales.id, label_names: "営業、新設 ,営業" } }
+
+    group = TenantContext.switch(tenant: @tenant) { Group.find_by!(name: "第三営業部") }
+    assert_redirected_to management_group_path(group)
+    follow_redirect!
+    assert_select "[role=status]", text: "登録しました。"
+    assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
+    assert_select "#group-labels span", text: /\A(営業|新設)\z/, count: 2
+    TenantContext.switch(tenant: @tenant) { assert GroupLabel.exists?(name: "新設") }
+  end
+
+  test "グループの名前・上位・ラベルを変える" do
+    login(@admin)
+    patch management_group_path(@sales1), params: { group: { name: "法人営業部", parent_id: @dev_hq.id, label_names: "本部" } }
+    assert_redirected_to management_group_path(@sales1)
+
+    TenantContext.switch(tenant: @tenant) do
+      @sales1.reload
+      assert_equal "法人営業部", @sales1.name
+      assert_equal @dev_hq, @sales1.parent
+      assert_equal ["本部"], @sales1.labels.pluck(:name)
+    end
+
+    # 最上位にもできる。ラベルを空にすると外れる
+    patch management_group_path(@sales1), params: { group: { name: "法人営業部", parent_id: "", label_names: "" } }
+    TenantContext.switch(tenant: @tenant) do
+      assert_nil @sales1.reload.parent
+      assert_empty @sales1.labels
+    end
+  end
+
+  test "同じ上位の下に同じ名前の有効なグループがあると保存できず、入力を残して出し直す" do
+    login(@admin)
+    patch management_group_path(@sales1), params: { group: { name: "第二営業部", parent_id: @sales.id, label_names: "新しいラベル" } }
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /グループ名が同じ上位グループの中のものと重複しています/
+    assert_select "input#group_name[value=?]", "第二営業部"
+    assert_select "input#group_label_names[value=?]", "新しいラベル"
+    TenantContext.switch(tenant: @tenant) { assert_not GroupLabel.exists?(name: "新しいラベル") }
+
+    # 停止中のグループとは重なってよい
+    patch management_group_path(@sales1), params: { group: { name: "旧企画部", parent_id: @company.id, label_names: "" } }
+    assert_redirected_to management_group_path(@sales1)
+  end
+
+  test "上位に自分の下位・「全員」・利用停止中のグループを指定すると保存できない" do
+    login(@admin)
+    [@sales1, @everyone, @planning].each do |parent|
+      patch management_group_path(@sales), params: { group: { name: "営業本部", parent_id: parent.id, label_names: "" } }
+      assert_response :unprocessable_entity
+      assert_select "[role=alert]", text: /上位グループには/
+    end
+
+    post management_groups_path, params: { group: { name: "新しい部", parent_id: @planning.id, label_names: "" } }
+    assert_response :unprocessable_entity
+  end
+
+  test "長すぎるラベルはグループの誤りとして出し、何も保存しない" do
+    login(@admin)
+    post management_groups_path, params: { group: { name: "新しい部", parent_id: "", label_names: "あ" * 101 } }
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /ラベルは100文字以内/
+    TenantContext.switch(tenant: @tenant) { assert_not Group.exists?(name: "新しい部") }
+  end
+
+  test "「全員」グループは変えられない" do
+    login(@admin)
+    patch management_group_path(@everyone), params: { group: { name: "みんな", parent_id: "", label_names: "" } }
+    assert_response :not_found
   end
 
   test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do
@@ -186,10 +259,10 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     get new_management_group_path(parent_id: @sales1)
     assert_response :success
     assert_select "#group-form" do
-      assert_select "input[name=group_name]:not([value])"
+      assert_select "input#group_name:not([value])"
       assert_select "#group-parent summary", text: /全社\s*>\s*営業本部\s*>\s*第一営業部/
-      assert_select "select[name=group_parent_id] option[selected]", text: /第一営業部/
-      assert_select "label-input input[name=group_labels][value='']"
+      assert_select "select#group_parent_id option[selected]", text: /第一営業部/
+      assert_select "label-input input#group_label_names[value='']"
     end
 
     get new_management_group_path

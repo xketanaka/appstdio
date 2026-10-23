@@ -27,9 +27,10 @@ class GroupSchemaTest < ActiveSupport::TestCase
     suspend(@sales)
 
     assert_nothing_raised { Group.create!(tenant: @tenant, name: "営業部") }
-    second = Group.create!(tenant: @tenant, parent: @sales, name: "1課")
+    # 停止中の下には検証で作れないので、検証を通さずに入れる
+    Group.new(tenant: @tenant, parent: @sales, name: "1課").save!(validate: false)
     assert_raises(ActiveRecord::RecordNotUnique) do
-      Group.create!(tenant: @tenant, parent: @sales, name: second.name)
+      Group.new(tenant: @tenant, parent: @sales, name: "1課").save!(validate: false)
     end
   end
 
