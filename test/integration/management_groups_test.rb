@@ -596,6 +596,133 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /全員（6人）/
   end
 
+  test "グループ管理者には、管理のメニューにグループ管理だけを出す。グループ管理者でない人は開けない" do
+    login(sato)
+    get top_page_path
+    assert_select "dialog[data-drawer] nav a[href=?]", management_groups_path, text: "管理"
+
+    get management_groups_path
+    assert_response :success
+    assert_select "#side-pane a", 1
+    assert_select "#side-pane a[aria-current=page]", text: "グループ管理"
+    [management_users_path, management_tenant_setting_path].each do |path|
+      get path
+      assert_response :not_found
+    end
+
+    delete logout_path
+    login(@people["山田"].user)
+    get top_page_path
+    assert_select "dialog[data-drawer] nav", text: /管理/, count: 0
+    get management_groups_path
+    assert_response :not_found
+  end
+
+  test "グループ管理者のツリーは範囲の中だけで、範囲の外の詳細は開けない" do
+    login(sato)
+    get management_groups_path
+    assert_select "#group-tree > details > summary a", text: "営業本部"
+    assert_select "#group-tree a", text: /全社|開発|全員/, count: 0
+    assert_select "#everyone-group", 0
+    assert_select "#new-group", 0
+
+    [@company, @dev, @everyone].each do |group|
+      get management_group_path(group)
+      assert_response :not_found
+    end
+    get management_group_path(@sales1)
+    assert_response :success
+  end
+
+  test "グループ管理者は範囲の中を編集・作成できるが、最上位や範囲の外には置けない" do
+    login(sato)
+
+    patch management_group_path(@sales1), params: { group: {
+      name: "法人営業部", parent_id: @sales.id, label_names: "", members: { @people["田中"].id => "leader" },
+    } }
+    assert_redirected_to management_group_path(@sales1)
+
+    post management_groups_path, params: { group: { name: "第三営業部", parent_id: @sales.id, label_names: "" } }
+    assert_response :redirect
+    get new_management_group_path(parent_id: @sales2.id)
+    assert_response :success
+
+    # 最上位と範囲の外には作れない
+    get new_management_group_path
+    assert_response :not_found
+    post management_groups_path, params: { group: { name: "新しい部", parent_id: "", label_names: "" } }
+    assert_response :not_found
+    post management_groups_path, params: { group: { name: "新しい部", parent_id: @dev.id, label_names: "" } }
+    assert_response :not_found
+
+    # 範囲の中へは移せるが、範囲の外へは移せない
+    patch management_group_path(@sales2), params: { group: { name: "第二営業部", parent_id: @sales1.id, label_names: "" } }
+    assert_redirected_to management_group_path(@sales2)
+    patch management_group_path(@sales), params: { group: { name: "営業本部", parent_id: @dev_hq.id, label_names: "" } }
+    assert_response :not_found
+    TenantContext.switch(tenant: @tenant) { assert_equal @company, @sales.reload.parent }
+  end
+
+  test "グループ管理者が自分のグループを編集するとき、範囲の外の今の上位はそのまま選ばれている" do
+    login(sato)
+    get edit_management_group_path(@sales)
+    assert_select "select#group_parent_id option[selected]", text: "全社"
+    assert_select "select#group_parent_id option[value='']", 0
+    assert_select "select#group_parent_id option", text: /開発/, count: 0
+
+    patch management_group_path(@sales), params: { group: {
+      name: "営業統括本部", parent_id: @company.id, label_names: "", members: { @people["佐藤"].id => "leader" },
+    } }
+    assert_redirected_to management_group_path(@sales)
+  end
+
+  test "グループ管理者は自分のグループそのものは消せず、その下位は消せる" do
+    login(sato)
+    get edit_management_group_path(@sales)
+    assert_select "#destroy-group", 0
+    get confirm_destroy_management_group_path(@sales)
+    assert_response :not_found
+    delete management_group_path(@sales)
+    assert_response :not_found
+
+    get edit_management_group_path(@sales1)
+    assert_select "#destroy-group"
+    delete management_group_path(@sales1)
+    assert_redirected_to management_group_path(@sales)
+  end
+
+  test "グループ管理者は自分のグループを停止・再開でき、停止中の一覧には範囲の中だけが出る" do
+    TenantContext.switch(tenant: @tenant) { @dev.suspend!(by: @admin_member) }
+    login(sato)
+
+    post suspend_management_group_path(@sales)
+    assert_redirected_to management_group_path(@sales)
+    get suspended_management_groups_path(include_descendants: 1)
+    assert_equal %w[営業本部 第一営業部 第二営業部], css_select("#suspended-groups tbody tr td:first-child a").map(&:text)
+
+    post reactivate_management_group_path(@sales)
+    TenantContext.switch(tenant: @tenant) { assert_not @sales.reload.suspended? }
+  end
+
+  test "グループ管理者が自分の印を外すと、開けるところへ戻る" do
+    TenantContext.switch(tenant: @tenant) do
+      GroupMember.create!(tenant: @tenant, group: @dev, tenant_user: @people["佐藤"], role: :leader)
+    end
+    login(sato)
+
+    # まだ開発部を管理しているので、グループ管理の一覧へ
+    patch management_group_path(@sales), params: { group: {
+      name: "営業本部", parent_id: @company.id, label_names: "", members: { @people["佐藤"].id => "member" },
+    } }
+    assert_redirected_to management_groups_path
+
+    # どこも管理しなくなったので、トップへ
+    patch management_group_path(@dev), params: { group: {
+      name: "開発部", parent_id: @dev_hq.id, label_names: "", members: { @people["佐藤"].id => "member" },
+    } }
+    assert_redirected_to top_page_path
+  end
+
   test "他のテナントのグループと存在しないグループは 404" do
     other = Tenant.setup!(name: "テナントB")
     other_group = TenantContext.switch(tenant: other) { Group.create!(tenant: other, name: "よその部") }
@@ -608,6 +735,11 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  # 営業本部のグループ管理者
+  def sato
+    @people["佐藤"].user
+  end
 
   def login(user)
     post login_path, params: { email: user.email, password: PASSWORD }

@@ -1,20 +1,25 @@
 <%# locals: (class_name:) %>
 <div class="<%= class_names("min-h-0 overflow-y-auto px-2 py-3", class_name) %>">
   <nav id="group-tree" aria-label="<%= t(".label") %>">
-    <% current = @group&.id == @everyone.id %>
-    <div id="everyone-group" class="flex items-center">
-      <%= link_to @everyone.name, management_group_path(@everyone),
-            "aria-current": (current ? "page" : nil),
-            class: class_names("nav-item w-full truncate pl-7", "nav-item-current": current) %>
-    </div>
+    <%# グループ管理者には「全員」を出さない（範囲の外） %>
+    <% if @everyone %>
+      <% current = @group&.id == @everyone.id %>
+      <div id="everyone-group" class="flex items-center">
+        <%= link_to @everyone.name, management_group_path(@everyone),
+              "aria-current": (current ? "page" : nil),
+              class: class_names("nav-item w-full truncate pl-7", "nav-item-current": current) %>
+      </div>
+    <% end %>
     <%= render "tree", parent_id: nil %>
   </nav>
 
-  <%= link_to new_management_group_path, id: "new-group", class: "nav-item mt-1 pl-2 text-slate-500 hover:text-slate-800" do %>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0" aria-hidden="true">
-      <path stroke-linecap="round" d="M12 5v14M5 12h14" />
-    </svg>
-    <%= t(".create") %>
+  <% if @scope.can_place_under?(nil) %>
+    <%= link_to new_management_group_path, id: "new-group", class: "nav-item mt-1 pl-2 text-slate-500 hover:text-slate-800" do %>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0" aria-hidden="true">
+        <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+      </svg>
+      <%= t(".create") %>
+    <% end %>
   <% end %>
 
   <%= link_to t(".suspended"), suspended_management_groups_path, id: "suspended-groups-link",

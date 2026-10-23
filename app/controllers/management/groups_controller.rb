@@ -2,12 +2,16 @@ module Management
   class GroupsController < BaseController
     PER_PAGE = 30
 
+    # テナントの管理者に加えて、グループ管理者も開ける（自分の範囲の中だけ）
+    skip_before_action :tenant_admin_required
+    before_action :group_manager_required
     before_action :load_tree
     before_action :set_group, except: [:index, :new, :create, :suspended]
     # 「全員」は名前もメンバーも変えられず、消せない
     before_action :reject_everyone, except: [:index, :new, :create, :suspended, :show]
     # 停止中は詳細を見て再開するだけ。編集・削除・停止はできない
     before_action :reject_suspended, except: [:index, :new, :create, :suspended, :show, :sub_members, :reactivate]
+    before_action :destroyable_required, only: [:confirm_destroy, :destroy]
 
     def index
     end
@@ -34,6 +38,7 @@ module Management
       page = [params[:page].to_i, 1].max
 
       groups = Group.suspended
+      groups = groups.where(id: @scope.ids) unless @scope.all?
       if @query.present?
         groups = groups.where("groups.name ILIKE :pattern OR array_to_string(groups.suspended_path, ' ') ILIKE :pattern",
           pattern: "%#{Group.sanitize_sql_like(@query)}%")
@@ -92,6 +97,8 @@ module Management
 
     def new
       @group = Group.new(parent: Group.department.active.find_by(id: params[:parent_id]))
+      raise ActiveRecord::RecordNotFound unless @scope.can_place_under?(@group.parent)
+
       @label_names = []
     end
 
@@ -118,7 +125,14 @@ module Management
       roles = params.fetch(:group, {}).permit(members: {}).fetch(:members, nil).to_h.to_h { |id, role| [id.to_i, role] }
 
       if save_group { @group.replace_members!(roles) }
-        redirect_to management_group_path(@group), notice: t("messages.saved")
+        # 自分のグループ管理者の印を外すと、範囲の外になって詳細（どこも管理していなければグループ管理も）を開けなくなる
+        scope = GroupScope.new(current_tenant_user)
+        destination =
+          if scope.include?(@group) then management_group_path(@group)
+          elsif scope.any? then management_groups_path
+          else top_page_path
+          end
+        redirect_to destination, notice: t("messages.saved")
       else
         # 送られてきたとおりに出し直す
         users = TenantUser.includes(:user).where(tenant: current_tenant, id: roles.keys).index_by(&:id)
@@ -162,13 +176,26 @@ module Management
 
     private
 
+    def group_manager_required
+      @scope = GroupScope.new(current_tenant_user)
+      render_not_found unless @scope.any?
+    end
+
+    # グループ管理者には範囲の中だけを出し、範囲のいちばん上のグループを根として描く。「全員」も出さない
     def load_tree
-      @everyone = Group.everyone_of(current_tenant)
-      @children = Group.department.active.order(:name).group_by(&:parent_id)
+      groups = Group.department.active.order(:name).to_a
+      if @scope.all?
+        @everyone = Group.everyone_of(current_tenant)
+        @children = groups.group_by(&:parent_id)
+      else
+        @children = groups.select { @scope.include?(it) }
+          .group_by { @scope.ids.include?(it.parent_id) ? it.parent_id : nil }
+      end
     end
 
     def set_group
       @group = Group.find(params[:id])
+      raise ActiveRecord::RecordNotFound unless @scope.include?(@group)
     end
 
     def reject_everyone
@@ -179,12 +206,21 @@ module Management
       raise ActiveRecord::RecordNotFound if @group.suspended?
     end
 
+    def destroyable_required
+      raise ActiveRecord::RecordNotFound unless @scope.can_destroy?(@group)
+    end
+
     def label_names_param
       params.dig(:group, :label_names).to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
     end
 
     # ラベルの名前が長すぎるときなどは GroupLabel の検証で落ちるので、グループの誤りとして出す
     def save_group
+      # グループ管理者は、範囲の外へ移したり最上位に置いたりできない
+      if (@group.new_record? || @group.parent_id_changed?) && !@scope.can_place_under?(@group.parent)
+        raise ActiveRecord::RecordNotFound
+      end
+
       Group.transaction do
         @group.save!
         @group.replace_labels!(@label_names)

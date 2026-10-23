@@ -26,11 +26,11 @@ class Group < ApplicationRecord
     everyone.find_by!(tenant: tenant)
   end
 
-  # 下位のグループの id（自分は含まない）。停止中も含む
-  def self.descendant_ids_of(id)
-    connection.select_values(sanitize_sql([<<~SQL.squish, id]))
+  # 下位のグループの id（自分は含まない）。停止中も含む。ids は1つでも複数でもよい
+  def self.descendant_ids_of(ids)
+    connection.select_values(sanitize_sql([<<~SQL.squish, Array(ids)]))
       WITH RECURSIVE descendants(id) AS (
-        SELECT id FROM groups WHERE parent_id = ?
+        SELECT id FROM groups WHERE parent_id IN (?)
         UNION
         SELECT groups.id FROM groups JOIN descendants ON groups.parent_id = descendants.id
       )
@@ -124,6 +124,8 @@ class Group < ApplicationRecord
 
   # 「全員」と停止中は上位にできない。自分と自分の下位を上位にすると循環する
   def parent_must_be_selectable
+    # 他のテナントのグループは RLS で見えず、parent が nil になる
+    return errors.add(:parent, :invalid) if parent_id && parent.nil?
     return if parent.nil?
 
     cyclic = persisted? && parent.self_and_ancestors.include?(self)
