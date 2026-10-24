@@ -358,7 +358,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "見つかりませんでした。", count: 0
   end
 
-  test "削除の確認で、一緒に消える下位の数とファイルの共有設定が消えることを示す" do
+  test "削除の確認で、一緒に消える下位の数を示す" do
     login(@admin)
     get edit_management_group_path(@sales)
     assert_select "#destroy-group[href=?]", confirm_destroy_management_group_path(@sales)
@@ -367,14 +367,11 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#destroy-confirmation", text: /「営業本部」を削除します。/
     assert_select "#destroy-confirmation", text: /下位グループ 2件も一緒に削除されます。/
-    assert_select "#files-warning"
     assert_select "form[action=?] button", management_group_path(@sales), text: "削除する"
 
-    # 下位が無ければ数を出さない。ファイル管理を使っていなければ共有設定の注意を出さない
-    TenantContext.switch(tenant: @tenant) { Files::Setting.find_by!(tenant: @tenant).update!(enabled: false) }
+    # 下位が無ければ数を出さない
     get confirm_destroy_management_group_path(@sales1)
     assert_select "#destroy-confirmation", text: /下位グループ/, count: 0
-    assert_select "#files-warning", 0
   end
 
   test "削除すると、停止中も含めて下位とメンバー・ファイルの共有設定ごと消え、上位の詳細に戻る" do
@@ -418,12 +415,6 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     get confirm_suspend_management_group_path(@sales)
     assert_select "#suspend-confirmation", text: /「営業本部」を利用停止にします。/
     assert_select "#suspend-confirmation", text: /下位グループ 2件も一緒に停止されます。/
-    assert_select "#files-note"
-
-    # ファイル管理を使っていなければ、共有設定には触れない
-    TenantContext.switch(tenant: @tenant) { Files::Setting.find_by!(tenant: @tenant).update!(enabled: false) }
-    get confirm_suspend_management_group_path(@sales)
-    assert_select "#files-note", 0
 
     post suspend_management_group_path(@sales)
     assert_redirected_to management_group_path(@sales)

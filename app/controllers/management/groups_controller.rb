@@ -141,15 +141,13 @@ module Management
       end
     end
 
-    # 削除の確認。一緒に消える下位の数と、ファイルの共有設定が消えることを示す
+    # 削除の確認。一緒に消える下位の数を示す
     def confirm_destroy
       @descendants_count = Group.descendant_ids_of(@group.id).size
-      @files_enabled = Files::Setting.find_by!(tenant: current_tenant).enabled?
     end
 
     def confirm_suspend
       @descendants_count = Group.active.where(id: Group.descendant_ids_of(@group.id)).count
-      @files_enabled = Files::Setting.find_by!(tenant: current_tenant).enabled?
     end
 
     def suspend
