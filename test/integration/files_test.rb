@@ -352,6 +352,54 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "名前の変更・ゴミ箱・復元" do
+    setup do
+      TenantContext.switch(tenant: @tenant) { grant(@root, @member, :editor) }
+      login(@member_user)
+    end
+
+    test "名前を変える。同じ名前があれば 422" do
+      patch rename_files_api_node_path(@minutes), params: { name: "議事録.md" }, as: :json
+      assert_response :no_content
+
+      patch rename_files_api_node_path(@minutes), params: { name: "営業" }, as: :json
+      assert_response :unprocessable_content
+      assert_equal ["名前が同じフォルダの中のものと重複しています。"], json["errors"]
+    end
+
+    test "ゴミ箱へ入れると一覧から消えてゴミ箱に出て、復元で戻る" do
+      post trash_files_api_nodes_path, params: { node_ids: [@sales.id, @minutes.id] }, as: :json
+      assert_response :no_content
+      get files_api_drives_shared_path
+      assert_equal ["人事"], json["entries"].pluck("name")
+      get files_api_folder_path(@estimates)
+      assert_response :not_found, "配下も一緒にゴミ箱に入る"
+      get files_api_trash_path
+      assert_equal ["営業", "議事録.docx"], json["entries"].pluck("name").sort
+
+      post restore_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      assert_response :no_content
+      get files_api_folder_path(@estimates)
+      assert_response :success
+    end
+
+    test "ゴミ箱に出ていない配下は、それだけを復元できない" do
+      post trash_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      post restore_files_api_nodes_path, params: { node_ids: [@estimates.id] }, as: :json
+
+      assert_response :not_found
+    end
+
+    test "親フォルダを編集できなければ 403" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :viewer) }
+
+      post trash_files_api_nodes_path, params: { node_ids: [@estimates.id] }, as: :json
+      assert_response :forbidden
+      patch rename_files_api_node_path(@estimates), params: { name: "見積書" }, as: :json
+      assert_response :forbidden
+    end
+  end
+
   describe "特権モード" do
     test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)

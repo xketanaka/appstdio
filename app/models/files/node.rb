@@ -1,7 +1,7 @@
 module Files
   class Node < ApplicationRecord
-    # 移動できなかった理由。messages はそのまま画面に出せる文
-    class MoveError < StandardError
+    # 移動・復元など、まとめて行う操作ができなかった理由。messages はそのまま画面に出せる文
+    class OperationError < StandardError
       attr_reader :messages
 
       def initialize(messages)
@@ -87,7 +87,7 @@ module Files
       names = moving.map(&:name)
       taken = to.children.kept.where(name: names).pluck(:name) + names.tally.select { |_, count| count > 1 }.keys
       taken.uniq.each { |name| errors.add(:base, :name_taken_at_destination, name:) }
-      raise MoveError, errors.full_messages if errors.any?
+      raise OperationError, errors.full_messages if errors.any?
 
       transaction do
         moving.each do |node|
@@ -98,6 +98,54 @@ module Files
           )
         end
       end
+    end
+
+    # ゴミ箱へ入れる。フォルダは配下もまとめて入れる（配下だけを URL で開けないように）。
+    # 配下には deleted_root_id で、どの削除で入ったかを持たせ、復元のときにまとめて戻す
+    def self.trash!(nodes, actor:)
+      now = Time.current
+      transaction do
+        # フォルダとその中のものを一緒に選んだときは、フォルダの削除で中も入るので、浅いほうから処理する
+        nodes.sort_by { it.ancestor_ids.size }.each do |node|
+          next if kept.where(id: node.id).none?
+
+          kept.where("? = ANY(ancestor_ids)", node.id).update_all(deleted_at: now, deleted_root_id: node.id, deleted_by_id: actor.id)
+          node.update!(deleted_at: now, deleted_root_id: node.id, deleted_by: actor, purge_after: now + 3.months)
+          Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :deleted)
+        end
+      end
+    end
+
+    # ゴミ箱から元の場所へ戻す。元のフォルダもゴミ箱にある・同じ名前のものができている場合は、
+    # 1件も戻さずに理由を返す（doc/files.md の「ゴミ箱」）
+    def self.restore!(nodes, actor:)
+      errors = ActiveModel::Errors.new(new)
+      nodes.each do |node|
+        if node.parent.deleted_at
+          errors.add(:base, :restore_parent_trashed, name: node.name, parent: node.parent.name)
+        elsif node.parent.children.kept.exists?(name: node.name)
+          errors.add(:base, :restore_name_taken, name: node.name)
+        end
+      end
+      nodes.group_by { [it.parent_id, it.name] }.each_value do |same|
+        errors.add(:base, :restore_name_taken, name: same.first.name) if same.size > 1
+      end
+      raise OperationError, errors.full_messages.uniq if errors.any?
+
+      transaction do
+        nodes.each do |node|
+          where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil, purge_after: nil)
+          Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :restored)
+        end
+      end
+    end
+
+    def rename!(new_name, actor:)
+      from = name
+      update!(name: new_name.to_s.strip)
+      return if name == from
+
+      Activity.create!(tenant_id:, node: self, actor:, action: :renamed, detail: { from:, to: name })
     end
 
     def root?

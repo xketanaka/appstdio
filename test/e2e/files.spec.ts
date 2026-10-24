@@ -160,3 +160,41 @@ test("ファイルを選んで、またはパソコンから落としてアッ�
   for await (const chunk of body) chunks.push(chunk as Buffer)
   expect(Buffer.concat(chunks).toString()).toBe("報告の中身")
 })
+
+test("名前を変え、削除して知らせから戻し、ゴミ箱からも元に戻す", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+  const notice = page.getByRole("status").filter({ hasText: "しました" })
+
+  // 開いたときは拡張子を除いた部分だけが選ばれているので、打ち込めば拡張子は残る
+  await list.getByRole("row", { name: /変更前\.txt/ }).getByRole("group").click()
+  await list.getByRole("row", { name: /変更前\.txt/ }).getByRole("button", { name: "名前を変更" }).click()
+  const dialog = page.getByRole("dialog", { name: "名前を変更" })
+  await page.keyboard.type("変更後")
+  await dialog.getByRole("button", { name: "変更" }).click()
+  await expect(dialog).toBeHidden()
+  await expect(list.getByRole("row", { name: /変更後\.txt/ })).toBeVisible()
+
+  const unneeded = list.getByRole("row", { name: /不要\.txt/ })
+  await unneeded.click()
+  await page.getByRole("toolbar").getByRole("button", { name: "削除" }).click()
+  await expect(notice).toContainText("「不要.txt」をゴミ箱に移動しました")
+  await expect(unneeded).toHaveCount(0)
+  await notice.getByRole("button", { name: "元に戻す" }).click()
+  await expect(notice).toContainText("削除を元に戻しました")
+  await expect(unneeded).toHaveCount(1)
+
+  await unneeded.click()
+  await page.keyboard.press("Delete")
+  await expect(unneeded).toHaveCount(0)
+
+  await page.locator("#side-pane").getByRole("link", { name: "ゴミ箱" }).click()
+  await list.getByRole("row", { name: /不要\.txt/ }).click()
+  await page.getByRole("toolbar").getByRole("button", { name: "元に戻す" }).click()
+  await expect(notice).toContainText("「不要.txt」を元に戻しました")
+  await expect(list.getByRole("row", { name: /不要\.txt/ })).toHaveCount(0)
+
+  await page.locator("#side-pane").getByRole("link", { name: "マイドライブ" }).click()
+  await expect(unneeded).toHaveCount(1)
+})
