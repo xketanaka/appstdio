@@ -42,16 +42,20 @@ export function notify(message: string, { error = false, action }: Omit<Partial<
 }
 
 // 移せなかった理由の文。「時間をおいて」と促すのは、それで直りうる失敗（サーバの誤りや通信）だけにする
-export function moveErrorMessages(error: unknown, { undo = false } = {}) {
+// 操作（移動・名前の変更・ゴミ箱・復元）ができなかった理由の文。文言は files_app の
+// <operation>.forbidden / not_found / failed。元に戻すときの 404 は <operation>.undo_not_found
+type Operation = "move" | "rename" | "trash" | "restore"
+
+export function operationErrorMessages(operation: Operation, error: unknown, { undo = false } = {}) {
   if (error instanceof ValidationError) return error.messages
-  if (error instanceof ForbiddenError) return [t("move.forbidden")]
-  if (error instanceof NotFoundError) return [t(undo ? "move.undo_not_found" : "move.not_found")]
+  if (error instanceof ForbiddenError) return [t(`${operation}.forbidden`)]
+  if (error instanceof NotFoundError) return [t(`${operation}.${undo ? "undo_not_found" : "not_found"}`)]
   console.error(error)
-  return [t("move.failed")]
+  return [t(`${operation}.failed`)]
 }
 
-export function notifyMoveError(error: unknown, options: { undo?: boolean } = {}) {
-  notify(moveErrorMessages(error, options).join(" "), { error: true })
+export function notifyOperationError(operation: Operation, error: unknown, options: { undo?: boolean } = {}) {
+  notify(operationErrorMessages(operation, error, options).join(" "), { error: true })
 }
 
 export function loadConfig(element: HTMLElement) {
@@ -116,8 +120,37 @@ async function undoMove(items: Item[], from: number) {
     notify(t("move.undone"))
     await changed()
   } catch (error) {
-    notifyMoveError(error, { undo: true })
+    notifyOperationError("move", error, { undo: true })
   }
+}
+
+const done = (operation: Operation, items: Item[]) =>
+  items.length === 1
+    ? t(`${operation}.done_one`, { name: items[0].name })
+    : t(`${operation}.done_other`, { count: items.length })
+
+// ゴミ箱へ入れる。確認は出さず、知らせの「元に戻す」で取り消せるようにする（相談して決めたとおり）
+export async function trashItems(items: Item[]) {
+  await api.trashNodes(items.map((item) => item.id))
+  notify(done("trash", items), { action: { label: t("move.undo"), run: () => undoTrash(items) } })
+  await changed()
+}
+
+async function undoTrash(items: Item[]) {
+  state.notice = null
+  try {
+    await api.restoreNodes(items.map((item) => item.id))
+    notify(t("trash.undone"))
+    await changed()
+  } catch (error) {
+    notifyOperationError("restore", error)
+  }
+}
+
+export async function restoreItems(items: Item[]) {
+  await api.restoreNodes(items.map((item) => item.id))
+  notify(done("restore", items))
+  await changed()
 }
 
 export async function toggleFolder(id: number) {

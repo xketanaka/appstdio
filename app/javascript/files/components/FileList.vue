@@ -15,7 +15,8 @@ const props = defineProps<{
   trash?: boolean
   selectable?: boolean
   selected?: ReadonlySet<number>
-  canMove?: boolean
+  // 親フォルダ（今のフォルダ）を編集できるか。名前の変更・移動・削除・復元に要る
+  canEdit?: boolean
   // 行をドラッグして、フォルダの行へ落として移せるか
   draggable?: boolean
 }>()
@@ -25,6 +26,9 @@ const emit = defineEmits<{
   open: [row: Row]
   clear: []
   move: [row: Row]
+  rename: [row: Row]
+  trash: [row: Row]
+  restore: [row: Row]
   download: [row: Row]
   dragstart: [row: Row, event: DragEvent]
   dragend: []
@@ -37,12 +41,18 @@ const dropTarget = (row: Row) =>
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
 const rowActions = props.trash ? ["restore", "purge"] : ["download", "rename", "move", "destroy"]
-// 行のメニューで押せる操作。まだ作っていない操作は押せない表示にする
-const available = (action: string, row: Row) =>
-  (action === "move" && props.canMove) || (action === "download" && !props.trash && row.kind === "file" && row.readable)
+// 行のメニューで押せる操作。まだ作っていない操作（完全に削除）は押せない表示にする
+const available = (action: string, row: Row) => {
+  if (action === "download") return !props.trash && row.kind === "file" && row.readable
+  if (action === "purge") return false
+  return !!props.canEdit
+}
 
 const runAction = (action: string, row: Row) => {
   if (action === "move") emit("move", row)
+  else if (action === "rename") emit("rename", row)
+  else if (action === "destroy") emit("trash", row)
+  else if (action === "restore") emit("restore", row)
   else emit("download", row)
 }
 

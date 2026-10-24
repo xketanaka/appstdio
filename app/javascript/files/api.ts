@@ -89,6 +89,9 @@ export const api = {
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
   completeUpload: (parentId: number, signedBlobId: string) =>
     request<{ id: number, name: string }>("POST", "/files/api/nodes/upload", { parent_id: parentId, signed_blob_id: signedBlobId }),
+  rename: (id: number, name: string) => request<void>("PATCH", `/files/api/nodes/${id}/rename`, { name }),
+  trashNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/trash", { node_ids: nodeIds }),
+  restoreNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/restore", { node_ids: nodeIds }),
   move: (nodeIds: number[], destinationId: number) =>
     request<void>("POST", "/files/api/nodes/move", { node_ids: nodeIds, destination_id: destinationId }),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),

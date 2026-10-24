@@ -1,6 +1,6 @@
 import { ref } from "vue"
 import { t } from "./i18n"
-import { moveItems, notifyMoveError } from "./store"
+import { moveItems, notifyOperationError } from "./store"
 import { uploadFiles } from "./uploads"
 
 type Item = { id: number, name: string }
@@ -46,7 +46,7 @@ async function dropOn(destination: { id: number, label: string }) {
   try {
     await moveItems(current.items, destination, current.from)
   } catch (error) {
-    notifyMoveError(error)
+    notifyOperationError("move", error)
   }
 }
 
