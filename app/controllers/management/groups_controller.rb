@@ -25,7 +25,7 @@ module Management
       @members = members_of(@group)
       @labels = @group.labels.order(:name).pluck(:name)
       @parent_path = @group.self_and_ancestors.drop(1).reverse
-      @has_children = Group.exists?(parent_id: @group.id)
+      @has_children = visible_descendant_ids(@group).any?
       @sub_members_count = sub_members_of(@group).count
       @reactivation_blocker = @group.reactivation_blocker if @group.suspended?
     end
@@ -71,7 +71,7 @@ module Management
         .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
       @next_page = (page + 1 if users.size > PER_PAGE)
       users = users.first(PER_PAGE)
-      groups = GroupMember.where(group_id: Group.descendant_ids_of(@group.id), tenant_user_id: users.map(&:id))
+      groups = GroupMember.where(group_id: visible_descendant_ids(@group), tenant_user_id: users.map(&:id))
         .includes(:group).group_by(&:tenant_user_id)
       # 同じ人が複数の下位グループにいれば1行にまとめ、所属する下位グループを並べる
       @rows = users.map { |user| [user, groups.fetch(user.id).map(&:group).sort_by(&:name)] }
@@ -239,7 +239,14 @@ module Management
     end
 
     def sub_members_of(group)
-      TenantUser.where(id: GroupMember.where(group_id: Group.descendant_ids_of(group.id)).select(:tenant_user_id))
+      TenantUser.where(id: GroupMember.where(group_id: visible_descendant_ids(group)).select(:tenant_user_id))
+    end
+
+    # 詳細に出す下位。停止中の下位のメンバーは上位のメンバーとして数えない（ファイルの権限も届かない）ので、
+    # 有効なグループでは有効な下位だけ。停止中のグループを見るときは、一緒に止まった下位も含めて停止した時の形で出す
+    def visible_descendant_ids(group)
+      ids = Group.descendant_ids_of(group.id)
+      group.suspended? ? ids : Group.active.where(id: ids).ids
     end
   end
 end

@@ -67,7 +67,10 @@ module Files
 
     def subjects
       @subjects ||= begin
-        memberships = GroupMember.where(tenant_user_id: @tenant_user.id).select(:group_id).to_sql
+        # 利用停止中のグループの所属は数えない。停止中の下位はすべて停止中なので、有効なグループから
+        # 上へたどった先も有効なグループだけになる
+        memberships = GroupMember.where(tenant_user_id: @tenant_user.id, group_id: Group.active.select(:id))
+          .select(:group_id).to_sql
         belonging = Group.connection.select_values(<<~SQL.squish)
           WITH RECURSIVE belonging(id) AS (
             #{memberships}

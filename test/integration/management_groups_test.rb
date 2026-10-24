@@ -112,6 +112,28 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "停止中の下位のメンバーは、有効なグループの「下位グループに所属するメンバー」に出さない" do
+    TenantContext.switch(tenant: @tenant) { @sales2.suspend!(by: @admin_member) }
+    login(@admin)
+
+    get management_group_path(@sales)
+    assert_select "#sub-members summary", text: "下位グループに所属するメンバー（2人）"
+    get sub_members_management_group_path(@sales, page: 1)
+    assert_select "li", 2
+    assert_select "li", text: /第二営業部|高橋さん/, count: 0
+
+    # 下位が停止中だけになったら欄ごと出さない
+    TenantContext.switch(tenant: @tenant) { @sales1.suspend!(by: @admin_member) }
+    get management_group_path(@sales)
+    assert_select "#sub-members", 0
+
+    # 停止中のグループの詳細は、一緒に止まった下位も含めて停止した時の形で出す
+    TenantContext.switch(tenant: @tenant) { [@sales1, @sales2].each { it.reload.reactivate } }
+    TenantContext.switch(tenant: @tenant) { @sales.suspend!(by: @admin_member) }
+    get management_group_path(@sales)
+    assert_select "#sub-members summary", text: "下位グループに所属するメンバー（3人）"
+  end
+
   test "詳細ではラベルをチップで出し、グループ管理者を先頭に印を付けて並べる" do
     login(@admin)
 
