@@ -78,6 +78,25 @@ class Files::AccessTest < ActiveSupport::TestCase
       assert_equal "editor", access(@sales1_member).effective_permission(@estimates).role
     end
 
+    test "利用停止中のグループへの付与は届かず、そのメンバーは上位グループのメンバーとしても数えない" do
+      grant(@estimates, @sales1, :manager)
+      @sales1.suspend!(by: @admin)
+
+      assert_equal "viewer", access(@sales1_member).effective_permission(@estimates).role, "全員からの閲覧者だけが残る"
+
+      @sales1.reload.reactivate
+      assert_equal "manager", access(@sales1_member).effective_permission(@estimates).role
+    end
+
+    test "利用停止中のグループの打ち消しが効かなくなっても、他の主体の権限は増えない" do
+      grant(@estimates, @sales1, :viewer)
+      grant(@estimates, @everyone, :none)
+      grant(@estimate, @sales1, :none)
+      @sales1.suspend!(by: @admin)
+
+      assert_not access(@sales1_member).effective_permission(@estimate).readable?
+    end
+
     test "本人への付与とグループへの付与は強い方を採る" do
       grant(@estimates, @sales1_member, :manager)
       grant(@sales_folder, @outsider, :none)

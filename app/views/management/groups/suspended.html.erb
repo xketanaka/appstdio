@@ -1,0 +1,45 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <%= link_to t(".back"), management_groups_path, class: "mb-1 inline-block text-sm text-primary-700 hover:underline" %>
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<%= form_with url: suspended_management_groups_path, method: :get, id: "suspended-filter",
+      class: "flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 sm:px-6" do %>
+  <%= label_tag :q, t(".query"), class: "sr-only" %>
+  <%= search_field_tag :q, @query, placeholder: t(".query"), class: "input max-w-xs" %>
+  <label class="flex items-center gap-2 text-sm">
+    <%= check_box_tag :include_descendants, "1", @include_descendants, data: { auto_submit: true }, class: "accent-primary-600" %>
+    <%= t(".include_descendants") %>
+  </label>
+  <%= submit_tag t(".submit"), name: nil, class: "btn btn-secondary btn-sm" %>
+<% end %>
+
+<div class="min-h-0 flex-1 overflow-auto px-3">
+  <% if @groups.empty? %>
+    <div class="border-t border-slate-100 px-3 py-10 text-center text-sm text-slate-500">
+      <p><%= t(@query.present? ? ".not_found" : ".empty") %></p>
+      <% if @hidden_count&.positive? %>
+        <p id="hidden-matches" class="mt-2">
+          <%= t(".hidden_matches", count: @hidden_count) %>
+          <%= link_to t(".show_hidden"), suspended_management_groups_path(q: @query, include_descendants: 1),
+                class: "ml-1 text-primary-700 hover:underline" %>
+        </p>
+      <% end %>
+    </div>
+  <% else %>
+    <table id="suspended-groups" class="w-full text-sm">
+      <thead class="sticky top-0 bg-white text-xs text-slate-500">
+        <tr class="border-b border-slate-200">
+          <th class="px-3 py-2.5 text-left font-medium"><%= t(".columns.name") %></th>
+          <th class="hidden px-3 py-2.5 text-left font-medium md:table-cell"><%= t(".columns.path") %></th>
+          <th class="px-3 py-2.5 text-left font-medium"><%= t(".columns.suspended_at") %></th>
+          <th class="hidden px-3 py-2.5 text-left font-medium sm:table-cell"><%= t(".columns.suspended_by") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= render "suspended_rows" %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

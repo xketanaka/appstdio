@@ -1,162 +1,251 @@
 module Management
   class GroupsController < BaseController
-    # 画面モック。実データは未実装で、以下はすべて仮の表示用
-    MockGroup = Struct.new(:id, :name, :parent_id, :kind, keyword_init: true) do
-      # パスのヘルパーに渡したとき、ActiveRecord と同じく id を URL に使わせる
-      def to_param = id.to_s
-    end
-    MockMember = Struct.new(:display_name, :email, keyword_init: true)
+    PER_PAGE = 30
 
-    EVERYONE = MockGroup.new(id: 100, name: "全員", parent_id: nil, kind: :everyone)
-    DEPARTMENTS = [
-      MockGroup.new(id: 1, name: "全社", parent_id: nil, kind: :department),
-      MockGroup.new(id: 2, name: "営業本部", parent_id: 1, kind: :department),
-      MockGroup.new(id: 3, name: "第一営業部", parent_id: 2, kind: :department),
-      MockGroup.new(id: 4, name: "第二営業部", parent_id: 2, kind: :department),
-      MockGroup.new(id: 5, name: "開発本部", parent_id: 1, kind: :department),
-      MockGroup.new(id: 6, name: "開発部", parent_id: 5, kind: :department),
-    ].freeze
-
-    yamada = MockMember.new(display_name: "山田 太郎", email: "yamada@example.com")
-    sato = MockMember.new(display_name: "佐藤 花子", email: "sato@example.com")
-    suzuki = MockMember.new(display_name: "鈴木 一郎", email: "suzuki@example.com")
-    takahashi = MockMember.new(display_name: "高橋 次郎", email: "takahashi@example.com")
-    tanaka = MockMember.new(display_name: "田中 三郎", email: "tanaka@example.com")
-    ito = MockMember.new(display_name: "伊藤 美咲", email: "ito@example.com")
-    watanabe = MockMember.new(display_name: "渡辺 健", email: "watanabe@example.com")
-    # 下位グループのメンバーをスクロールで読み足す動きを試せるよう、人数を多めにしている
-    developers = (1..70).map { |i| MockMember.new(display_name: "開発 メンバー#{i}", email: "dev#{i}@example.com") }
-    MEMBERS = {
-      1 => [yamada],
-      2 => [yamada, sato],
-      3 => [suzuki, takahashi, tanaka],
-      4 => [ito, tanaka],
-      6 => [watanabe] + developers,
-    }.freeze
-    LEADERS = {
-      1 => ["yamada@example.com"],
-      2 => ["sato@example.com"],
-      3 => ["suzuki@example.com"],
-      6 => ["watanabe@example.com"],
-    }.freeze
-    LABELS = {
-      1 => ["本社"],
-      2 => ["営業", "本部"],
-      3 => ["営業", "東日本"],
-      4 => ["営業", "西日本"],
-      5 => ["開発", "本部"],
-      6 => ["開発"],
-    }.freeze
-    # どのグループにも付いていないラベルも、テナントに登録されていれば候補に出る
-    LABEL_NAMES = (LABELS.values.flatten + ["プロジェクト"]).uniq.freeze
-    TENANT_USERS_COUNT = 12
-    SUB_MEMBERS_PER_PAGE = 30
-
+    # テナントの管理者に加えて、グループ管理者も開ける（自分の範囲の中だけ）
+    skip_before_action :tenant_admin_required
+    before_action :group_manager_required
     before_action :load_tree
-    before_action :set_group, only: [:show, :edit, :sub_members]
+    before_action :set_group, except: [:index, :new, :create, :suspended]
+    # 「全員」は名前もメンバーも変えられず、消せない
+    before_action :reject_everyone, except: [:index, :new, :create, :suspended, :show]
+    # 停止中は詳細を見て再開するだけ。編集・削除・停止はできない
+    before_action :reject_suspended, except: [:index, :new, :create, :suspended, :show, :sub_members, :reactivate]
+    before_action :destroyable_required, only: [:confirm_destroy, :destroy]
 
     def index
     end
 
     def show
-      if @group.kind == :everyone
-        @tenant_users_count = TENANT_USERS_COUNT
+      if @group.everyone?
+        @tenant_users_count = TenantUser.active.where(tenant: current_tenant).count
         return
       end
 
       @members = members_of(@group)
-      @labels = LABELS.fetch(@group.id, [])
-      @parent_path = path_to(@group.parent_id)
-      @sub_members_count = sub_members_of(@group).size
+      @labels = @group.labels.order(:name).pluck(:name)
+      @parent_path = @group.self_and_ancestors.drop(1).reverse
+      @has_children = visible_descendant_ids(@group).any?
+      @sub_members_count = sub_members_of(@group).count
+      @reactivation_blocker = @group.reactivation_blocker if @group.suspended?
+    end
+
+    # 利用停止中のグループの一覧。既定は起点だけを出し、include_descendants で一緒に止まった下位も出す。
+    # キーワードはグループ名と、停止した時点の上位の名前の並びに当てる
+    def suspended
+      @query = params[:q].to_s.strip
+      @include_descendants = params[:include_descendants] == "1"
+      page = [params[:page].to_i, 1].max
+
+      groups = Group.suspended
+      groups = groups.where(id: @scope.ids) unless @scope.all?
+      if @query.present?
+        groups = groups.where("groups.name ILIKE :pattern OR array_to_string(groups.suspended_path, ' ') ILIKE :pattern",
+          pattern: "%#{Group.sanitize_sql_like(@query)}%")
+      end
+      unless @include_descendants
+        roots = groups.where("groups.suspension_root_id = groups.id")
+        # 起点には見つからず、一緒に止まった下位に当てはまるものがあれば、チェックを入れるよう誘う
+        @hidden_count = groups.count if @query.present? && page == 1 && !roots.exists?
+        groups = roots
+      end
+
+      # 同じ停止の操作で止まった行は、起点から上位の並びの短い順（ツリーの浅い順）に並べる
+      @groups = groups.includes(:suspended_by, :suspension_root)
+        .order(suspended_at: :desc, suspension_root_id: :desc)
+        .order(Arel.sql("cardinality(groups.suspended_path)"), :name, :id)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if @groups.size > PER_PAGE)
+      @groups = @groups.first(PER_PAGE)
+      root_ids = @groups.select { it.suspension_root_id == it.id }.map(&:id)
+      @co_suspended_counts = Group.where(suspension_root_id: root_ids).where("groups.id <> groups.suspension_root_id")
+        .group(:suspension_root_id).count
+
+      render partial: "suspended_rows", layout: false if page > 1
     end
 
     # 下位グループのメンバーの一覧を1ページ分だけ返す。詳細の画面がスクロールに合わせて読み足す
     def sub_members
-      raise ActiveRecord::RecordNotFound if @group.kind == :everyone
-
       page = [params[:page].to_i, 1].max
-      members = sub_members_of(@group)
-      @rows = members.drop((page - 1) * SUB_MEMBERS_PER_PAGE).first(SUB_MEMBERS_PER_PAGE)
-      @next_page = (page + 1 if members.size > page * SUB_MEMBERS_PER_PAGE)
+      users = sub_members_of(@group).includes(:user).order(:display_name, :id)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if users.size > PER_PAGE)
+      users = users.first(PER_PAGE)
+      groups = GroupMember.where(group_id: visible_descendant_ids(@group), tenant_user_id: users.map(&:id))
+        .includes(:group).group_by(&:tenant_user_id)
+      # 同じ人が複数の下位グループにいれば1行にまとめ、所属する下位グループを並べる
+      @rows = users.map { |user| [user, groups.fetch(user.id).map(&:group).sort_by(&:name)] }
       render partial: "sub_member_rows", layout: false
     end
 
+    # メンバーの追加のダイアログの候補。テナントの所属のうち有効・招待中の人を、表示名か
+    # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す。
+    # tenant_users は RLS でも自分の他のテナントでの所属が見える（テナントの切り替えのため）ので、テナントで絞る
+    def member_candidates
+      page = [params[:page].to_i, 1].max
+      users = TenantUser.where(tenant: current_tenant, status: [:active, :invited]).joins(:user).includes(:user)
+      if params[:q].present?
+        pattern = "%#{TenantUser.sanitize_sql_like(params[:q].strip)}%"
+        users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
+      end
+      users = users.order(:display_name, :id)
+        .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if users.size > PER_PAGE)
+      @candidates = users.first(PER_PAGE)
+      render partial: "member_candidates", layout: false
+    end
+
     def new
-      parent = DEPARTMENTS.find { |group| group.id == params[:parent_id].to_i }
-      @parent_path = path_to(parent&.id)
-      @parent_options = parent_options(excluded: [])
-      @labels = []
-      @label_names = LABEL_NAMES
+      @group = Group.new(parent: Group.department.active.find_by(id: params[:parent_id]))
+      raise ActiveRecord::RecordNotFound unless @scope.can_place_under?(@group.parent)
+
+      @label_names = []
+    end
+
+    def create
+      @group = Group.new(tenant: current_tenant, **params.expect(group: [:name, :parent_id]))
+      @label_names = label_names_param
+
+      if save_group
+        redirect_to management_group_path(@group), notice: t("messages.created")
+      else
+        render :new, status: :unprocessable_entity
+      end
     end
 
     def edit
-      raise ActiveRecord::RecordNotFound if @group.kind == :everyone
-
       @members = members_of(@group)
-      @labels = LABELS.fetch(@group.id, [])
-      @label_names = LABEL_NAMES
-      @parent_path = path_to(@group.parent_id)
-      # 自分と自分の下位を上位にすると循環する
-      @parent_options = parent_options(excluded: [@group.id] + descendants_of(@group).map(&:id))
+      @label_names = @group.labels.order(:name).pluck(:name)
+    end
+
+    def update
+      @group.assign_attributes(params.expect(group: [:name, :parent_id]))
+      @label_names = label_names_param
+      # 行を全部外すと members は送られてこない
+      roles = params.fetch(:group, {}).permit(members: {}).fetch(:members, nil).to_h.to_h { |id, role| [id.to_i, role] }
+
+      if save_group { @group.replace_members!(roles) }
+        # 自分のグループ管理者の印を外すと、範囲の外になって詳細（どこも管理していなければグループ管理も）を開けなくなる
+        scope = GroupScope.new(current_tenant_user)
+        destination =
+          if scope.include?(@group) then management_group_path(@group)
+          elsif scope.any? then management_groups_path
+          else top_page_path
+          end
+        redirect_to destination, notice: t("messages.saved")
+      else
+        # 送られてきたとおりに出し直す
+        users = TenantUser.includes(:user).where(tenant: current_tenant, id: roles.keys).index_by(&:id)
+        @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
+        render :edit, status: :unprocessable_entity
+      end
+    end
+
+    # 削除の確認。一緒に消える下位の数を示す
+    def confirm_destroy
+      @descendants_count = Group.descendant_ids_of(@group.id).size
+    end
+
+    def confirm_suspend
+      @descendants_count = Group.active.where(id: Group.descendant_ids_of(@group.id)).count
+    end
+
+    def suspend
+      @group.suspend!(by: current_tenant_user)
+      redirect_to management_group_path(@group), notice: t(".done")
+    end
+
+    def reactivate
+      raise ActiveRecord::RecordNotFound unless @group.suspended?
+
+      if @group.reactivate
+        redirect_to management_group_path(@group), notice: t(".done")
+      else
+        redirect_to management_group_path(@group)
+      end
+    end
+
+    # 下位（停止中も）は children の dependent: :destroy でたどって消す。ファイルの共有設定は外部キーの
+    # ON DELETE CASCADE で消える
+    def destroy
+      @group.destroy!
+      redirect_to (@group.parent ? management_group_path(@group.parent) : management_groups_path),
+        notice: t("messages.deleted")
     end
 
     private
 
+    def group_manager_required
+      @scope = GroupScope.new(current_tenant_user)
+      render_not_found unless @scope.any?
+    end
+
+    # グループ管理者には範囲の中だけを出し、範囲のいちばん上のグループを根として描く。「全員」も出さない
     def load_tree
-      @everyone = EVERYONE
-      @children = DEPARTMENTS.group_by(&:parent_id)
+      groups = Group.department.active.order(:name).to_a
+      if @scope.all?
+        @everyone = Group.everyone_of(current_tenant)
+        @children = groups.group_by(&:parent_id)
+      else
+        @children = groups.select { @scope.include?(it) }
+          .group_by { @scope.ids.include?(it.parent_id) ? it.parent_id : nil }
+      end
     end
 
     def set_group
-      @group = ([EVERYONE] + DEPARTMENTS).find { |group| group.id == params[:id].to_i }
-      raise ActiveRecord::RecordNotFound unless @group
+      @group = Group.find(params[:id])
+      raise ActiveRecord::RecordNotFound unless @scope.include?(@group)
     end
 
-    # [メンバー, グループ管理者か] の組。グループ管理者を先に並べる
+    def reject_everyone
+      raise ActiveRecord::RecordNotFound if @group.everyone?
+    end
+
+    def reject_suspended
+      raise ActiveRecord::RecordNotFound if @group.suspended?
+    end
+
+    def destroyable_required
+      raise ActiveRecord::RecordNotFound unless @scope.can_destroy?(@group)
+    end
+
+    def label_names_param
+      params.dig(:group, :label_names).to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
+    end
+
+    # ラベルの名前が長すぎるときなどは GroupLabel の検証で落ちるので、グループの誤りとして出す
+    def save_group
+      # グループ管理者は、範囲の外へ移したり最上位に置いたりできない
+      if (@group.new_record? || @group.parent_id_changed?) && !@scope.can_place_under?(@group.parent)
+        raise ActiveRecord::RecordNotFound
+      end
+
+      Group.transaction do
+        @group.save!
+        @group.replace_labels!(@label_names)
+        yield if block_given?
+        true
+      rescue ActiveRecord::RecordInvalid => e
+        e.record.errors.full_messages.each { @group.errors.add(:base, it) } unless e.record == @group
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    # グループ管理者を先に、それぞれ表示名の順に並べる
     def members_of(group)
-      MEMBERS.fetch(group.id, [])
-        .map { |member| [member, LEADERS.fetch(group.id, []).include?(member.email)] }
-        .sort_by { |_, leader| leader ? 0 : 1 }
+      group.group_members.includes(tenant_user: :user).to_a
+        .sort_by { |member| [member.leader? ? 0 : 1, member.tenant_user.display_name, member.id] }
     end
 
-    # 同じ人が複数の下位グループにいれば1行にまとめる
     def sub_members_of(group)
-      descendants_of(group)
-        .flat_map { |child| MEMBERS.fetch(child.id, []).map { |member| [member, child] } }
-        .group_by(&:first)
-        .map { |member, pairs| [member, pairs.map(&:last)] }
+      TenantUser.where(id: GroupMember.where(group_id: visible_descendant_ids(group)).select(:tenant_user_id))
     end
 
-    def descendants_of(group)
-      descendants = @children.fetch(group.id, []).dup
-      descendants.each { |child| descendants.concat(@children.fetch(child.id, [])) }
-      descendants
-    end
-
-    # 最上位から指定したグループまでの系列（指定したグループを含む）
-    def path_to(group_id)
-      path = []
-      while group_id
-        group = DEPARTMENTS.find { |department| department.id == group_id }
-        path.unshift(group)
-        group_id = group.parent_id
-      end
-      path
-    end
-
-    # 「全員」は親にしないので選択肢に入れない
-    def parent_options(excluded:)
-      options = []
-      walk = ->(parent_id, depth) do
-        @children.fetch(parent_id, []).each do |group|
-          next if excluded.include?(group.id)
-
-          options << ["\u00A0\u00A0" * depth + group.name, group.id]
-          walk.(group.id, depth + 1)
-        end
-      end
-      walk.(nil, 0)
-      options
+    # 詳細に出す下位。停止中の下位のメンバーは上位のメンバーとして数えない（ファイルの権限も届かない）ので、
+    # 有効なグループでは有効な下位だけ。停止中のグループを見るときは、一緒に止まった下位も含めて停止した時の形で出す
+    def visible_descendant_ids(group)
+      ids = Group.descendant_ids_of(group.id)
+      group.suspended? ? ids : Group.active.where(id: ids).ids
     end
   end
 end

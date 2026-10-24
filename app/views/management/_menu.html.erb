@@ -1,8 +1,9 @@
 <%# PC とスマホの2箇所から描画される。id を持つ要素を置かないこと %>
 <nav aria-label="<%= t(".label") %>">
-  <% { users: management_users_path,
-       groups: management_groups_path,
-       tenant_settings: management_tenant_setting_path }.each do |key, path| %>
+  <%# グループ管理者（テナントの管理者でない）にはグループ管理だけを出す %>
+  <% items = { users: management_users_path, groups: management_groups_path, tenant_settings: management_tenant_setting_path } %>
+  <% items = items.slice(:groups) unless current_tenant_user.admin_or_owner? %>
+  <% items.each do |key, path| %>
     <% current = controller_name == key.to_s %>
     <%= link_to t(".items.#{key}"), path,
           "aria-current": (current ? "page" : nil), class: class_names("nav-item", "nav-item-current": current) %>
