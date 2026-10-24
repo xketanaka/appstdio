@@ -9,7 +9,9 @@
     <% end %>
     <ul class="mb-6 list-disc pl-5 text-slate-600">
       <li><%= t(".notes.hidden") %></li>
-      <li><%= t(".notes.shares") %></li>
+      <% if @files_enabled %>
+        <li id="files-note"><%= t(".notes.shares") %></li>
+      <% end %>
       <li><%= t(".notes.reactivate") %></li>
     </ul>
   </div>

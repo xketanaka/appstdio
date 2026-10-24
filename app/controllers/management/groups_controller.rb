@@ -149,6 +149,7 @@ module Management
 
     def confirm_suspend
       @descendants_count = Group.active.where(id: Group.descendant_ids_of(@group.id)).count
+      @files_enabled = Files::Setting.find_by!(tenant: current_tenant).enabled?
     end
 
     def suspend

@@ -418,6 +418,12 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     get confirm_suspend_management_group_path(@sales)
     assert_select "#suspend-confirmation", text: /「営業本部」を利用停止にします。/
     assert_select "#suspend-confirmation", text: /下位グループ 2件も一緒に停止されます。/
+    assert_select "#files-note"
+
+    # ファイル管理を使っていなければ、共有設定には触れない
+    TenantContext.switch(tenant: @tenant) { Files::Setting.find_by!(tenant: @tenant).update!(enabled: false) }
+    get confirm_suspend_management_group_path(@sales)
+    assert_select "#files-note", 0
 
     post suspend_management_group_path(@sales)
     assert_redirected_to management_group_path(@sales)
