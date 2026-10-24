@@ -4,7 +4,7 @@ import { login, scenario, type User } from "./support"
 // 画面は #app-shell が画面の大きさに固定され、各部分がスクロールする作りなので、
 // 印刷のときだけ枠とスクロールをやめて中身を紙に流す（application.css）
 
-let data: { owner: User; groups: { company: number } }
+let data: { owner: User, groups: { company: number } }
 
 test.beforeAll(() => {
   data = scenario<typeof data>("groups")
