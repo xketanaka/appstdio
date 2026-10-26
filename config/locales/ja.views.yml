@@ -56,9 +56,12 @@ ja:
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"
+      frame:
+        heading: "グループ管理"
       tree_column:
         label: "グループ"
         create: "グループを追加"
+        suspended: "利用停止中のグループ"
       labels_field:
         label: "ラベル"
         add: "「%{name}」を新しいラベルとして追加"
@@ -74,14 +77,13 @@ ja:
         select: "左の一覧からグループを選んでください。"
       show:
         title: "%{name} - グループ管理"
-        heading: "グループ管理"
         detail: "グループ詳細"
         add_child: "下位グループを追加"
         edit: "編集"
         back: "« グループ一覧へ戻る"
+        back_to_suspended: "« 利用停止中のグループへ戻る"
       new:
         title: "グループを追加 - グループ管理"
-        heading: "グループ管理"
         detail: "グループを追加"
         back: "« グループ一覧へ戻る"
         name: "グループ名"
@@ -109,17 +111,80 @@ ja:
         failed: "読み込めませんでした。画面を開き直してください。"
       edit:
         title: "%{name}の編集 - グループ管理"
-        heading: "グループ管理"
         detail: "グループの編集"
         name: "グループ名"
         cancel: "キャンセル"
         destroy: "このグループを削除"
+        suspend: "利用停止"
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"
-          leader: "管理者"
-          remove: "外す"
           empty: "直接所属しているメンバーはいません。"
+          dialog:
+            title: "メンバーを追加"
+            search: "名前かメールアドレスで探す"
+            candidates: "候補"
+            cancel: "キャンセル"
+            submit: "追加する"
+            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      confirm_destroy:
+        title: "%{name}の削除 - グループ管理"
+        detail: "グループの削除"
+        message: "「%{name}」を削除します。"
+        descendants: "下位グループ %{count}件も一緒に削除されます。"
+        irreversible: "削除は元に戻せません。残しておきたいときは、削除せずに利用停止にしてください。"
+        submit: "削除する"
+        cancel: "キャンセル"
+      confirm_suspend:
+        title: "%{name}の利用停止 - グループ管理"
+        detail: "グループの利用停止"
+        message: "「%{name}」を利用停止にします。"
+        descendants: "下位グループ %{count}件も一緒に停止されます。"
+        notes:
+          hidden: "停止中のグループは編集できず、ツリーにも出なくなります。「利用停止中のグループ」から見られます。"
+          reactivate: "あとで再開すると、元の位置に戻ります。"
+        submit: "利用停止にする"
+        cancel: "キャンセル"
+      suspend:
+        done: "利用停止にしました。"
+      reactivate:
+        done: "再開しました。"
+      suspension:
+        status: "このグループは利用停止中です。"
+        suspended_at: "%{at} に停止されました。"
+        suspended_at_by: "%{at} に%{name}が停止しました。"
+        reactivate: "再開する"
+        open_root: "「%{name}」を開く"
+        blockers:
+          not_root: "「%{name}」と一緒に停止されています。再開は「%{name}」から行ってください。"
+          ancestor_suspended: "上位の「%{name}」が停止中のため再開できません。先に上位を再開してください。"
+          name_taken: "同じ上位グループの下に同じ名前の有効なグループがあるため再開できません。"
+      suspended:
+        title: "利用停止中のグループ - グループ管理"
+        heading: "利用停止中のグループ"
+        back: "« グループ管理へ戻る"
+        query: "グループ名・上位グループで探す"
+        include_descendants: "一緒に停止された下位グループも表示する"
+        submit: "絞り込む"
+        empty: "利用停止中のグループはありません。"
+        not_found: "当てはまるグループはありません。"
+        hidden_matches: "一緒に停止された下位グループに %{count}件あります。"
+        show_hidden: "表示する"
+        columns:
+          name: "グループ名"
+          path: "停止した時点の上位グループ"
+          suspended_at: "停止日時"
+          suspended_by: "停止した人"
+      suspended_rows:
+        with_descendants: "下位グループ %{count}件も一緒に停止"
+        with_root: "「%{name}」と一緒に停止"
+        no_parent: "（なし）"
+      member_row:
+        leader: "管理者"
+        remove: "外す"
+      member_candidates:
+        empty: "見つかりませんでした。"
+        invited: "招待中"
     tenant_settings:
       show:
         title: "組織設定"

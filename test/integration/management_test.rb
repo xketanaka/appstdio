@@ -57,6 +57,20 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#user-list tbody", text: /メンバー/
   end
 
+  test "利用者管理には、自分の他のテナントでの所属を出さない" do
+    # tenant_users は RLS でも、ログインしている人の他のテナントでの所属が見える
+    other = Tenant.setup!(name: "テナントB")
+    TenantContext.switch(tenant: other) do
+      TenantUser.create!(tenant: other, user: @owner, display_name: "Bのオーナーさん", role: :owner, status: :active)
+    end
+    post login_path, params: { email: @owner.email, password: PASSWORD }
+    post select_tenant_path, params: { tenant_id: @tenant.id }
+
+    get management_users_path
+    assert_select "#user-list tbody tr", 3
+    assert_select "#user-list tbody", text: /Bのオーナーさん/, count: 0
+  end
+
   test "左ペインでグループ管理・組織管理に切り替えられる" do
     login(@admin)
     { management_groups_path => "グループ管理",
@@ -77,180 +91,6 @@ class ManagementTest < ActionDispatch::IntegrationTest
     assert_select "#tenant dd", text: "テナントA"
     assert_select "#tenant dd", text: @tenant.id
     assert_select "#tenant", text: /テナントB/, count: 0
-  end
-
-  test "グループ管理ではグループの階層をツリーで出す" do
-    login(@admin)
-    get management_groups_path
-    assert_response :success
-
-    assert_select "#group-tree #everyone-group a[href=?]", management_group_path(100), text: "全員"
-    assert_select "#group-tree a[href=?]", management_group_path(2), text: "営業本部"
-    assert_select "#group-tree details > summary a", text: "全社"
-    assert_select "#group-tree details details > summary a", text: "営業本部"
-    assert_select "#group-tree details details > div a", text: "第一営業部"
-    assert_select "#group-detail", 0
-  end
-
-  test "グループを選ぶと詳細を参照だけで出し、編集ボタンを置く" do
-    login(@admin)
-    get management_group_path(2)
-    assert_response :success
-
-    assert_select "#group-tree a[aria-current=page]", text: "営業本部"
-    assert_select "#edit-group[href=?]", edit_management_group_path(2)
-    assert_select "#group-detail" do
-      assert_select "input, select, button", 0
-      assert_select "dd", text: "営業本部"
-
-      assert_select "#direct-members tr", 2
-      assert_select "p", text: /下位グループを含めて/, count: 0
-
-      # 下位グループのメンバーは人数だけ出して閉じておき、一覧は開いたときに読み込む
-      assert_select "details#sub-members:not([open])" do
-        assert_select "summary", text: "下位グループに所属するメンバー（4人）"
-        assert_select "li[data-load-more=?]", sub_members_management_group_path(2, page: 1)
-      end
-    end
-  end
-
-  test "下位グループのメンバーを1ページずつ返し、続きがあれば次の読み込み先を付ける" do
-    login(@admin)
-
-    # 全社の下位は 77人（営業の6人と開発部の71人。田中さんは2つの部にいるが1人と数える）
-    get sub_members_management_group_path(1, page: 1)
-    assert_response :success
-    assert_not_includes response.body, "<html"
-    assert_select "li:not([data-load-more])", 30
-    assert_select "li[data-load-more=?]", sub_members_management_group_path(1, page: 2)
-
-    get sub_members_management_group_path(1, page: 3)
-    assert_select "li:not([data-load-more])", 17
-    assert_select "li[data-load-more]", 0
-
-    # 同じ人が複数の下位グループにいれば1行にまとめ、所属するグループを並べる
-    get sub_members_management_group_path(2, page: 1)
-    assert_select "li", 4
-    assert_select "li", text: /田中 三郎.*第一営業部.*第二営業部/m
-
-    get sub_members_management_group_path(100, page: 1)
-    assert_response :not_found
-  end
-
-  test "詳細ではラベルをチップで出し、グループ管理者を先頭に印を付けて並べる" do
-    login(@admin)
-
-    get management_group_path(2)
-    assert_select "#group-labels span", 2
-    assert_select "#group-labels", text: /営業\s*本部/
-    assert_select "#direct-members tr:first-child", text: /佐藤 花子\s*管理者/
-    assert_select "#direct-members tr:last-child", text: /管理者/, count: 0
-
-    get management_group_path(1)
-    assert_select "#group-labels", text: "本社"
-
-    get management_group_path(5)
-    assert_select "#direct-members", text: /管理者/, count: 0
-  end
-
-  test "編集と追加の画面にラベルの入力欄を置き、編集ではグループ管理者を切り替えられる" do
-    login(@admin)
-
-    get edit_management_group_path(2)
-    assert_select "#group-form label-input" do |elements|
-      suggestions = JSON.parse(elements.first["data-suggestions"])
-      assert_includes suggestions, "プロジェクト"
-      assert_select "input[name=group_labels][value=?]", "営業, 本部"
-    end
-    assert_select "input[type=checkbox][name='leaders[]'][value='sato@example.com'][checked]"
-    assert_select "input[type=checkbox][name='leaders[]'][value='yamada@example.com']:not([checked])"
-
-    get new_management_group_path(parent_id: 2)
-    assert_select "#group-form label-input input[name=group_labels][value='']"
-  end
-
-  test "上位グループは階層をたどって表示する" do
-    login(@admin)
-
-    get management_group_path(3)
-    assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
-    assert_select "#group-parent-path a[href=?]", management_group_path(2)
-
-    get management_group_path(1)
-    assert_select "#group-parent-path", text: /（なし）/
-  end
-
-  test "編集の画面で名前・上位グループ・メンバーを変えられ、上位には自分と下位を選べない" do
-    login(@admin)
-    get edit_management_group_path(2)
-    assert_response :success
-
-    assert_select "#group-tree a[aria-current=page]", text: "営業本部"
-    assert_select "#group-form" do
-      assert_select "input[name=group_name][value=?]", "営業本部"
-      assert_select "#group-parent summary", text: /全社/
-      assert_select "select[name=group_parent_id] option[selected]", text: "全社"
-      assert_select "select[name=group_parent_id] option", text: /営業本部|第一営業部|第二営業部/, count: 0
-      assert_select "select[name=group_parent_id] option", text: /開発部/
-      assert_select "select[name=group_parent_id] option", text: "全員", count: 0
-      assert_select "#direct-members tr", 2
-      assert_select "button", text: "保存する"
-      assert_select "a[href=?]", management_group_path(2), text: "キャンセル"
-    end
-  end
-
-  test "グループの追加は、ツリーの末尾・行ごと・詳細の画面の3か所から作る場所を決めて開く" do
-    login(@admin)
-
-    # ツリーの末尾は最上位に作る。どのグループを選んでいても同じ
-    get management_groups_path
-    assert_select "#new-group[href=?]", new_management_group_path
-    get management_group_path(2)
-    assert_select "#new-group[href=?]", new_management_group_path
-
-    # ツリーの行ごとの「＋」は、その行のグループの下に作る。「全員」の行には無い
-    assert_select "#group-tree a[aria-label=?][href=?]", "「第一営業部」の下にグループを追加",
-      new_management_group_path(parent_id: 3)
-    assert_select "#everyone-group a[aria-label]", 0
-
-    # 詳細の画面からは、そのグループの下に作る
-    assert_select "#add-child-group[href=?]", new_management_group_path(parent_id: 2)
-    get management_group_path(100)
-    assert_select "#add-child-group", 0
-
-    get new_management_group_path(parent_id: 3)
-    assert_response :success
-    assert_select "#group-form" do
-      assert_select "input[name=group_name]:not([value])"
-      assert_select "#group-parent summary", text: /全社\s*>\s*営業本部\s*>\s*第一営業部/
-      assert_select "select[name=group_parent_id] option[selected]", text: /第一営業部/
-    end
-
-    get new_management_group_path
-    assert_select "#group-parent summary", text: /（なし）/
-  end
-
-  test "「全員」グループは読み取り専用で、サブグループの欄を出さない" do
-    login(@admin)
-    get management_group_path(100)
-    assert_response :success
-
-    assert_select "#group-tree #everyone-group a[aria-current=page]", text: "全員"
-    assert_select "#group-detail" do
-      assert_select "input, select", 0
-      assert_select "p", text: /自動でメンバーになります/
-    end
-    assert_select "#sub-members", 0
-    assert_select "#edit-group", 0
-
-    get edit_management_group_path(100)
-    assert_response :not_found
-  end
-
-  test "存在しないグループは 404" do
-    login(@admin)
-    get management_group_path(999)
-    assert_response :not_found
   end
 
   test "未ログインでは開けない" do

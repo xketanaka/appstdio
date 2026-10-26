@@ -1,8 +1,8 @@
-<% @rows.each do |member, groups| %>
+<% @rows.each do |tenant_user, groups| %>
   <li class="flex items-center justify-between gap-3 border-t border-slate-100 py-2">
     <div class="min-w-0">
-      <span class="block truncate"><%= member.display_name %></span>
-      <span class="block truncate text-xs text-slate-500"><%= member.email %></span>
+      <span class="block truncate"><%= tenant_user.display_name %></span>
+      <span class="block truncate text-xs text-slate-500"><%= tenant_user.user.email %></span>
     </div>
     <div class="shrink-0 text-right text-sm">
       <% groups.each do |group| %>

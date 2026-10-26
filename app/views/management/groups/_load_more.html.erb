@@ -1,4 +1,10 @@
-<%# locals: (url:) %>
-<%# data-load-more を application.ts が見張り、画面に見えたら url を読んでこの行と置き換える %>
-<li data-load-more="<%= url %>" data-load-error="<%= t(".failed") %>"
-    class="border-t border-slate-100 py-3 text-center text-sm text-slate-500"><%= t(".loading") %></li>
+<%# locals: (url:, colspan: nil) %>
+<%# data-load-more を application.ts が見張り、画面に見えたら url を読んでこの行と置き換える。
+    表の中では colspan を渡して tr にする %>
+<% attributes = { data: { load_more: url, load_error: t(".failed") },
+                  class: "border-t border-slate-100 py-3 text-center text-sm text-slate-500" } %>
+<% if colspan %>
+  <%= tag.tr(**attributes) { tag.td(t(".loading"), colspan:, class: "py-3") } %>
+<% else %>
+  <%= tag.li(t(".loading"), **attributes) %>
+<% end %>
