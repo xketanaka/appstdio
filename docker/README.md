@@ -53,7 +53,7 @@ RLS を迂回する必要がある操作（`db:seed`）は必ずこちらを使�
 
 通常の `bin/rails` はアプリ用ロールで接続するため、マイグレーションを実行しようとすると
 `permission denied for table schema_migrations` で落ちる。これは意図した動作。
-ロールを分けている理由は `doc/architecture.md` の「テナント分離」を参照。
+ロールを分けている理由は `doc/database.md` の「テナント分離」を参照。
 
 以上でセットアップ完了。
 ブラウザで docker-compose.override.yml で指定したポートにアクセスすると画面が表示される
@@ -151,7 +151,7 @@ docker compose exec vite npm install --save-dev <パッケージ>
 
 本番では `assets:precompile` に Vite のビルドが組み込まれている。
 
-構成と書き方の方針は `doc/architecture.md` の「フロントエンド」と「CSS」を参照。
+構成と書き方の方針は `doc/frontend.md` を参照。
 
 ## テスト(Minitest)実行
 

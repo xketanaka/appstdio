@@ -59,14 +59,14 @@
 
 Docker コンテナ内で実行する。セットアップ・DB接続・テスト実行の手順は `docker/README.md` を参照。
 
-**設計と実装方針は `doc/architecture.md` にまとめてある。**
+**設計と実装方針は `doc/architecture.md` にまとめてある。** DB（テナント分離など）は `doc/database.md`、フロントエンド（Vite / Vue.js・CSS）は `doc/frontend.md` に分けてある。
 
 DB は PostgreSQL で、テナント分離に Row Level Security を使っている。
 **接続ロールが分かれている**ため、マイグレーションは `bin/rails-as-owner db:migrate` のように所有者ロールへ切り替えて実行する。
 
-JavaScript と CSS は Vite でビルドする。`vite` サービスが開発サーバを動かす。npm のコマンドは `vite` コンテナの中で実行する（`node_modules` はホストから見えない）。画面は ERB が基本で、ファイル画面だけ Vue.js（TypeScript）で作る。どの画面を Vue.js にするかの基準は `doc/architecture.md` の「フロントエンド」を参照。
+JavaScript と CSS は Vite でビルドする。`vite` サービスが開発サーバを動かす。npm のコマンドは `vite` コンテナの中で実行する（`node_modules` はホストから見えない）。画面は ERB が基本で、ファイル画面だけ Vue.js（TypeScript）で作る。どの画面を Vue.js にするかの基準は `doc/frontend.md` の「Vue.js で作る画面の判断」を参照。
 
-CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルは基本的にビューの `class` に直接書く。詳細は `doc/architecture.md` の「CSS」を参照。
+CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルは基本的にビューの `class` に直接書く。詳細は `doc/frontend.md` の「CSS」を参照。
 
 **画面の見た目は `doc/design.md` の決まりに従う。** 色・文字・角丸は決まった範囲から選び、ボタン・入力欄・左ペインの項目は部品のクラス（`btn` / `input` / `nav-item`。ERB と Vue で共通）を使う。新しい画面を作るときも同じ。
 
@@ -90,6 +90,6 @@ CSS は Tailwind CSS。独自の CSS ファイルは持たず、スタイルは�
 
 ### テナントスコープのテーブル
 
-`tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を、適用先には `TO appstdio_app` を付けること。書き方と理由は `doc/architecture.md` の「テナント分離」を参照。
+`tenant_id` を持つテーブルには必ず RLS を有効にしてポリシーを張る。更新系のポリシーには `WITH CHECK` を、適用先には `TO appstdio_app` を付けること。書き方と理由は `doc/database.md` の「テナント分離」を参照。
 
 付け忘れは `test/models/rls/rls_configuration_test.rb` が検出する。
