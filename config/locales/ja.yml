@@ -10,6 +10,8 @@ ja:
         files/node:
           move_into_itself: "「%{name}」は、それ自身やその中のフォルダへは移動できません。"
           name_taken_at_destination: "移動先に「%{name}」と同じ名前のものがあります。"
+          restore_parent_trashed: "「%{name}」の元のフォルダ「%{parent}」がゴミ箱にあります。先にそのフォルダを元に戻してください。"
+          restore_name_taken: "元の場所に「%{name}」と同じ名前のものがあります。"
           attributes:
             name:
               taken: "が同じフォルダの中のものと重複しています。"

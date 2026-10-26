@@ -54,6 +54,30 @@ ja:
       count: "%{count}件を選択中"
       clear: "選択を解除"
       move: "移動"
+      trash: "削除"
+      restore: "元に戻す"
+    rename:
+      title: "名前を変更"
+      name: "新しい名前"
+      submit: "変更"
+      cancel: "キャンセル"
+      forbidden: "名前を変更する権限がありません。親フォルダの編集権限が必要です"
+      not_found: "名前を変更するものが見つからないか、開く権限がありません"
+      failed: "名前を変更できませんでした。時間をおいてもう一度お試しください"
+    trash:
+      empty: "ゴミ箱は空です"
+      done_one: "「%{name}」をゴミ箱に移動しました"
+      done_other: "%{count}件をゴミ箱に移動しました"
+      undone: "削除を元に戻しました"
+      forbidden: "削除する権限がありません。親フォルダの編集権限が必要です"
+      not_found: "削除するものが見つからないか、開く権限がありません"
+      failed: "削除できませんでした。時間をおいてもう一度お試しください"
+    restore:
+      done_one: "「%{name}」を元に戻しました"
+      done_other: "%{count}件を元に戻しました"
+      forbidden: "元に戻す権限がありません。元のフォルダの編集権限が必要です"
+      not_found: "元に戻すものが見つからないか、ゴミ箱から消えています"
+      failed: "元に戻せませんでした。時間をおいてもう一度お試しください"
     move:
       title_one: "「%{name}」を移動"
       title_other: "%{count}件を移動"
@@ -75,8 +99,6 @@ ja:
       failed: "移動できませんでした。時間をおいてもう一度お試しください"
     shared_items:
       empty: "共有されたアイテムはありません"
-    trash:
-      empty: "ゴミ箱は空です"
     upload:
       title: "アップロード"
       summary: "%{done}/%{total}件 完了"

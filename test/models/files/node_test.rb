@@ -77,7 +77,7 @@ class Files::NodeTest < ActiveSupport::TestCase
       Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @general, kind: :file, name: "見積.xlsx")
       other = Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @sales, kind: :file, name: "価格表.xlsx")
 
-      error = assert_raises(Files::Node::MoveError) do
+      error = assert_raises(Files::Node::OperationError) do
         Files::Node.move!([other, @estimate], to: @general, actor: @member)
       end
       assert_equal ["移動先に「見積.xlsx」と同じ名前のものがあります。"], error.messages
@@ -86,7 +86,7 @@ class Files::NodeTest < ActiveSupport::TestCase
     end
 
     test "それ自身や配下へは移せない" do
-      error = assert_raises(Files::Node::MoveError) do
+      error = assert_raises(Files::Node::OperationError) do
         Files::Node.move!([@root.children.find_by!(name: "営業")], to: @sales, actor: @member)
       end
       assert_equal ["「営業」は、それ自身やその中のフォルダへは移動できません。"], error.messages
@@ -132,6 +132,51 @@ class Files::NodeTest < ActiveSupport::TestCase
         Files::Node.create_file!(parent: @root, blob: @blob, creator: @member)
       end
       assert_equal 0, @tenant.files_setting.reload.storage_used_bytes
+    end
+  end
+
+  describe "名前の変更・ゴミ箱・復元" do
+    setup do
+      @sales = Files::Node.create_folder!(parent: @root, name: "営業", creator: @member)
+      @estimates = Files::Node.create_folder!(parent: @sales, name: "見積", creator: @member)
+      @memo = Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @estimates, kind: :file, name: "メモ.txt")
+    end
+
+    test "名前を変えると、変更前と変更後を操作履歴に残す。同じ名前なら残さない" do
+      @memo.rename!(" メモ.md ", actor: @member)
+      @memo.rename!("メモ.md", actor: @member)
+
+      assert_equal "メモ.md", @memo.reload.name
+      assert_equal [{ "from" => "メモ.txt", "to" => "メモ.md" }], Files::Activity.renamed.pluck(:detail)
+    end
+
+    test "フォルダをゴミ箱へ入れると、配下もまとめて入り、復元でまとめて戻る" do
+      Files::Node.trash!([@sales, @memo], actor: @member)
+
+      assert_equal [@sales.id] * 3, [@sales, @estimates, @memo].map { it.reload.deleted_root_id }
+      assert_equal [@sales], Files::Node.trash_roots.to_a
+      assert_equal ["deleted"], Files::Activity.deleted.pluck(:action)
+
+      Files::Node.restore!([@sales], actor: @member)
+      assert_equal [nil] * 3, [@sales, @estimates, @memo].map { it.reload.deleted_at }
+      assert_equal 1, Files::Activity.restored.count
+    end
+
+    test "元のフォルダもゴミ箱にあれば、戻さずに理由を返す" do
+      Files::Node.trash!([@memo], actor: @member)
+      Files::Node.trash!([@estimates], actor: @member)
+
+      error = assert_raises(Files::Node::OperationError) { Files::Node.restore!([@memo.reload], actor: @member) }
+      assert_equal ["「メモ.txt」の元のフォルダ「見積」がゴミ箱にあります。先にそのフォルダを元に戻してください。"], error.messages
+      assert_not_nil @memo.reload.deleted_at
+    end
+
+    test "元の場所に同じ名前のものができていれば、戻さない" do
+      Files::Node.trash!([@memo], actor: @member)
+      Files::Node.create!(tenant: @tenant, drive_id: @root.drive_id, parent: @estimates, kind: :file, name: "メモ.txt")
+
+      error = assert_raises(Files::Node::OperationError) { Files::Node.restore!([@memo.reload], actor: @member) }
+      assert_equal ["元の場所に「メモ.txt」と同じ名前のものがあります。"], error.messages
     end
   end
 end

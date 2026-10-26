@@ -6,22 +6,39 @@ module Files
 
       # 移動元の親フォルダと移動先の、両方の編集権限が要る（doc/files.md の「移動」）
       def move
-        ids = Array(params[:node_ids]).map(&:to_i).uniq
         destination = Node.kept.folder.find(params[:destination_id])
-        nodes = Node.kept.where(id: ids).includes(:parent).to_a
-        raise ActiveRecord::RecordNotFound if nodes.size != ids.size || nodes.any?(&:root?)
-
-        permissions = access.effective_permissions([destination, *nodes.map(&:parent)].uniq)
-        raise ActiveRecord::RecordNotFound unless [destination, *nodes.map(&:parent)].all? { permissions[it].readable? }
-        return head :forbidden unless [destination, *nodes.map(&:parent)].all? { permissions[it].editable? }
+        nodes = editable_children!(Node.kept, params[:node_ids], also: [destination])
 
         Node.move!(nodes, to: destination, actor: current_tenant_user)
         head :no_content
-      rescue Node::MoveError => e
+      rescue Node::OperationError => e
         render json: { errors: e.messages }, status: :unprocessable_content
       rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
         # 同じ名前のものが同時に移動先へ作られ、事前の確かめをすり抜けたとき
         render json: { errors: [t("files.nodes.move_conflict")] }, status: :unprocessable_content
+      end
+
+      def rename
+        node = editable_children!(Node.kept, [params[:id]]).first
+        node.rename!(params[:name], actor: current_tenant_user)
+        head :no_content
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
+      rescue ActiveRecord::RecordNotUnique
+        render json: { errors: [t("files.nodes.name_conflict")] }, status: :unprocessable_content
+      end
+
+      def trash
+        Node.trash!(editable_children!(Node.kept, params[:node_ids]), actor: current_tenant_user)
+        head :no_content
+      end
+
+      # 戻せるのは、ゴミ箱に出ているもの（削除したときに選んだもの）だけ。その中にあったものは一緒に戻る
+      def restore
+        Node.restore!(editable_children!(Node.trash_roots, params[:node_ids]), actor: current_tenant_user)
+        head :no_content
+      rescue Node::OperationError => e
+        render json: { errors: e.messages }, status: :unprocessable_content
       end
 
       # ダイレクトアップロードの1段目。確かめてから blob を作り、ブラウザが中身を送る先を返す。
@@ -78,6 +95,23 @@ module Files
           expires_in: 5.minutes, disposition: :attachment, filename: ActiveStorage::Filename.new(file.name),
         )
         redirect_to url, allow_other_host: true
+      end
+
+      private
+
+      # 名前の変更・移動・削除・復元は、どれも親フォルダの編集権限が要る（doc/files.md）。
+      # also には、移動先など、親と一緒に編集権限を確かめるフォルダを渡す
+      def editable_children!(scope, ids, also: [])
+        ids = Array(ids).map(&:to_i).uniq
+        nodes = scope.where(id: ids).includes(:parent).to_a
+        raise ActiveRecord::RecordNotFound if nodes.empty? || nodes.size != ids.size || nodes.any?(&:root?)
+
+        folders = [*also, *nodes.map(&:parent)].uniq
+        permissions = access.effective_permissions(folders)
+        raise ActiveRecord::RecordNotFound unless folders.all? { permissions[it].readable? }
+        raise Forbidden unless folders.all? { permissions[it].editable? }
+
+        nodes
       end
     end
   end

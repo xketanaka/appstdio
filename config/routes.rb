@@ -52,11 +52,14 @@ Rails.application.routes.draw do
         resources :nodes, only: [] do
           collection do
             post :move
+            post :trash
+            post :restore
             post :prepare_upload
             post :upload
           end
           member do
             get :download
+            patch :rename
           end
         end
         get "shared" => "shared_items#index"
