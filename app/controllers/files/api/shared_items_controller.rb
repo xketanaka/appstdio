@@ -6,7 +6,7 @@ module Files
         permissions = access.effective_permissions(entries)
         ActiveRecord::Associations::Preloader.new(records: entries, associations: :creator).call
 
-        render json: { entries: entries.map { |node| entry_json(node, permissions[node].readable?) } }
+        render json: { entries: entries.map { |node| entry_json(node, permissions[node]) } }
       end
     end
   end

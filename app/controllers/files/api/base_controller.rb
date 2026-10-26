@@ -26,6 +26,25 @@ module Files
         @access ||= Access.new(current_tenant_user, privileged: privileged_mode?)
       end
 
+      # 1ファイルの大きさの上限と、容量の残りを確かめる。アップロード（新しいファイル・新しい版）の1段目で使う
+      def upload_size_errors(byte_size)
+        max = Settings.files.max_upload_bytes
+        errors = []
+        errors << t("files.nodes.too_large", max: helpers.number_to_human_size(max)) if byte_size > max
+        errors << t("files.nodes.storage_full") if byte_size > current_tenant.files_setting.remaining_bytes
+        errors
+      end
+
+      # ダイレクトアップロードの1段目の応答。blob を作り、ブラウザが中身を送る先を返す。
+      # 形は @rails/activestorage の DirectUpload が読む形（Active Storage 標準の受け口と同じ）
+      def render_direct_upload(blob_params)
+        blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_params.to_h.symbolize_keys)
+        render json: {
+          signed_id: blob.signed_id,
+          direct_upload: { url: blob.service_url_for_direct_upload, headers: blob.service_headers_for_direct_upload },
+        }
+      end
+
       # 中に作るフォルダ。閲覧できなければ 404、閲覧できても編集できなければ 403
       def editable_folder!(id)
         folder = Node.kept.folder.find(id)
@@ -49,12 +68,14 @@ module Files
       end
 
       # 閲覧できない項目は名前だけを返す。画面で隠すだけでは、応答を見れば分かってしまう
-      def entry_json(node, readable)
+      def entry_json(node, permission)
+        readable = permission.readable?
         {
           id: node.id,
           kind: node.kind,
           name: node.name,
-          readable: readable,
+          readable:,
+          editable: permission.editable?,
           owner: (node.creator&.display_name if readable),
           updated_at: (node.updated_at if readable),
           byte_size: (node.byte_size if readable && node.file?),

@@ -179,4 +179,35 @@ class Files::NodeTest < ActiveSupport::TestCase
       assert_equal ["元の場所に「メモ.txt」と同じ名前のものがあります。"], error.messages
     end
   end
+
+  describe "#add_version!" do
+    setup do
+      first = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版1"), filename: "見積.txt")
+      @file = Files::Node.create_file!(parent: @root, blob: first, creator: @member)
+    end
+
+    test "番号を1つ進めて最新にし、容量を数えて操作履歴を残す" do
+      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版2の中身"), filename: "別名.txt")
+      used = @tenant.files_setting.reload.storage_used_bytes
+
+      version = @file.add_version!(blob:, creator: @member)
+
+      assert_equal [2, version.id, blob.byte_size], [version.number, @file.reload.current_version_id, @file.byte_size]
+      assert_equal "見積.txt", @file.name, "上げたファイルの名前は使わない"
+      assert_equal used + blob.byte_size, @tenant.files_setting.reload.storage_used_bytes
+      assert_equal [{ "version" => 2 }], Files::Activity.updated.pluck(:detail)
+    end
+
+    test "古い版の中身で最新に戻せる。中身は古い版と共有し、古い版を消しても残る" do
+      old = @file.current_version
+      @file.add_version!(blob: ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版2"), filename: "a.txt"), creator: @member)
+
+      restored = @file.add_version!(blob: old.body.blob, creator: @member, restored_from: old.number)
+      old.body.purge
+
+      assert_equal 3, restored.number
+      assert_equal "版1", restored.reload.body.download.force_encoding("UTF-8")
+      assert_equal({ "version" => 3, "restored_from" => 1 }, Files::Activity.updated.order(:id).last.detail)
+    end
+  end
 end
