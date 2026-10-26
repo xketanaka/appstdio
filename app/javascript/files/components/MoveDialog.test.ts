@@ -16,7 +16,7 @@ const folder = (id: number, label: string, children: { id: number, name: string 
   via_shared: false,
   can_edit: true,
   entries: children.map((child) => ({
-    ...child, kind: "folder", readable: true, owner: null, updated_at: null, byte_size: null,
+    ...child, kind: "folder", readable: true, editable: true, owner: null, updated_at: null, byte_size: null,
   })),
   ...overrides,
 })

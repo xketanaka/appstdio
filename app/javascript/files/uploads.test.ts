@@ -40,7 +40,7 @@ beforeEach(() => {
 
 test("送り終えたら登録し、完了にする", async () => {
   directUpload.next.push(stored)
-  vi.mocked(api.completeUpload).mockResolvedValue({ id: 1, name: "報告書.txt" })
+  vi.mocked(api.completeUpload).mockResolvedValue({ id: 1, name: "報告書.txt", version: null })
 
   uploadFiles([file("報告書.txt")], { id: 7, label: "営業" })
   await flushPromises()
@@ -62,7 +62,7 @@ test("1段目で断られたら、サーバが返した理由を出し、次の�
     done("Error creating Blob")
   })
   directUpload.next.push(stored)
-  vi.mocked(api.completeUpload).mockResolvedValue({ id: 2, name: "b.txt" })
+  vi.mocked(api.completeUpload).mockResolvedValue({ id: 2, name: "b.txt", version: null })
 
   uploadFiles([file("a.txt"), file("b.txt")], { id: 7, label: "営業" })
   await flushPromises()
@@ -75,8 +75,8 @@ test("1段目で断られたら、サーバが返した理由を出し、次の�
 
 test("片付けると、終わったものだけ一覧から消える", () => {
   uploads.push(
-    { id: 1, name: "a", size: 1, loaded: 1, destination: "", status: "done", message: null },
-    { id: 2, name: "b", size: 1, loaded: 0, destination: "", status: "uploading", message: null },
+    { id: 1, name: "a", size: 1, loaded: 1, destination: "", status: "done", message: null, saved: null },
+    { id: 2, name: "b", size: 1, loaded: 0, destination: "", status: "uploading", message: null, saved: null },
   )
 
   clearFinished()

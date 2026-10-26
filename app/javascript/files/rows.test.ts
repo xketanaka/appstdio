@@ -2,7 +2,7 @@ import { expect, test } from "vitest"
 import { entryRow, trashRow } from "./rows"
 
 const entry = {
-  id: 1, kind: "folder" as const, name: "営業", readable: true,
+  id: 1, kind: "folder" as const, name: "営業", readable: true, editable: true,
   owner: "管理者", updated_at: "2026-10-05T19:20:00+09:00", byte_size: null,
 }
 

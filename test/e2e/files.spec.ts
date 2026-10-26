@@ -198,3 +198,40 @@ test("名前を変え、削除して知らせから戻し、ゴミ箱からも�
   await page.locator("#side-pane").getByRole("link", { name: "マイドライブ" }).click()
   await expect(unneeded).toHaveCount(1)
 })
+
+test("同じ名前で上げると新しい版になり、版の履歴でラベルを付けて古い版を最新に戻せる", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const list = page.locator("#file-list")
+  const spec = list.getByRole("row", { name: /仕様書\.txt/ })
+
+  await page.locator("summary", { hasText: "作成" }).click()
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("button", { name: "ファイルをアップロード" }).click(),
+  ])
+  await chooser.setFiles({ name: "仕様書.txt", mimeType: "text/plain", buffer: Buffer.from("第2版の中身") })
+  await expect(page.getByRole("region", { name: "アップロード" })).toContainText("「仕様書.txt」の版2として保存しました")
+  await expect(spec).toHaveCount(1)
+
+  await spec.getByRole("group").click()
+  await spec.getByRole("button", { name: "版の履歴" }).click()
+  const panel = page.getByRole("dialog", { name: "「仕様書.txt」の版の履歴" })
+  const first = panel.getByRole("listitem").filter({ hasText: "版1" })
+  await expect(panel.getByRole("listitem").first()).toContainText("版2最新")
+
+  await first.getByRole("button", { name: "ラベルを付ける" }).click()
+  await first.getByLabel("ラベル").fill("初版")
+  await first.getByRole("button", { name: "保存" }).click()
+  await expect(first).toContainText("初版")
+
+  await first.getByRole("button", { name: "この版を最新に戻す" }).click()
+  await expect(page.getByRole("status").filter({ hasText: "版1の中身で、版3を作りました" })).toBeVisible()
+  await expect(panel.getByRole("listitem").first()).toContainText("版3最新")
+  await panel.getByRole("button", { name: "版の履歴を閉じる" }).click()
+
+  const [download] = await Promise.all([page.waitForEvent("download"), spec.dblclick()])
+  const chunks: Buffer[] = []
+  for await (const chunk of await download.createReadStream()) chunks.push(chunk as Buffer)
+  expect(Buffer.concat(chunks).toString()).toBe("初版の中身")
+})

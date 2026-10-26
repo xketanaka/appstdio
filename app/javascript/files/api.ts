@@ -14,10 +14,26 @@ export type Entry = {
   kind: "folder" | "file"
   name: string
   readable: boolean
+  // そのもの自身を編集できるか（ファイルなら新しい版を足せるか）
+  editable: boolean
   owner: string | null
   updated_at: string | null
   byte_size: number | null
 }
+
+export type Version = {
+  id: number
+  number: number
+  label: string | null
+  byte_size: number
+  creator: string | null
+  created_at: string
+  current: boolean
+  purged: boolean
+}
+
+// アップロードを登録した結果。同じ名前のファイルの新しい版になったときは、その版の番号が入る
+export type Uploaded = { id: number, name: string, version: number | null }
 
 export type TrashEntry = {
   id: number
@@ -75,6 +91,8 @@ async function request<T>(method: string, path: string, body?: object): Promise<
 
 // ダウンロードはサーバが保存先の期限付き URL へ転送するので、この URL へ移るだけでよい
 export const downloadUrl = (id: number) => `/files/api/nodes/${id}/download`
+export const versionDownloadUrl = (nodeId: number, versionId: number) =>
+  `/files/api/nodes/${nodeId}/versions/${versionId}/download`
 
 export const api = {
   tree: () => request<Tree>("GET", "/files/api/tree"),
@@ -88,7 +106,14 @@ export const api = {
   createFolder: (parentId: number, name: string) =>
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
   completeUpload: (parentId: number, signedBlobId: string) =>
-    request<{ id: number, name: string }>("POST", "/files/api/nodes/upload", { parent_id: parentId, signed_blob_id: signedBlobId }),
+    request<Uploaded>("POST", "/files/api/nodes/upload", { parent_id: parentId, signed_blob_id: signedBlobId }),
+  versions: (nodeId: number) => request<{ can_edit: boolean, versions: Version[] }>("GET", `/files/api/nodes/${nodeId}/versions`),
+  addVersion: (nodeId: number, signedBlobId: string) =>
+    request<Uploaded>("POST", `/files/api/nodes/${nodeId}/versions`, { signed_blob_id: signedBlobId }),
+  updateVersionLabel: (nodeId: number, versionId: number, label: string) =>
+    request<void>("PATCH", `/files/api/nodes/${nodeId}/versions/${versionId}`, { label }),
+  restoreVersion: (nodeId: number, versionId: number) =>
+    request<{ version: number }>("POST", `/files/api/nodes/${nodeId}/versions/${versionId}/restore`),
   rename: (id: number, name: string) => request<void>("PATCH", `/files/api/nodes/${id}/rename`, { name }),
   trashNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/trash", { node_ids: nodeIds }),
   restoreNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/restore", { node_ids: nodeIds }),
