@@ -10,17 +10,27 @@ ja:
         files/node:
           move_into_itself: "「%{name}」は、それ自身やその中のフォルダへは移動できません。"
           name_taken_at_destination: "移動先に「%{name}」と同じ名前のものがあります。"
+          restore_parent_trashed: "「%{name}」の元のフォルダ「%{parent}」がゴミ箱にあります。先にそのフォルダを元に戻してください。"
+          restore_name_taken: "元の場所に「%{name}」と同じ名前のものがあります。"
           attributes:
             name:
               taken: "が同じフォルダの中のものと重複しています。"
               invalid: "に「/」は使えません。"
               exclusion: "に「.」と「..」は使えません。"
+        group:
+          attributes:
+            name:
+              taken: "が同じ上位グループの中のものと重複しています。"
+            parent:
+              invalid: "には、自分自身とその下位・「全員」・利用停止中のグループを選べません。"
         tenant_setting:
           attributes:
             logo:
               invalid_content_type: "は PNG・JPEG・GIF・WebP のいずれかにしてください。"
               too_large: "は%{count}MB以下にしてください。"
     models:
+      group: "グループ"
+      group_label: "ラベル"
       tenant: "テナント"
       operator: "運営者"
       user: "ユーザ"
@@ -66,6 +76,11 @@ ja:
         enabled: "ファイル管理"
       files/node:
         name: "名前"
+      group:
+        name: "グループ名"
+        parent: "上位グループ"
+      group_label:
+        name: "ラベル"
       tenant_user:
         id: "ID"
         tenant: "テナント"

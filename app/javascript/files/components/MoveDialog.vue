@@ -2,7 +2,7 @@
 import { computed, ref, shallowRef } from "vue"
 import { api, NotFoundError, type FolderLink, type FolderPayload, type FolderSource } from "../api"
 import { t } from "../i18n"
-import { moveErrorMessages, moveItems } from "../store"
+import { moveItems, operationErrorMessages } from "../store"
 import FileIcon from "./FileIcon.vue"
 
 type Item = { id: number, name: string }
@@ -71,7 +71,7 @@ const submit = async () => {
     close()
     emit("moved")
   } catch (error) {
-    errors.value = moveErrorMessages(error)
+    errors.value = operationErrorMessages("move", error)
   } finally {
     busy.value = false
   }

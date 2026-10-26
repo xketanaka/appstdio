@@ -414,6 +414,71 @@ ALTER SEQUENCE public.files_versions_id_seq OWNED BY public.files_versions.id;
 
 
 --
+-- Name: group_labelings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_labelings (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    group_id bigint NOT NULL,
+    group_label_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: group_labelings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.group_labelings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: group_labelings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.group_labelings_id_seq OWNED BY public.group_labelings.id;
+
+
+--
+-- Name: group_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_labels (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    name character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: group_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.group_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: group_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.group_labels_id_seq OWNED BY public.group_labels.id;
+
+
+--
 -- Name: group_members; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -423,7 +488,9 @@ CREATE TABLE public.group_members (
     group_id bigint NOT NULL,
     tenant_user_id bigint NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    role character varying DEFAULT 'member'::character varying NOT NULL,
+    CONSTRAINT group_members_role_check CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'leader'::character varying])::text[])))
 );
 
 
@@ -458,7 +525,12 @@ CREATE TABLE public.groups (
     name character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT groups_kind_check CHECK (((kind)::text = ANY ((ARRAY['department'::character varying, 'everyone'::character varying])::text[])))
+    suspended_at timestamp(6) without time zone,
+    suspended_by_id bigint,
+    suspended_path character varying[],
+    suspension_root_id bigint,
+    CONSTRAINT groups_kind_check CHECK (((kind)::text = ANY ((ARRAY['department'::character varying, 'everyone'::character varying])::text[]))),
+    CONSTRAINT groups_suspension_check CHECK ((((suspended_at IS NULL) = (suspension_root_id IS NULL)) AND ((suspended_at IS NULL) = (suspended_path IS NULL))))
 );
 
 
@@ -726,6 +798,20 @@ ALTER TABLE ONLY public.files_versions ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: group_labelings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labelings ALTER COLUMN id SET DEFAULT nextval('public.group_labelings_id_seq'::regclass);
+
+
+--
+-- Name: group_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labels ALTER COLUMN id SET DEFAULT nextval('public.group_labels_id_seq'::regclass);
+
+
+--
 -- Name: group_members id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -845,6 +931,22 @@ ALTER TABLE ONLY public.files_settings
 
 ALTER TABLE ONLY public.files_versions
     ADD CONSTRAINT files_versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: group_labelings group_labelings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labelings
+    ADD CONSTRAINT group_labelings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: group_labels group_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labels
+    ADD CONSTRAINT group_labels_pkey PRIMARY KEY (id);
 
 
 --
@@ -1073,6 +1175,34 @@ CREATE INDEX index_files_versions_on_tenant_id ON public.files_versions USING bt
 
 
 --
+-- Name: index_group_labelings_on_group_id_and_group_label_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_group_labelings_on_group_id_and_group_label_id ON public.group_labelings USING btree (group_id, group_label_id);
+
+
+--
+-- Name: index_group_labelings_on_group_label_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_group_labelings_on_group_label_id ON public.group_labelings USING btree (group_label_id);
+
+
+--
+-- Name: index_group_labelings_on_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_group_labelings_on_tenant_id ON public.group_labelings USING btree (tenant_id);
+
+
+--
+-- Name: index_group_labels_on_tenant_id_and_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_group_labels_on_tenant_id_and_name ON public.group_labels USING btree (tenant_id, name);
+
+
+--
 -- Name: index_group_members_on_group_id_and_tenant_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1094,6 +1224,20 @@ CREATE INDEX index_group_members_on_tenant_user_id ON public.group_members USING
 
 
 --
+-- Name: index_groups_on_active_name_under_parent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_groups_on_active_name_under_parent ON public.groups USING btree (tenant_id, parent_id, name) WHERE ((parent_id IS NOT NULL) AND (suspended_at IS NULL));
+
+
+--
+-- Name: index_groups_on_active_root_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_groups_on_active_root_name ON public.groups USING btree (tenant_id, name) WHERE ((parent_id IS NULL) AND (suspended_at IS NULL));
+
+
+--
 -- Name: index_groups_on_everyone_per_tenant; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1101,10 +1245,10 @@ CREATE UNIQUE INDEX index_groups_on_everyone_per_tenant ON public.groups USING b
 
 
 --
--- Name: index_groups_on_tenant_id_and_name; Type: INDEX; Schema: public; Owner: -
+-- Name: index_groups_on_suspension_root_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_groups_on_tenant_id_and_name ON public.groups USING btree (tenant_id, name) WHERE (parent_id IS NULL);
+CREATE INDEX index_groups_on_suspension_root_id ON public.groups USING btree (suspension_root_id);
 
 
 --
@@ -1115,10 +1259,10 @@ CREATE INDEX index_groups_on_tenant_id_and_parent_id ON public.groups USING btre
 
 
 --
--- Name: index_groups_on_tenant_id_and_parent_id_and_name; Type: INDEX; Schema: public; Owner: -
+-- Name: index_groups_on_tenant_id_and_suspended_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_groups_on_tenant_id_and_parent_id_and_name ON public.groups USING btree (tenant_id, parent_id, name) WHERE (parent_id IS NOT NULL);
+CREATE INDEX index_groups_on_tenant_id_and_suspended_at ON public.groups USING btree (tenant_id, suspended_at) WHERE (suspended_at IS NOT NULL);
 
 
 --
@@ -1201,6 +1345,14 @@ ALTER TABLE ONLY public.groups
 
 
 --
+-- Name: groups fk_rails_1e46d54d65; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT fk_rails_1e46d54d65 FOREIGN KEY (suspension_root_id) REFERENCES public.groups(id) ON DELETE SET NULL;
+
+
+--
 -- Name: files_nodes fk_rails_21a3ca0c04; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1273,6 +1425,22 @@ ALTER TABLE ONLY public.files_activities
 
 
 --
+-- Name: group_labels fk_rails_5fefa46e60; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labels
+    ADD CONSTRAINT fk_rails_5fefa46e60 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_labelings fk_rails_6de1d94f0c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labelings
+    ADD CONSTRAINT fk_rails_6de1d94f0c FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: files_settings fk_rails_782386ed63; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1286,6 +1454,14 @@ ALTER TABLE ONLY public.files_settings
 
 ALTER TABLE ONLY public.group_members
     ADD CONSTRAINT fk_rails_7a0abeaa65 FOREIGN KEY (tenant_user_id) REFERENCES public.tenant_users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_labelings fk_rails_7afaf5f4e7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labelings
+    ADD CONSTRAINT fk_rails_7afaf5f4e7 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -1310,6 +1486,14 @@ ALTER TABLE ONLY public.files_activities
 
 ALTER TABLE ONLY public.active_storage_variant_records
     ADD CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: group_labelings fk_rails_a3b1c3286d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_labelings
+    ADD CONSTRAINT fk_rails_a3b1c3286d FOREIGN KEY (group_label_id) REFERENCES public.group_labels(id) ON DELETE CASCADE;
 
 
 --
@@ -1414,6 +1598,14 @@ ALTER TABLE ONLY public.group_members
 
 ALTER TABLE ONLY public.files_nodes
     ADD CONSTRAINT fk_rails_f66ac37be2 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: groups fk_rails_f8349f70ea; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT fk_rails_f8349f70ea FOREIGN KEY (suspended_by_id) REFERENCES public.tenant_users(id) ON DELETE SET NULL;
 
 
 --
@@ -1629,6 +1821,74 @@ CREATE POLICY files_versions_update ON public.files_versions FOR UPDATE TO appst
 
 
 --
+-- Name: group_labelings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.group_labelings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: group_labelings group_labelings_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labelings_delete ON public.group_labelings FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labelings group_labelings_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labelings_insert ON public.group_labelings FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labelings group_labelings_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labelings_select ON public.group_labelings FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labelings group_labelings_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labelings_update ON public.group_labelings FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labels; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.group_labels ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: group_labels group_labels_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labels_delete ON public.group_labels FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labels group_labels_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labels_insert ON public.group_labels FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labels group_labels_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labels_select ON public.group_labels FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: group_labels group_labels_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY group_labels_update ON public.group_labels FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
 -- Name: group_members; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1778,6 +2038,7 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20261026100000'),
+('20261022100000'),
 ('20261021120000'),
 ('20261012100000'),
 ('20261012064301'),

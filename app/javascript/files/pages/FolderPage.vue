@@ -7,10 +7,12 @@ import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
 import MoveDialog from "../components/MoveDialog.vue"
 import NewFolderDialog from "../components/NewFolderDialog.vue"
+import RenameDialog from "../components/RenameDialog.vue"
+import SelectionToolbar from "../components/SelectionToolbar.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
 import { endDrag, startDrag, useDropTargets } from "../dnd"
-import { changed, showFolder } from "../store"
+import { changed, notifyOperationError, showFolder, trashItems } from "../store"
 import { useLoad } from "../useLoad"
 import { uploadFiles } from "../uploads"
 import { useSelection } from "../useSelection"
@@ -39,12 +41,30 @@ const download = (row: Row) => {
   window.location.href = downloadUrl(row.id)
 }
 
-// ダイアログが開いているときの Esc はダイアログを閉じるだけにする
-const clearOnEscape = (event: KeyboardEvent) => {
-  if (event.key === "Escape" && !document.querySelector("dialog[open]")) clear()
+const selectedRows = () => rows.value.filter((row) => selected.has(row.id))
+
+const trash = async (items: Row[]) => {
+  try {
+    await trashItems(items)
+  } catch (error) {
+    notifyOperationError("trash", error)
+  }
 }
-onMounted(() => document.addEventListener("keydown", clearOnEscape))
-onBeforeUnmount(() => document.removeEventListener("keydown", clearOnEscape))
+
+// Esc で選択を解き、Delete（Mac は Backspace）で選んだものをゴミ箱へ入れる。
+// ダイアログが開いているときと、文字を入力しているときは、その操作に任せる
+const onKeydown = (event: KeyboardEvent) => {
+  if (document.querySelector("dialog[open]") || (event.target as Element).closest("input, textarea")) return
+  if (event.key === "Escape") clear()
+  else if ((event.key === "Delete" || event.key === "Backspace") && selected.size > 0 && data.value?.can_edit) {
+    event.preventDefault()
+    trash(selectedRows())
+  }
+}
+onMounted(() => document.addEventListener("keydown", onKeydown))
+onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown))
+
+const renameDialog = ref<InstanceType<typeof RenameDialog> | null>(null)
 
 // 選んでいない行をドラッグしたら、その行だけを選び直して動かす（Google ドライブと同じ）
 const dragRows = (row: Row, event: DragEvent) => {
@@ -57,7 +77,7 @@ const dragRows = (row: Row, event: DragEvent) => {
 const { over: overCrumb, handlers: crumbTarget } = useDropTargets()
 
 const moveDialog = ref<InstanceType<typeof MoveDialog> | null>(null)
-const moveSelected = () => moveDialog.value?.open(rows.value.filter((row) => selected.has(row.id)))
+const moveSelected = () => moveDialog.value?.open(selectedRows())
 const moveRow = (row: Row) => {
   select(row.id, { toggle: false, range: false })
   moveDialog.value?.open([row])
@@ -187,12 +207,14 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       :empty="t('folder.empty')"
       selectable
       :selected="selected"
-      :can-move="data.can_edit"
+      :can-edit="data.can_edit"
       :draggable="data.can_edit"
       @select="select"
       @open="open"
       @clear="clear"
       @move="moveRow"
+      @rename="renameDialog?.open($event)"
+      @trash="trash([$event])"
       @dragstart="dragRows"
       @dragend="endDrag"
       @download="download"
@@ -201,32 +223,10 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
         v-if="selected.size > 0"
         #toolbar
       >
-        <div
-          role="toolbar"
-          :aria-label="t('selection.count', { count: selected.size })"
-          class="flex items-center gap-2 text-sm text-slate-800"
+        <SelectionToolbar
+          :count="selected.size"
+          @clear="clear"
         >
-          <button
-            type="button"
-            class="cursor-pointer rounded-full p-1.5 text-slate-600 hover:bg-slate-900/5"
-            :aria-label="t('selection.clear')"
-            @click="clear"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              class="size-4"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                d="M6 6l12 12M18 6L6 18"
-              />
-            </svg>
-          </button>
-          <span class="mr-2">{{ t("selection.count", { count: selected.size }) }}</span>
           <button
             v-if="data.can_edit"
             type="button"
@@ -235,7 +235,15 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
           >
             {{ t("selection.move") }}
           </button>
-        </div>
+          <button
+            v-if="data.can_edit"
+            type="button"
+            class="btn btn-danger btn-sm"
+            @click="trash(selectedRows())"
+          >
+            {{ t("selection.trash") }}
+          </button>
+        </SelectionToolbar>
       </template>
     </FileList>
       <p
@@ -251,6 +259,7 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       :parent-id="data.folder.id"
       @created="changed"
     />
+    <RenameDialog ref="renameDialog" />
     <MoveDialog
       ref="moveDialog"
       :from="data.folder"

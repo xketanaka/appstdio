@@ -1,0 +1,19 @@
+<%# locals: (tenant_user_id: nil, name: nil, email: nil, leader: false) %>
+<%# 引数なしで描くと、ダイアログで足す行の元（group_members.ts が名前と送信名を入れる） %>
+<tr class="border-t border-slate-200" data-member-row="<%= tenant_user_id %>">
+  <td class="py-2 pr-3">
+    <span class="block truncate" data-name><%= name %></span>
+    <span class="block truncate text-xs text-slate-500" data-email><%= email %></span>
+  </td>
+  <td class="w-px py-2 pr-2 whitespace-nowrap">
+    <label class="flex items-center gap-1.5 text-sm text-slate-600">
+      <%= hidden_field_tag "group[members][#{tenant_user_id}]", "member", id: nil %>
+      <%= check_box_tag "group[members][#{tenant_user_id}]", "leader", leader, id: nil, class: "accent-primary-600" %>
+      <%= t(".leader") %>
+    </label>
+  </td>
+  <td class="w-px py-2 text-right whitespace-nowrap">
+    <%= button_tag t(".remove"), type: "button", data: { remove_member: true },
+          class: "cursor-pointer rounded-full px-3 py-1 text-sm text-slate-500 hover:bg-slate-900/5" %>
+  </td>
+</tr>

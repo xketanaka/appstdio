@@ -1,12 +1,14 @@
-<details id="group-parent" class="group mb-6">
+<%# locals: (form:) %>
+<% path = @group.parent ? @group.parent.self_and_ancestors.reverse : [] %>
+<details id="group-parent" class="group mb-6" <%= "open" if @group.errors.include?(:parent) %>>
   <summary class="list-none [&::-webkit-details-marker]:hidden">
     <span class="mb-1.5 block text-sm font-semibold"><%= t(".label") %></span>
     <span class="flex items-center justify-between gap-4">
       <span class="min-w-0 truncate">
-        <% if @parent_path.empty? %>
+        <% if path.empty? %>
           <span class="text-slate-500"><%= t(".no_parent") %></span>
         <% else %>
-          <% @parent_path.each_with_index do |group, i| %>
+          <% path.each_with_index do |group, i| %>
             <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
             <span><%= group.name %></span>
           <% end %>
@@ -15,9 +17,9 @@
       <span class="btn btn-secondary btn-sm group-open:hidden"><%= t(".change") %></span>
     </span>
   </summary>
-  <%= label_tag :group_parent_id, t(".label"), class: "sr-only" %>
-  <%= select_tag :group_parent_id,
-        options_for_select(@parent_options, @parent_path.last&.id),
-        include_blank: t(".no_parent"),
+  <%= form.label :parent_id, t(".label"), class: "sr-only" %>
+  <%# グループ管理者は最上位に置けない。もともと最上位のグループは、そのままにはできる %>
+  <%= form.select :parent_id, group_parent_options(@group, @children),
+        { include_blank: (t(".no_parent") if @scope.all? || (@group.persisted? && @group.parent_id_was.nil?)) },
         class: "input mt-2" %>
 </details>

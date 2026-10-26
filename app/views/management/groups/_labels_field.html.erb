@@ -1,11 +1,12 @@
+<%# locals: (form:) %>
 <%# 文字を打つ欄とチップは label-input（app/javascript/components/label_input.ts）が作る。
     中の input は JavaScript が無いときのカンマ区切りの入力欄を兼ねる %>
 <div class="mb-5">
-  <%= label_tag :group_labels, t(".label"), class: "mb-1.5 block text-sm font-semibold" %>
-  <%= tag.label_input data: { suggestions: @label_names.to_json,
+  <%= form.label :label_names, t(".label"), class: "mb-1.5 block text-sm font-semibold" %>
+  <%= tag.label_input data: { suggestions: GroupLabel.order(:name).pluck(:name).to_json,
                               add_text: t(".add", name: "%{name}"),
                               remove_text: t(".remove", name: "%{name}") } do %>
-    <%= text_field_tag :group_labels, @labels.join(", "), class: "input" %>
+    <%= form.text_field :label_names, value: @label_names.join(", "), class: "input" %>
   <% end %>
   <p class="mt-1 text-xs text-slate-500"><%= t(".hint") %></p>
 </div>

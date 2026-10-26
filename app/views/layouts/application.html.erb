@@ -88,6 +88,8 @@
           <%= render "partial/drawer_item", label: t("menus.chats"), path: nil %>
           <% if current_tenant_user&.admin_or_owner? %>
             <%= render "partial/drawer_item", label: t("menus.management"), path: management_root_path %>
+          <% elsif current_tenant_user&.group_leader? %>
+            <%= render "partial/drawer_item", label: t("menus.management"), path: management_groups_path %>
           <% end %>
         <% end %>
       <% end %>

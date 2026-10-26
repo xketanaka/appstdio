@@ -57,7 +57,7 @@ describe("選べる一覧", () => {
         empty: "",
         selectable: true,
         selected: new Set(selected),
-        canMove: true,
+        canEdit: true,
       },
       slots,
       global: { plugins: [router] },
