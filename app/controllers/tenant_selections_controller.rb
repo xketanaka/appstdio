@@ -27,9 +27,9 @@ class TenantSelectionsController < ApplicationController
     redirect_to(session.delete(:return_to) || top_page_path)
   end
 
-  # RLS により、ここで見えるのは自分自身の所属行だけ
+  # テナントをまたいで引くのはここだけ（TenantUser.own_memberships）
   def memberships
-    TenantUser.active.where(user_id: session[:current_user_id])
+    TenantUser.own_memberships.active
   end
 
   def sorted_memberships

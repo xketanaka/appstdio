@@ -8,30 +8,18 @@ module TenantContextFilter
   private
 
   def with_tenant_context
-    # 順序に依存している。tenant_users には RLS が掛かっているため、
-    # 先に app.user_id を設定しないと自分の所属行すら見えない
-    TenantContext.apply(user: session[:current_user_id])
+    user_id = session[:current_user_id]
+    tenant_id = session[:current_tenant_id]
 
-    @current_tenant_user = authenticated_tenant_user
-    if @current_tenant_user
-      TenantContext.apply(
-        tenant: @current_tenant_user.tenant_id,
-        user: @current_tenant_user.user_id,
-      )
-    end
+    # tenant_users の RLS は今のテナントの行しか見せないので、セッションのテナントを先に設定してから
+    # 自分の所属行を探す。所属していなければ（有効でなければ）見つからないので、テナントの設定を外す
+    TenantContext.apply(tenant: tenant_id, user: user_id)
+    @current_tenant_user = TenantUser.active.find_by(user_id:) if user_id.present? && tenant_id.present?
+    TenantContext.apply(user: user_id) unless @current_tenant_user
 
     yield
   ensure
     # インスタンス変数と違い DB コネクションは使い回されるので明示的に解除する
     TenantContext.clear
-  end
-
-  def authenticated_tenant_user
-    return if session[:current_user_id].blank? || session[:current_tenant_id].blank?
-
-    TenantUser.active.find_by(
-      tenant_id: session[:current_tenant_id],
-      user_id: session[:current_user_id],
-    )
   end
 end

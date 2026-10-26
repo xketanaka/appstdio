@@ -651,6 +651,19 @@ CREATE TABLE public.tenant_users (
 
 
 --
+-- Name: own_memberships(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.own_memberships() RETURNS SETOF public.tenant_users
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'public'
+    AS $$
+    SELECT * FROM tenant_users
+     WHERE user_id = NULLIF(current_setting('app.user_id', true), '')::bigint
+  $$;
+
+
+--
 -- Name: tenant_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -2007,7 +2020,7 @@ CREATE POLICY tenant_users_insert ON public.tenant_users FOR INSERT TO appstdio_
 -- Name: tenant_users tenant_users_select; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY tenant_users_select ON public.tenant_users FOR SELECT TO appstdio_app USING (((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) OR (user_id = (NULLIF(current_setting('app.user_id'::text, true), ''::text))::bigint)));
+CREATE POLICY tenant_users_select ON public.tenant_users FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
 
 
 --
@@ -2024,6 +2037,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261026100000'),
 ('20261022100000'),
 ('20261021120000'),
 ('20261012100000'),

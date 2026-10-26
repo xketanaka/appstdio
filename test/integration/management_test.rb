@@ -58,7 +58,6 @@ class ManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "利用者管理には、自分の他のテナントでの所属を出さない" do
-    # tenant_users は RLS でも、ログインしている人の他のテナントでの所属が見える
     other = Tenant.setup!(name: "テナントB")
     TenantContext.switch(tenant: other) do
       TenantUser.create!(tenant: other, user: @owner, display_name: "Bのオーナーさん", role: :owner, status: :active)
