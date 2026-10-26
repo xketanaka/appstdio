@@ -7,7 +7,7 @@ module Files
       # 移動元の親フォルダと移動先の、両方の編集権限が要る（doc/files.md の「移動」）
       def move
         destination = Node.kept.folder.find(params[:destination_id])
-        nodes = editable_children!(Node.kept, also: [destination])
+        nodes = editable_children!(Node.kept, params[:node_ids], also: [destination])
 
         Node.move!(nodes, to: destination, actor: current_tenant_user)
         head :no_content
@@ -19,7 +19,7 @@ module Files
       end
 
       def rename
-        node = editable_children!(Node.kept, ids: [params[:id]]).first
+        node = editable_children!(Node.kept, [params[:id]]).first
         node.rename!(params[:name], actor: current_tenant_user)
         head :no_content
       rescue ActiveRecord::RecordInvalid => e
@@ -29,13 +29,13 @@ module Files
       end
 
       def trash
-        Node.trash!(editable_children!(Node.kept), actor: current_tenant_user)
+        Node.trash!(editable_children!(Node.kept, params[:node_ids]), actor: current_tenant_user)
         head :no_content
       end
 
       # 戻せるのは、ゴミ箱に出ているもの（削除したときに選んだもの）だけ。その中にあったものは一緒に戻る
       def restore
-        Node.restore!(editable_children!(Node.trash_roots), actor: current_tenant_user)
+        Node.restore!(editable_children!(Node.trash_roots, params[:node_ids]), actor: current_tenant_user)
         head :no_content
       rescue Node::OperationError => e
         render json: { errors: e.messages }, status: :unprocessable_content
@@ -101,7 +101,7 @@ module Files
 
       # 名前の変更・移動・削除・復元は、どれも親フォルダの編集権限が要る（doc/files.md）。
       # also には、移動先など、親と一緒に編集権限を確かめるフォルダを渡す
-      def editable_children!(scope, ids: params[:node_ids], also: [])
+      def editable_children!(scope, ids, also: [])
         ids = Array(ids).map(&:to_i).uniq
         nodes = scope.where(id: ids).includes(:parent).to_a
         raise ActiveRecord::RecordNotFound if nodes.empty? || nodes.size != ids.size || nodes.any?(&:root?)
