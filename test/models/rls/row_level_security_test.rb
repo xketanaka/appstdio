@@ -44,10 +44,48 @@ class RowLevelSecurityTest < ActiveSupport::TestCase
     assert_nil TenantUser.find_by(id: @membership_a.id)
   end
 
-  test "ユーザコンテキストだけでも自分自身の所属は参照できる" do
-    TenantContext.switch(user: @user_a) do
-      assert_equal [@tenant_a.id], TenantUser.pluck(:tenant_id)
+  test "自分の他のテナントでの所属も、テナントのコンテキストでは見えない" do
+    membership_a_in_b = TenantContext.switch(tenant: @tenant_b) do
+      TenantUser.create!(tenant: @tenant_b, user: @user_a, display_name: "BでのAさん", status: :active)
     end
+
+    TenantContext.switch(tenant: @tenant_a, user: @user_a) do
+      assert_equal [@membership_a.id], TenantUser.pluck(:id)
+      assert_nil TenantUser.find_by(id: membership_a_in_b.id)
+    end
+    TenantContext.switch(user: @user_a) do
+      assert_equal 0, TenantUser.count
+    end
+  end
+
+  test "own_memberships は自分の所属だけを、テナントをまたいで返す" do
+    membership_a_in_b = TenantContext.switch(tenant: @tenant_b) do
+      TenantUser.create!(tenant: @tenant_b, user: @user_a, display_name: "BでのAさん", status: :active)
+    end
+
+    TenantContext.switch(user: @user_a) do
+      assert_equal [@membership_a.id, membership_a_in_b.id].sort, TenantUser.own_memberships.pluck(:id).sort
+    end
+    TenantContext.switch(tenant: @tenant_b, user: @user_b) do
+      assert_equal [@membership_b.id], TenantUser.own_memberships.pluck(:id)
+    end
+    TenantContext.switch(tenant: @tenant_a) do
+      assert_empty TenantUser.own_memberships.pluck(:id), "app.user_id が未設定なら0件"
+    end
+  end
+
+  test "own_memberships の行は読み取り専用で、他のテナントの行を書き換えられない" do
+    membership_a_in_b = TenantContext.switch(tenant: @tenant_b) do
+      TenantUser.create!(tenant: @tenant_b, user: @user_a, display_name: "BでのAさん", status: :active)
+    end
+
+    TenantContext.switch(tenant: @tenant_a, user: @user_a) do
+      row = TenantUser.own_memberships.find(membership_a_in_b.id)
+      assert_raises(ActiveRecord::ReadOnlyRecord) { row.update!(role: :owner) }
+      # 読み取り専用を外しても、更新は tenant_users の RLS に掛かる
+      assert_equal 0, TenantUser.where(id: membership_a_in_b.id).update_all(role: "owner")
+    end
+    TenantContext.switch(tenant: @tenant_b) { assert_predicate membership_a_in_b.reload, :member? }
   end
 
   test "コンテキスト外のテナントの行は作成できない" do

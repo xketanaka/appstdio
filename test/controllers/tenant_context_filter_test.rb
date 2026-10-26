@@ -54,7 +54,14 @@ class TenantContextFilterTest < ActionController::TestCase
   end
 
   test "所属していないテナントには切り替えられない" do
-    get :new, session: { current_user_id: @user.id, current_tenant_id: @other_tenant.id }
+    sql = capture_sql do
+      get :new, session: { current_user_id: @user.id, current_tenant_id: @other_tenant.id }
+    end
+
+    # 所属行を探すために仮に設定したテナントは、見つからなければアクションの前に外す
+    settings = sql.grep(/set_config/)
+    assert_includes settings[0], @other_tenant.id
+    assert_includes settings[1], "set_config('app.tenant_id', '', false)"
 
     assert_equal @user, @controller.current_user
     assert_nil @controller.current_tenant_user
@@ -81,7 +88,8 @@ class TenantContextFilterTest < ActionController::TestCase
       sql.join("\n"),
       "users は認証情報しか持たないため、リクエストごとに読む必要はない",
     )
-    assert_equal 4, sql.size, "実行された SQL:\n#{sql.join("\n")}"
+    # コンテキストの設定・所属行の検索・解除の3つだけ
+    assert_equal 3, sql.size, "実行された SQL:\n#{sql.join("\n")}"
   end
 
   test "リクエストを抜けたらDBのテナントコンテキストは解除される" do
