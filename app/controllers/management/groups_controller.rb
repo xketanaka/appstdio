@@ -18,7 +18,7 @@ module Management
 
     def show
       if @group.everyone?
-        @tenant_users_count = TenantUser.active.where(tenant: current_tenant).count
+        @tenant_users_count = TenantUser.active.count
         return
       end
 
@@ -79,11 +79,10 @@ module Management
     end
 
     # メンバーの追加のダイアログの候補。テナントの所属のうち有効・招待中の人を、表示名か
-    # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す。
-    # tenant_users は RLS でも自分の他のテナントでの所属が見える（テナントの切り替えのため）ので、テナントで絞る
+    # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す
     def member_candidates
       page = [params[:page].to_i, 1].max
-      users = TenantUser.where(tenant: current_tenant, status: [:active, :invited]).joins(:user).includes(:user)
+      users = TenantUser.where(status: [:active, :invited]).joins(:user).includes(:user)
       if params[:q].present?
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].strip)}%"
         users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
@@ -135,7 +134,7 @@ module Management
         redirect_to destination, notice: t("messages.saved")
       else
         # 送られてきたとおりに出し直す
-        users = TenantUser.includes(:user).where(tenant: current_tenant, id: roles.keys).index_by(&:id)
+        users = TenantUser.includes(:user).where(id: roles.keys).index_by(&:id)
         @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
         render :edit, status: :unprocessable_entity
       end
