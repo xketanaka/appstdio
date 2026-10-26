@@ -653,6 +653,34 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "グループ管理者は、範囲の外のグループに対しては、どの操作も 404 になる" do
+    login(sato)
+    TenantContext.switch(tenant: @tenant) { @dev_hq.suspend!(by: @admin_member) }
+    params = { group: { name: "開発部", parent_id: @dev_hq.id, label_names: "" } }
+
+    [@company, @dev, @dev_hq, @everyone].each do |group|
+      [:show, :edit, :sub_members, :member_candidates, :confirm_destroy, :confirm_suspend].each do |action|
+        get url_for(controller: "management/groups", action:, id: group.id, only_path: true)
+        assert_response :not_found, "#{group.name} の #{action}"
+      end
+      patch management_group_path(group), params: params
+      assert_response :not_found, "#{group.name} の update"
+      post suspend_management_group_path(group)
+      assert_response :not_found, "#{group.name} の suspend"
+      post reactivate_management_group_path(group)
+      assert_response :not_found, "#{group.name} の reactivate"
+      delete management_group_path(group)
+      assert_response :not_found, "#{group.name} の destroy"
+    end
+    get suspended_management_groups_path(include_descendants: 1)
+    assert_select "#suspended-groups", 0
+
+    TenantContext.switch(tenant: @tenant) do
+      assert_equal 8, Group.count
+      assert @dev_hq.reload.suspended?
+    end
+  end
+
   test "グループ管理者は範囲の中を編集・作成できるが、最上位や範囲の外には置けない" do
     login(sato)
 
