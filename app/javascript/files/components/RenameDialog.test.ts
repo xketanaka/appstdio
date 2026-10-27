@@ -21,7 +21,7 @@ beforeEach(() => {
 })
 
 const row = (overrides: Partial<Row>): Row => ({
-  id: 3, kind: "file", name: "見積書.v2.xlsx", readable: true, editable: true, person: null, time: null, byteSize: 1, folderId: null, ...overrides,
+  id: 3, kind: "file", name: "見積書.v2.xlsx", readable: true, editable: true, manageable: false, person: null, time: null, byteSize: 1, folderId: null, ...overrides,
 })
 
 const render = async (target: Row) => {
