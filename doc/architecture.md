@@ -49,11 +49,6 @@ PostgreSQL は **スーパーユーザとテーブルの所有者には RLS を�
 未設定なら `current_setting(..., true)` が NULL を返して1行も一致しないため、
 **設定漏れは「他テナントが見える」ではなく「0件」になる**（fail-closed）。
 
-**`tenant_users` だけは例外で、SELECT のポリシーが `app.user_id` の行も通す。** ログインした人が
-自分の所属するテナントを選べるようにするため。そのため、テナントの中の所属を一覧・集計するときは
-`TenantUser.where(tenant: current_tenant)` のようにテナントで絞る。絞り忘れると、管理者自身の
-他のテナントでの所属が一覧や人数に混ざる。
-
 Web リクエストでは `TenantContextFilter`（`ApplicationController` に include 済み）が
 自動で設定・解除するので、コントローラ側で意識する必要はない。
 
