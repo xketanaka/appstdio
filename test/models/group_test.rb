@@ -12,12 +12,33 @@ class GroupTest < ActiveSupport::TestCase
   end
 
   test "ラベルを名前で付け直し、外したラベルもテナントの一覧には残す" do
-    @sales.replace_labels!(%w[営業 本部])
+    assert @sales.save_with_labels(%w[営業 本部])
     assert_equal %w[営業 本部], @sales.labels.pluck(:name).sort
 
-    @sales.replace_labels!(%w[本部 地域])
+    assert @sales.save_with_labels(%w[本部 地域])
     assert_equal %w[地域 本部], @sales.labels.reload.pluck(:name).sort
     assert_equal %w[営業 地域 本部], GroupLabel.pluck(:name).sort
+  end
+
+  test "ラベルが保存できなければグループの保存も戻し、ラベルの誤りをグループの誤りとして出す" do
+    group = Group.new(tenant: @tenant, name: "新しい部")
+
+    assert_not group.save_with_labels(["あ" * 101])
+    assert_not group.persisted?
+    assert_not Group.exists?(name: "新しい部")
+    assert_includes group.errors[:base].join, "100文字以内"
+  end
+
+  test "メンバーを付け直し、保存できない行があれば全部戻してグループの誤りとして出す" do
+    users = %w[a b].map do |key|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{key}@example.com", password: "password1234"),
+        display_name: key, status: :active)
+    end
+    assert @sales.replace_members(users[0].id => "leader")
+
+    assert_not @sales.replace_members(users[0].id => "member", users[1].id => "owner")
+    assert_equal({ users[0].id => "leader" }, @sales.group_members.pluck(:tenant_user_id, :role).to_h)
+    assert_predicate @sales.errors[:base], :present?
   end
 
   test "下位のグループの id を、停止中も含めて孫までたどる" do

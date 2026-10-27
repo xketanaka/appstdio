@@ -38,25 +38,40 @@ class Group < ApplicationRecord
     SQL
   end
 
-  # ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える
-  def replace_labels!(names)
-    label_ids = names.map { |name| GroupLabel.find_or_create_by!(tenant:, name:).id }
-    labelings.where.not(group_label_id: label_ids).delete_all
-    (label_ids - labelings.pluck(:group_label_id)).each do |label_id|
-      labelings.create!(tenant:, group_label_id: label_id)
+  # 名前・上位などを保存し、ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える。
+  # ラベルの検証（長さ）で落ちたらグループの保存も戻し、ラベルの誤りをグループの誤りとして出す。保存できなければ false
+  def save_with_labels(names)
+    transaction do
+      save!
+      label_ids = names.map { |name| GroupLabel.find_or_create_by!(tenant:, name:).id }
+      labelings.where.not(group_label_id: label_ids).delete_all
+      (label_ids - labelings.pluck(:group_label_id)).each do |label_id|
+        labelings.create!(tenant:, group_label_id: label_id)
+      end
+      true
+    rescue ActiveRecord::RecordInvalid => e
+      e.record.errors.full_messages.each { errors.add(:base, it) } unless e.record == self
+      raise ActiveRecord::Rollback
     end
   end
 
-  # メンバーを付け直す。roles は { tenant_user_id => "member" / "leader" }。
-  # 新しく加える人は、テナントの所属のうち有効・招待中の人に限る
-  def replace_members!(roles)
+  # メンバーを付け直す。roles は { tenant_user_id => "member" / "leader" }。保存できなければ false で、
+  # 誤りはグループの誤りとして出す。新しく加える人は、テナントの所属のうち有効・招待中の人に限り、
+  # それ以外が混ざっていたら（画面からは起きない）見つからない扱いにする
+  def replace_members(roles)
     added_ids = roles.keys - group_members.pluck(:tenant_user_id)
     addable = TenantUser.where(tenant_id:, id: added_ids, status: [:active, :invited]).count
     raise ActiveRecord::RecordNotFound, "tenant_user not addable" if addable != added_ids.size
 
-    group_members.where.not(tenant_user_id: roles.keys).delete_all
-    roles.each do |tenant_user_id, role|
-      group_members.find_or_initialize_by(tenant_user_id:).update!(tenant:, role:)
+    transaction do
+      group_members.where.not(tenant_user_id: roles.keys).delete_all
+      roles.each do |tenant_user_id, role|
+        group_members.find_or_initialize_by(tenant_user_id:).update!(tenant:, role:)
+      end
+      true
+    rescue ActiveRecord::RecordInvalid => e
+      e.record.errors.full_messages.each { errors.add(:base, it) }
+      raise ActiveRecord::Rollback
     end
   end
 

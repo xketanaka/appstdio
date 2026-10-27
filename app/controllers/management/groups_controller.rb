@@ -137,15 +137,7 @@ module Management
       # 行を全部削除すると members は送られてこない
       roles = params.fetch(:group, {}).permit(members: {}).fetch(:members, nil).to_h.to_h { |id, role| [id.to_i, role] }
 
-      saved = Group.transaction do
-        @group.replace_members!(roles)
-        true
-      rescue ActiveRecord::RecordInvalid => e
-        e.record.errors.full_messages.each { @group.errors.add(:base, it) }
-        raise ActiveRecord::Rollback
-      end
-
-      if saved
+      if @group.replace_members(roles)
         # 自分のグループ管理者の印を外すと、範囲の外になって詳細（どこも管理していなければグループ管理も）を開けなくなる
         scope = GroupScope.new(current_tenant_user)
         destination =
@@ -234,21 +226,13 @@ module Management
       params.dig(:group, :label_names).to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
     end
 
-    # ラベルの名前が長すぎるときなどは GroupLabel の検証で落ちるので、グループの誤りとして出す
     def save_group
       # グループ管理者は、範囲の外へ移したり最上位に置いたりできない
       if (@group.new_record? || @group.parent_id_changed?) && !@scope.can_place_under?(@group.parent)
         raise ActiveRecord::RecordNotFound
       end
 
-      Group.transaction do
-        @group.save!
-        @group.replace_labels!(@label_names)
-        true
-      rescue ActiveRecord::RecordInvalid => e
-        e.record.errors.full_messages.each { @group.errors.add(:base, it) } unless e.record == @group
-        raise ActiveRecord::Rollback
-      end
+      @group.save_with_labels(@label_names)
     end
 
     # グループ管理者を先に、それぞれ表示名の順に並べる

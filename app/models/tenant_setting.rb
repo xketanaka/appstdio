@@ -16,6 +16,11 @@ class TenantSetting < ApplicationRecord
   validates :title_color, format: { with: /\A#[0-9a-f]{6}\z/ }, allow_nil: true
   validate :logo_must_be_small_image
 
+  # 組織設定の画面は、表示の設定とファイル管理の設定を一緒に保存する。どちらかが保存できなければ両方戻して false
+  def save_with(files_setting)
+    transaction { (save && files_setting.save) || raise(ActiveRecord::Rollback) }
+  end
+
   # 背景が明るく、白い文字では読めないか。WCAG のコントラスト比で白と黒を比べる
   def light_title_color?
     channels = (title_color || DEFAULT_TITLE_COLOR).delete_prefix("#").scan(/../).map do |hex|
