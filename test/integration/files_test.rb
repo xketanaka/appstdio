@@ -563,6 +563,19 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert TenantContext.switch(tenant: @tenant) { @sales.permissions.find_by(tenant_user: @member).role_manager? }
     end
 
+    test "利用停止中の人・グループには、そのことを返す" do
+      TenantContext.switch(tenant: @tenant) do
+        @sales_group.suspend!(by: @owner)
+        @owner.update!(status: :suspended)
+        grant(@estimates, @owner, :viewer)
+      end
+      login(@member_user)
+      get files_api_node_permissions_path(@estimates)
+
+      assert_equal({ "営業部" => true, "管理者さん" => true }, json["own"].to_h { [it.dig("subject", "name"), it.dig("subject", "suspended")] })
+      assert_not json["inherited"].first.dig("subject", "suspended")
+    end
+
     test "利用停止中のグループは新しく加えられない" do
       TenantContext.switch(tenant: @tenant) { @sales_group.suspend!(by: @owner) }
       login(@member_user)

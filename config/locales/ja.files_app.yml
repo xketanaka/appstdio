@@ -79,6 +79,7 @@ ja:
       own_file: "このファイルに設定された権限"
       from: "（%{name}から継承）"
       from_hidden: "（上位のフォルダから継承）"
+      suspended: "利用停止中"
       cancel_inherited: "打ち消す"
       uncancel: "打ち消しをやめる"
       roles:

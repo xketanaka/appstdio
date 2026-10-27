@@ -68,7 +68,9 @@ const remove = (subject: Subject) => {
 }
 
 const add = (candidate: ShareCandidate) => {
-  const subject: Subject = { type: candidate.type, id: candidate.id, name: candidate.name, everyone: candidate.everyone }
+  const subject: Subject = {
+    type: candidate.type, id: candidate.id, name: candidate.name, everyone: candidate.everyone, suspended: false,
+  }
   cancelled.delete(keyOf(subject))
   own.value.push({ subject, role: "viewer" })
   query.value = ""
@@ -159,6 +161,10 @@ const submit = async () => {
               :class="{ 'text-slate-400 line-through': cancelled.has(keyOf(setting.subject)) }"
             >
               <span class="font-medium">{{ setting.subject.name }}</span>
+              <span
+                v-if="setting.subject.suspended"
+                class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
+              >{{ t("share.suspended") }}</span>
               <span class="ml-2">{{ t(`share.roles.${setting.role}`) }}</span>
               <span class="ml-2 text-xs text-slate-500">
                 {{ setting.from ? t("share.from", { name: setting.from.label }) : t("share.from_hidden") }}
@@ -191,7 +197,13 @@ const submit = async () => {
             :key="keyOf(setting.subject)"
             class="flex items-center gap-3 py-1.5 text-sm"
           >
-            <span class="min-w-0 flex-1 truncate font-medium">{{ setting.subject.name }}</span>
+            <span class="min-w-0 flex-1 truncate">
+              <span class="font-medium">{{ setting.subject.name }}</span>
+              <span
+                v-if="setting.subject.suspended"
+                class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
+              >{{ t("share.suspended") }}</span>
+            </span>
             <select
               v-model="setting.role"
               class="input w-auto py-1"

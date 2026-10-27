@@ -60,7 +60,8 @@ export type FolderPayload = {
 
 export type Role = "viewer" | "editor" | "manager"
 
-export type Subject = { type: "group" | "tenant_user", id: number, name: string, everyone: boolean }
+// suspended は利用停止中の人・グループ。停止中のグループへの設定は効かないが、行は残る
+export type Subject = { type: "group" | "tenant_user", id: number, name: string, everyone: boolean, suspended: boolean }
 
 // 継承元（from）は、上位のフォルダが見えない人には null
 export type InheritedSetting = { subject: Subject, role: Role, from: FolderLink | null, cancelled: boolean }

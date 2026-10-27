@@ -16,10 +16,10 @@ vi.mock("../api", async (original) => ({
   },
 }))
 
-const everyone = { type: "group" as const, id: 1, name: "全員", everyone: true }
-const accounting = { type: "group" as const, id: 2, name: "経理部", everyone: false }
-const sales = { type: "group" as const, id: 3, name: "営業部", everyone: false }
-const ichiro = { type: "tenant_user" as const, id: 7, name: "一郎", everyone: false }
+const everyone = { type: "group" as const, id: 1, name: "全員", everyone: true, suspended: false }
+const accounting = { type: "group" as const, id: 2, name: "経理部", everyone: false, suspended: false }
+const sales = { type: "group" as const, id: 3, name: "営業部", everyone: false, suspended: true }
+const ichiro = { type: "tenant_user" as const, id: 7, name: "一郎", everyone: false, suspended: false }
 
 const sharing = (): Sharing => ({
   inherited: [
@@ -65,7 +65,7 @@ test("継承した権限を継承元と一緒に上に、このフォルダの�
     "経理部閲覧者（上位のフォルダから継承）打ち消しをやめる",
   ])
   expect(wrapper.find("#share-own").text()).toBe("このフォルダに設定された権限")
-  expect(rows(wrapper, "share-own").map((li) => li.find("span").text())).toEqual(["営業部", "一郎"])
+  expect(rows(wrapper, "share-own").map((li) => li.find("span").text())).toEqual(["営業部利用停止中", "一郎"])
 })
 
 test("ファイルでは見出しを「このファイル」にする", async () => {
@@ -75,7 +75,7 @@ test("ファイルでは見出しを「このファイル」にする", async ()
 })
 
 test("保存すると、開いたときからの差分だけを送る", async () => {
-  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }, { type: "tenant_user", id: 8, name: "二郎", everyone: false, detail: "jiro@example.com" }] })
+  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }, { type: "tenant_user", id: 8, name: "二郎", everyone: false, suspended: false, detail: "jiro@example.com" }] })
   const wrapper = await render()
 
   const [everyoneRow, accountingRow] = rows(wrapper, "share-inherited")

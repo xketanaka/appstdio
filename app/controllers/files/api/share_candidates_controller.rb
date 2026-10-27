@@ -13,8 +13,8 @@ module Files
           .includes(:user).order(:display_name).limit(LIMIT)
 
         render json: {
-          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, detail: nil } } +
-            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, detail: it.user.email } },
+          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, detail: nil } } +
+            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, detail: it.user.email } },
         }
       end
     end
