@@ -6,6 +6,7 @@ import FileTree from "./components/FileTree.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
 import UploadPanel from "./components/UploadPanel.vue"
+import VersionsPanel from "./components/VersionsPanel.vue"
 import { t } from "./i18n"
 import { reloadTree, state } from "./store"
 
@@ -91,5 +92,6 @@ const leavePrivilegedMode = async () => {
     </div>
     <NoticeBar />
     <UploadPanel />
+    <VersionsPanel />
   </div>
 </template>

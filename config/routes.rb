@@ -61,6 +61,15 @@ Rails.application.routes.draw do
             get :download
             patch :rename
           end
+          resources :versions, only: [:index, :create, :update] do
+            collection do
+              post :prepare_upload
+            end
+            member do
+              get :download
+              post :restore
+            end
+          end
         end
         get "shared" => "shared_items#index"
         get "trash" => "trash#index"

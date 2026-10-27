@@ -63,7 +63,9 @@ const percent = (upload: Upload) => (upload.size === 0 ? 100 : Math.floor((uploa
           v-else-if="upload.status === 'done'"
           class="mt-0.5 text-xs text-slate-500"
         >
-          {{ t("upload.done", { destination: upload.destination }) }}
+          {{ upload.saved?.version
+            ? t("upload.done_version", { name: upload.saved.name, version: upload.saved.version })
+            : t("upload.done", { destination: upload.destination }) }}
         </p>
         <p
           v-else-if="upload.status !== 'uploading'"

@@ -35,7 +35,8 @@ module E2eScenarios
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
   # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない。
   # オーナーのマイドライブ: 下書き、メモ.txt、保管（ダイアログでの移動で使う）、
-  # 資料、議事録.txt（ドラッグでの移動で使う）、変更前.txt、不要.txt（名前の変更・削除・復元で使う）
+  # 資料、議事録.txt（ドラッグでの移動で使う）、変更前.txt、不要.txt（名前の変更・削除・復元で使う）、
+  # 仕様書.txt（中身のある版1を持つ。版の流れで使う）
   def files
     key = SecureRandom.hex(4)
     tenant = Tenant.setup!(name: "E2E #{key}")
@@ -53,6 +54,8 @@ module E2eScenarios
       Files::Permission.create!(tenant:, node: hr, group: Group.everyone_of(tenant), role: :none)
       my_drive = Files::Drive.personal_root(owner)
       %w[下書き 保管 資料].each { Files::Node.create_folder!(parent: my_drive, name: it, creator: owner) }
+      spec = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("初版の中身"), filename: "仕様書.txt")
+      Files::Node.create_file!(parent: my_drive, blob: spec, creator: owner)
       %w[メモ.txt 議事録.txt 変更前.txt 不要.txt].each do |name|
         Files::Node.create!(tenant:, drive_id: my_drive.drive_id, parent: my_drive, kind: :file, name:, creator: owner)
       end

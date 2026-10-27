@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRouter } from "vue-router"
-import { api, downloadUrl, type FolderSource } from "../api"
+import { api, type FolderSource } from "../api"
 import FileIcon from "../components/FileIcon.vue"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
@@ -12,6 +12,7 @@ import SelectionToolbar from "../components/SelectionToolbar.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
 import { endDrag, startDrag, useDropTargets } from "../dnd"
+import { chooseNewVersion, download, showVersions } from "../fileActions"
 import { changed, notifyOperationError, showFolder, trashItems } from "../store"
 import { useLoad } from "../useLoad"
 import { uploadFiles } from "../uploads"
@@ -35,10 +36,6 @@ watch(() => props.source, clear)
 const open = (row: Row) => {
   if (row.folderId !== null) router.push({ name: "folder", params: { id: row.folderId } })
   else if (row.kind === "file" && row.readable) download(row)
-}
-
-const download = (row: Row) => {
-  window.location.href = downloadUrl(row.id)
 }
 
 const selectedRows = () => rows.value.filter((row) => selected.has(row.id))
@@ -218,6 +215,8 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       @dragstart="dragRows"
       @dragend="endDrag"
       @download="download"
+      @upload-version="chooseNewVersion"
+      @versions="showVersions"
     >
       <template
         v-if="selected.size > 0"

@@ -6,6 +6,7 @@ export type Row = {
   kind: "folder" | "file"
   name: string
   readable: boolean
+  editable: boolean
   person: string | null
   time: string | null
   byteSize: number | null
@@ -18,6 +19,7 @@ export function entryRow(entry: Entry): Row {
     kind: entry.kind,
     name: entry.name,
     readable: entry.readable,
+    editable: entry.editable,
     person: entry.owner,
     time: entry.updated_at,
     byteSize: entry.byte_size,
@@ -32,6 +34,7 @@ export function trashRow(entry: TrashEntry): Row {
     kind: entry.kind,
     name: entry.name,
     readable: true,
+    editable: false,
     person: entry.deleted_by,
     time: entry.deleted_at,
     byteSize: entry.byte_size,

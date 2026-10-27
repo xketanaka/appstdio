@@ -30,6 +30,8 @@ const emit = defineEmits<{
   trash: [row: Row]
   restore: [row: Row]
   download: [row: Row]
+  uploadVersion: [row: Row]
+  versions: [row: Row]
   dragstart: [row: Row, event: DragEvent]
   dragend: []
 }>()
@@ -40,10 +42,11 @@ const dropTarget = (row: Row) =>
 
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
-const rowActions = props.trash ? ["restore", "purge"] : ["download", "rename", "move", "destroy"]
+const rowActions = props.trash ? ["restore", "purge"] : ["download", "upload_version", "versions", "rename", "move", "destroy"]
 // 行のメニューで押せる操作。まだ作っていない操作（完全に削除）は押せない表示にする
 const available = (action: string, row: Row) => {
-  if (action === "download") return !props.trash && row.kind === "file" && row.readable
+  if (action === "download" || action === "versions") return !props.trash && row.kind === "file" && row.readable
+  if (action === "upload_version") return !props.trash && row.kind === "file" && row.editable
   if (action === "purge") return false
   return !!props.canEdit
 }
@@ -53,6 +56,8 @@ const runAction = (action: string, row: Row) => {
   else if (action === "rename") emit("rename", row)
   else if (action === "destroy") emit("trash", row)
   else if (action === "restore") emit("restore", row)
+  else if (action === "upload_version") emit("uploadVersion", row)
+  else if (action === "versions") emit("versions", row)
   else emit("download", row)
 }
 

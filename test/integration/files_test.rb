@@ -400,6 +400,96 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "版" do
+    setup do
+      @file = TenantContext.switch(tenant: @tenant) do
+        blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版1"), filename: "仕様.txt")
+        Files::Node.create_file!(parent: @sales, blob:, creator: @owner)
+      end
+    end
+
+    def upload_new_blob(content = "版2の中身")
+      ActiveStorage::Blob.create_and_upload!(io: StringIO.new(content), filename: "仕様.txt")
+    end
+
+    test "同じ名前でアップロードすると、そのファイルの新しい版になる" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :editor) }
+      login(@member_user)
+
+      post prepare_upload_files_api_nodes_path, params: {
+        parent_id: @sales.id, blob: { filename: "仕様.txt", byte_size: 10, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "text/plain" },
+      }, as: :json
+      assert_response :success
+
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob.signed_id }, as: :json
+      assert_response :created
+      assert_equal({ "id" => @file.id, "name" => "仕様.txt", "version" => 2 }, json)
+      get files_api_folder_path(@sales)
+      assert_equal 1, json["entries"].count { it["name"] == "仕様.txt" }
+    end
+
+    test "同じ名前のファイルを編集できなければ、新しい版にせず断る" do
+      TenantContext.switch(tenant: @tenant) do
+        grant(@sales, @member, :editor)
+        grant(@file, @member, :viewer)
+      end
+      login(@member_user)
+
+      post prepare_upload_files_api_nodes_path, params: {
+        parent_id: @sales.id, blob: { filename: "仕様.txt", byte_size: 10, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "text/plain" },
+      }, as: :json
+      assert_equal ["同じ名前の「仕様.txt」がありますが、新しい版を足す権限がありません。"], json["errors"]
+
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob.signed_id }, as: :json
+      assert_response :forbidden
+    end
+
+    test "版の一覧を新しい順に返し、古い版も落とせ、ラベルを付け、最新に戻せる" do
+      login(@owner_user)
+      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob.signed_id }, as: :json
+      assert_equal 2, json["version"]
+
+      get files_api_node_versions_path(@file)
+      assert json["can_edit"]
+      assert_equal [[2, true], [1, false]], json["versions"].map { [it["number"], it["current"]] }
+      first = json["versions"].last["id"]
+
+      get download_files_api_node_version_path(@file, first)
+      follow_redirect!
+      assert_equal "版1", response.body.force_encoding("UTF-8")
+
+      patch files_api_node_version_path(@file, first), params: { label: "承認版" }, as: :json
+      assert_response :no_content
+
+      post restore_files_api_node_version_path(@file, first), as: :json
+      assert_equal 3, json["version"]
+      get files_api_node_versions_path(@file)
+      assert_equal [[3, nil], [2, nil], [1, "承認版"]], json["versions"].map { [it["number"], it["label"]] }
+    end
+
+    test "閲覧者は一覧を見られるが、版を足す・ラベルを変える・最新に戻すはできない" do
+      login(@member_user)
+      get files_api_node_versions_path(@file)
+      assert_not json["can_edit"]
+      version = json["versions"].first["id"]
+
+      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob.signed_id }, as: :json
+      assert_response :forbidden
+      patch files_api_node_version_path(@file, version), params: { label: "x" }, as: :json
+      assert_response :forbidden
+      post restore_files_api_node_version_path(@file, version), as: :json
+      assert_response :forbidden
+    end
+
+    test "閲覧できないファイルの版は 404" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @everyone, :none) }
+      login(@member_user)
+      get files_api_node_versions_path(@file)
+
+      assert_response :not_found
+    end
+  end
+
   describe "特権モード" do
     test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)

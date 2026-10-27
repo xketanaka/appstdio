@@ -3,6 +3,7 @@ import { computed } from "vue"
 import { api } from "../api"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
+import { chooseNewVersion, download, showVersions } from "../fileActions"
 import { t } from "../i18n"
 import { entryRow } from "../rows"
 import { showSection } from "../store"
@@ -26,6 +27,9 @@ const rows = computed(() => data.value?.entries.map(entryRow) ?? [])
     v-if="status === 'ready'"
     :rows="rows"
     :empty="t('shared_items.empty')"
+    @download="download"
+    @upload-version="chooseNewVersion"
+    @versions="showVersions"
   />
   <LoadMessage
     v-else

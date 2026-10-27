@@ -41,28 +41,25 @@ module Files
         render json: { errors: e.messages }, status: :unprocessable_content
       end
 
-      # ダイレクトアップロードの1段目。確かめてから blob を作り、ブラウザが中身を送る先を返す。
-      # 応答の形は @rails/activestorage の DirectUpload が読む形（Active Storage 標準の受け口と同じ）
+      # ダイレクトアップロードの1段目。確かめてから、ブラウザが中身を送る先を返す。
+      # 同じ名前のファイルがあれば、新しいファイルではなくその新しい版にする（doc/files.md の「版」）。
+      # そのときは、そのファイル自身の編集権限が要る
       def prepare_upload
         parent = editable_folder!(params[:parent_id])
         blob_params = params.expect(blob: [:filename, :byte_size, :checksum, :content_type])
-        byte_size = blob_params[:byte_size].to_i
-        max = Settings.files.max_upload_bytes
-        node = Node.new(
-          tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file, name: blob_params[:filename].to_s,
-        )
+        name = blob_params[:filename].to_s
+        node = Node.new(tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file, name:)
         node.validate
-        errors = []
-        errors << t("files.nodes.too_large", max: helpers.number_to_human_size(max)) if byte_size > max
-        errors.concat(node.errors.full_messages_for(:name))
-        errors << t("files.nodes.storage_full") if byte_size > current_tenant.files_setting.remaining_bytes
+        existing = parent.children.kept.find_by(name: name.strip)
+        node.errors.delete(:name, :taken) if existing&.file?
+
+        errors = upload_size_errors(blob_params[:byte_size].to_i) + node.errors.full_messages_for(:name)
+        if existing&.file? && !access.effective_permission(existing).editable?
+          errors << t("files.nodes.version_forbidden", name: existing.name)
+        end
         return render json: { errors: }, status: :unprocessable_content if errors.any?
 
-        blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_params.to_h.symbolize_keys)
-        render json: {
-          signed_id: blob.signed_id,
-          direct_upload: { url: blob.service_url_for_direct_upload, headers: blob.service_headers_for_direct_upload },
-        }
+        render_direct_upload(blob_params)
       end
 
       # 2段目。中身が届いた blob をファイルとして登録する。1段目のあとに容量が埋まったり、
@@ -72,8 +69,18 @@ module Files
         blob = ActiveStorage::Blob.find_signed!(params[:signed_blob_id])
         raise ActiveRecord::RecordNotFound if blob.attachments.exists? || !blob.service.exist?(blob.key)
 
-        file = Node.create_file!(parent:, blob:, creator: current_tenant_user)
-        render json: { id: file.id, name: file.name }, status: :created
+        existing = parent.children.kept.file.find_by(name: blob.filename.to_s)
+        if existing
+          unless access.effective_permission(existing).editable?
+            blob.purge_later
+            raise Forbidden
+          end
+          version = existing.add_version!(blob:, creator: current_tenant_user)
+          render json: { id: existing.id, name: existing.name, version: version.number }, status: :created
+        else
+          file = Node.create_file!(parent:, blob:, creator: current_tenant_user)
+          render json: { id: file.id, name: file.name, version: nil }, status: :created
+        end
       rescue Node::StorageFullError
         blob.purge_later
         render json: { errors: [t("files.nodes.storage_full")] }, status: :unprocessable_content

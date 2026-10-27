@@ -55,12 +55,7 @@ module Files
     # 操作履歴を残す。容量が足りなければ StorageFullError（何も残さない）
     def self.create_file!(parent:, blob:, creator:)
       transaction do
-        # 同時に上げても上限を超えないよう、足せるときだけ1つの UPDATE で足す
-        reserved = Setting.where(tenant_id: parent.tenant_id)
-          .where("storage_used_bytes + ? <= storage_limit_bytes", blob.byte_size)
-          .update_all(["storage_used_bytes = storage_used_bytes + ?", blob.byte_size])
-        raise StorageFullError if reserved.zero?
-
+        reserve_storage!(parent.tenant_id, blob.byte_size)
         file = create!(
           tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file,
           name: blob.filename.to_s, byte_size: blob.byte_size, creator:,
@@ -74,6 +69,15 @@ module Files
         Activity.create!(tenant_id: file.tenant_id, node: file, actor: creator, action: :created)
         file
       end
+    end
+
+    # 使用量に足す。同時に上げても上限を超えないよう、足せるときだけ1つの UPDATE で足す。
+    # 足せなければ StorageFullError。トランザクションの中で呼ぶこと（失敗したら戻すため）
+    def self.reserve_storage!(tenant_id, byte_size)
+      reserved = Setting.where(tenant_id:)
+        .where("storage_used_bytes + ? <= storage_limit_bytes", byte_size)
+        .update_all(["storage_used_bytes = storage_used_bytes + ?", byte_size])
+      raise StorageFullError if reserved.zero?
     end
 
     # 1件でも移せなければ何も動かさない（doc/files.md の「移動」）。権限は呼び出し側で確かめておくこと。
@@ -137,6 +141,27 @@ module Files
           where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil, purge_after: nil)
           Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :restored)
         end
+      end
+    end
+
+    # 新しい版を足して最新にする（doc/files.md の「版」）。容量を数え、操作履歴を残す。
+    # 「最新に戻す」ときは古い版の blob をそのまま渡す。1つの blob を複数の版が指してよい
+    # （Active Storage は、ほかから付いている blob を purge しても消さない）
+    def add_version!(blob:, creator:, restored_from: nil)
+      transaction do
+        # 同時に版を足したとき、番号がぶつからないよう、このファイルの行を押さえる
+        lock!
+        self.class.reserve_storage!(tenant_id, blob.byte_size)
+        version = versions.create!(
+          tenant_id:, number: versions.maximum(:number).to_i + 1, byte_size: blob.byte_size,
+          content_type: blob.content_type, creator:, body: blob,
+        )
+        update!(current_version: version, byte_size: blob.byte_size)
+        Activity.create!(
+          tenant_id:, node: self, actor: creator, action: :updated,
+          detail: { version: version.number, restored_from: }.compact,
+        )
+        version
       end
     end
 
