@@ -66,8 +66,7 @@ module Files
       # 同じ名前ができたりしうるので、ここでも確かめる。登録できなければ届いた中身は消す
       def upload
         parent = editable_folder!(params[:parent_id])
-        blob = ActiveStorage::Blob.find_signed!(params[:signed_blob_id])
-        raise ActiveRecord::RecordNotFound if blob.attachments.exists? || !blob.service.exist?(blob.key)
+        blob = uploaded_blob!(params[:signed_blob_id])
 
         existing = parent.children.kept.file.find_by(name: blob.filename.to_s)
         if existing

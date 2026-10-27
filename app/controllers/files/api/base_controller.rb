@@ -38,11 +38,25 @@ module Files
       # ダイレクトアップロードの1段目の応答。blob を作り、ブラウザが中身を送る先を返す。
       # 形は @rails/activestorage の DirectUpload が読む形（Active Storage 標準の受け口と同じ）
       def render_direct_upload(blob_params)
-        blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_params.to_h.symbolize_keys)
+        blob = ActiveStorage::Blob.create_before_direct_upload!(
+          **blob_params.to_h.symbolize_keys, metadata: { uploaded_by: current_tenant_user.id },
+        )
         render json: {
           signed_id: blob.signed_id,
           direct_upload: { url: blob.service_url_for_direct_upload, headers: blob.service_headers_for_direct_upload },
         }
+      end
+
+      # ダイレクトアップロードの2段目で受け取る blob。signed_id の署名は「サーバが発行した blob か」しか
+      # 保証せず、誰に発行したかには結び付かない。1段目で書いた上げた人と一致し、まだどこにも付いて
+      # おらず（ロゴなど、使用中の blob の流用を防ぐ）、中身が届いているものだけを受け付ける
+      def uploaded_blob!(signed_id)
+        blob = ActiveStorage::Blob.find_signed!(signed_id)
+        if blob.metadata["uploaded_by"] != current_tenant_user.id || blob.attachments.exists? || !blob.service.exist?(blob.key)
+          raise ActiveRecord::RecordNotFound
+        end
+
+        blob
       end
 
       # 中に作るフォルダ。閲覧できなければ 404、閲覧できても編集できなければ 403

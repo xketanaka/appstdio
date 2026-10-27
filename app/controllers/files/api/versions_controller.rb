@@ -39,8 +39,7 @@ module Files
 
       # 2段目。中身の届いた blob を新しい版として足す
       def create
-        blob = ActiveStorage::Blob.find_signed!(params[:signed_blob_id])
-        raise ActiveRecord::RecordNotFound if blob.attachments.exists? || !blob.service.exist?(blob.key)
+        blob = uploaded_blob!(params[:signed_blob_id])
 
         version = @file.add_version!(blob:, creator: current_tenant_user)
         render json: { id: @file.id, name: @file.name, version: version.number }, status: :created
