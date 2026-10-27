@@ -283,7 +283,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
 
     test "2段目で、中身の届いた blob をファイルとして登録する" do
-      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("提案の中身"), filename: "提案書.txt")
+      blob = uploaded_blob("提案の中身", "提案書.txt", by: @member)
       post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
 
       assert_response :created
@@ -295,11 +295,12 @@ class FilesTest < ActionDispatch::IntegrationTest
     test "2段目で、中身が届いていない blob や、使い回しの blob は 404" do
       waiting = ActiveStorage::Blob.create_before_direct_upload!(
         filename: "a.txt", byte_size: 1, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "text/plain",
+        metadata: { uploaded_by: @member.id },
       )
       post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: waiting.signed_id }, as: :json
       assert_response :not_found
 
-      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("x"), filename: "b.txt")
+      blob = uploaded_blob("x", "b.txt", by: @member)
       post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
       assert_response :created
       post upload_files_api_nodes_path, params: { parent_id: @estimates.id, signed_blob_id: blob.signed_id }, as: :json
@@ -307,7 +308,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
 
     test "2段目で容量が埋まっていたら断り、届いた中身を消す" do
-      blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("提案の中身"), filename: "提案書.txt")
+      blob = uploaded_blob("提案の中身", "提案書.txt", by: @member)
       TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(storage_limit_bytes: 1) }
 
       assert_enqueued_with(job: ActiveStorage::PurgeJob) do
@@ -315,6 +316,21 @@ class FilesTest < ActionDispatch::IntegrationTest
       end
       assert_response :unprocessable_content
       assert_equal ["ファイルを保存する容量の上限を超えるため、アップロードできません。"], json["errors"]
+    end
+
+    test "2段目で、ほかの人が上げた blob は 404。signed_id が漏れても横取りできない" do
+      blob = uploaded_blob("所有者の中身", "提案書.txt", by: @owner)
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: blob.signed_id }, as: :json
+
+      assert_response :not_found
+    end
+
+    test "上げた人の記録は、中身を調べて付帯情報を書き足しても残る" do
+      blob = uploaded_blob("提案の中身", "提案書.txt", by: @member)
+      blob.analyze
+
+      assert_equal @member.id, blob.reload.metadata["uploaded_by"]
+      assert blob.analyzed?
     end
 
     test "Active Storage 標準のダイレクトアップロードの受け口は塞いである" do
@@ -408,8 +424,8 @@ class FilesTest < ActionDispatch::IntegrationTest
       end
     end
 
-    def upload_new_blob(content = "版2の中身")
-      ActiveStorage::Blob.create_and_upload!(io: StringIO.new(content), filename: "仕様.txt")
+    def upload_new_blob(by:)
+      uploaded_blob("版2の中身", "仕様.txt", by:)
     end
 
     test "同じ名前でアップロードすると、そのファイルの新しい版になる" do
@@ -421,7 +437,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       }, as: :json
       assert_response :success
 
-      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob.signed_id }, as: :json
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob(by: @member).signed_id }, as: :json
       assert_response :created
       assert_equal({ "id" => @file.id, "name" => "仕様.txt", "version" => 2 }, json)
       get files_api_folder_path(@sales)
@@ -440,13 +456,13 @@ class FilesTest < ActionDispatch::IntegrationTest
       }, as: :json
       assert_equal ["同じ名前の「仕様.txt」がありますが、新しい版を足す権限がありません。"], json["errors"]
 
-      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob.signed_id }, as: :json
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: upload_new_blob(by: @member).signed_id }, as: :json
       assert_response :forbidden
     end
 
     test "版の一覧を新しい順に返し、古い版も落とせ、ラベルを付け、最新に戻せる" do
       login(@owner_user)
-      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob.signed_id }, as: :json
+      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob(by: @owner).signed_id }, as: :json
       assert_equal 2, json["version"]
 
       get files_api_node_versions_path(@file)
@@ -473,7 +489,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_not json["can_edit"]
       version = json["versions"].first["id"]
 
-      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob.signed_id }, as: :json
+      post files_api_node_versions_path(@file), params: { signed_blob_id: upload_new_blob(by: @member).signed_id }, as: :json
       assert_response :forbidden
       patch files_api_node_version_path(@file, version), params: { label: "x" }, as: :json
       assert_response :forbidden
@@ -674,6 +690,11 @@ class FilesTest < ActionDispatch::IntegrationTest
       tenant: @tenant, drive: parent.drive, parent: parent, kind: kind, name: name,
       creator: @owner, byte_size: byte_size,
     )
+  end
+
+  # ダイレクトアップロードの1段目で作られる blob と同じく、上げた人を付帯情報に持たせる
+  def uploaded_blob(content, filename, by:)
+    ActiveStorage::Blob.create_and_upload!(io: StringIO.new(content), filename:, metadata: { uploaded_by: by.id })
   end
 
   def grant(node, subject, role)
