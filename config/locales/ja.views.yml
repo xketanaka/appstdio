@@ -26,6 +26,9 @@ ja:
     app:
       show:
         title: "ファイル"
+    permissions:
+      no_manager: "この変更を保存すると、管理者が1人もいなくなります。誰かを管理者にしてから保存してください。"
+      not_addable: "「%{name}」は共有の相手に加えられません（利用停止中など）。"
     nodes:
       too_large: "ファイルの大きさは %{max} までです。"
       version_forbidden: "同じ名前の「%{name}」がありますが、新しい版を足す権限がありません。"

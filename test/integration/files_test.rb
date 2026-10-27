@@ -506,6 +506,114 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "共有設定" do
+    setup do
+      TenantContext.switch(tenant: @tenant) do
+        @sales_group = Group.create!(tenant: @tenant, name: "営業部")
+        grant(@sales, @member, :manager)
+        grant(@estimates, @sales_group, :editor)
+        grant(@estimates, @everyone, :none)
+      end
+    end
+
+    test "継承した設定を継承元と一緒に、このフォルダの設定と分けて返す" do
+      login(@member_user)
+      get files_api_node_permissions_path(@estimates)
+
+      assert_response :success
+      inherited = json["inherited"].to_h { [it.dig("subject", "name"), it.slice("role", "cancelled")] }
+      assert_equal({ "全員" => { "role" => "viewer", "cancelled" => true },
+                     "一般さん" => { "role" => "manager", "cancelled" => false } }, inherited)
+      assert_equal "営業", json["inherited"].find { it.dig("subject", "name") == "一般さん" }.dig("from", "label")
+      assert_equal [["営業部", "editor"]], json["own"].map { [it.dig("subject", "name"), it["role"]] }
+    end
+
+    test "見えない上位のフォルダは、継承元の名前を返さない" do
+      folder = TenantContext.switch(tenant: @tenant) do
+        grant(@hr, @owner, :editor)
+        node(:folder, "面談", @hr).tap { grant(it, @member, :manager) }
+      end
+      login(@member_user)
+      get files_api_node_permissions_path(folder)
+
+      assert_nil json["inherited"].find { it.dig("subject", "name") == "管理者さん" }["from"]
+    end
+
+    test "差分をまとめて反映する" do
+      login(@member_user)
+      patch files_api_node_permissions_path(@estimates), params: { changes: [
+        { subject_type: "group", subject_id: @sales_group.id, role: "viewer" },
+        { subject_type: "group", subject_id: @everyone.id, role: "" },
+        { subject_type: "tenant_user", subject_id: @owner.id, role: "editor" },
+      ] }, as: :json
+
+      assert_response :no_content
+      roles = TenantContext.switch(tenant: @tenant) { @estimates.permissions.map { [it.subject.id, it.role] } }
+      assert_equal [[@sales_group.id, "viewer"], [@owner.id, "editor"]].sort, roles.sort
+    end
+
+    test "管理者が1人もいなくなる変更は 422 で、何も変えない" do
+      login(@member_user)
+      patch files_api_node_permissions_path(@sales), params: { changes: [
+        { subject_type: "tenant_user", subject_id: @member.id, role: "editor" },
+      ] }, as: :json
+
+      assert_response :unprocessable_content
+      assert_match "管理者が1人もいなくなります", json["errors"].first
+      assert TenantContext.switch(tenant: @tenant) { @sales.permissions.find_by(tenant_user: @member).role_manager? }
+    end
+
+    test "利用停止中のグループは新しく加えられない" do
+      TenantContext.switch(tenant: @tenant) { @sales_group.suspend!(by: @owner) }
+      login(@member_user)
+      patch files_api_node_permissions_path(@sales), params: { changes: [
+        { subject_type: "group", subject_id: @sales_group.id, role: "viewer" },
+      ] }, as: :json
+
+      assert_response :unprocessable_content
+      assert_match "「営業部」", json["errors"].first
+    end
+
+    test "編集者には 403、見えない人には 404" do
+      TenantContext.switch(tenant: @tenant) { grant(@sales, @owner, :editor) }
+      login(@owner_user)
+      get files_api_node_permissions_path(@sales)
+      assert_response :forbidden
+      patch files_api_node_permissions_path(@sales), params: { changes: [] }, as: :json
+      assert_response :forbidden
+
+      get files_api_node_permissions_path(@hr)
+      assert_response :not_found
+    end
+
+    test "項目とフォルダに、共有設定を変えられるかを返す" do
+      login(@member_user)
+      get files_api_folder_path(@root)
+      assert_equal [true, false], json["entries"].select { it["name"].in?(%w[営業 議事録.docx]) }.sort_by { it["kind"] }
+        .reverse.map { it["manageable"] }
+
+      get files_api_folder_path(@sales)
+      assert json["can_manage"]
+    end
+
+    test "加える相手の候補は、有効なグループと有効・招待中の人" do
+      TenantContext.switch(tenant: @tenant) do
+        Group.create!(tenant: @tenant, name: "営業2部").suspend!(by: @owner)
+        @owner.update!(status: :suspended)
+      end
+      login(@member_user)
+      get files_api_share_candidates_path, params: { q: "営業" }
+
+      assert_equal ["営業部"], json["candidates"].pluck("name")
+
+      get files_api_share_candidates_path, params: { q: "" }
+      names = json["candidates"].pluck("name")
+      assert_includes names, "全員"
+      assert_includes names, "一般さん"
+      assert_not_includes names, "管理者さん"
+    end
+  end
+
   describe "特権モード" do
     test "管理者は特権モードにすると権限の無いフォルダも開ける" do
       login(@owner_user)
