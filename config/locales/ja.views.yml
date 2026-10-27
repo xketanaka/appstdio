@@ -78,7 +78,7 @@ ja:
         select: "左の一覧からグループを選んでください。"
       show:
         title: "%{name} - グループ管理"
-        detail: "グループ詳細"
+        detail: "グループの詳細"
         add_child: "下位グループを追加"
         edit: "編集"
         back: "« グループ一覧へ戻る"
@@ -182,7 +182,7 @@ ja:
         no_parent: "（なし）"
       member_row:
         leader: "管理者"
-        remove: "外す"
+        remove: "削除"
       member_candidates:
         empty: "見つかりませんでした。"
         invited: "招待中"

@@ -10,7 +10,7 @@ const row = (id: string, name: string) => `
     <td><span data-name>${name}</span><span data-email></span></td>
     <td><input type="hidden" name="group[members][${id}]" value="member">
         <input type="checkbox" name="group[members][${id}]" value="leader"></td>
-    <td><button type="button" data-remove-member>外す</button></td>
+    <td><button type="button" data-remove-member>削除</button></td>
   </tr>`
 
 const candidate = (id: string, name: string) => `
