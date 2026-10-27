@@ -79,8 +79,10 @@ ja:
       show:
         title: "%{name} - グループ管理"
         detail: "グループの詳細"
+        actions: "グループの操作"
+        edit: "グループを編集"
+        edit_members: "メンバーを編集"
         add_child: "下位グループを追加"
-        edit: "編集"
         back: "« グループ一覧へ戻る"
         back_to_suspended: "« 利用停止中のグループへ戻る"
       new:
@@ -117,6 +119,10 @@ ja:
         cancel: "キャンセル"
         destroy: "このグループを削除"
         suspend: "利用停止"
+      edit_members:
+        title: "%{name}のメンバーの編集 - グループ管理"
+        detail: "メンバーの編集"
+        cancel: "キャンセル"
         members:
           heading: "所属メンバー（%{count}人）"
           add: "メンバーを追加"

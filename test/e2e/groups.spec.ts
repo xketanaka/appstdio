@@ -7,9 +7,11 @@ test.beforeAll(() => {
   data = scenario<typeof data>("groups")
 })
 
-test("編集の画面で、ダイアログから探して選んだ人を足し、グループ管理者にしてまとめて保存する", async ({ page }) => {
+test("メンバーの編集の画面で、ダイアログから探して選んだ人を足し、グループ管理者にしてまとめて保存する", async ({ page }) => {
   await login(page, data.owner)
-  await page.goto(`/management/groups/${data.groups.company}/edit`)
+  await page.goto(`/management/groups/${data.groups.company}`)
+  await page.getByLabel("グループの操作").click()
+  await page.getByRole("link", { name: "メンバーを編集" }).click()
 
   await page.getByRole("button", { name: "メンバーを追加" }).click()
   const dialog = page.getByRole("dialog", { name: "メンバーを追加" })

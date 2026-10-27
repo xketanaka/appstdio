@@ -58,13 +58,17 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "#group-detail", 0
   end
 
-  test "グループを選ぶと詳細を参照だけで出し、編集ボタンを置く" do
+  test "グループを選ぶと詳細を参照だけで出し、「⋮」に編集・メンバーの編集・下位グループの追加を並べる" do
     login(@admin)
     get management_group_path(@sales)
     assert_response :success
 
     assert_select "#group-tree a[aria-current=page]", text: "営業本部"
-    assert_select "#edit-group[href=?]", edit_management_group_path(@sales)
+    assert_select "details#group-actions summary[aria-label=?]", "グループの操作"
+    assert_equal [["グループを編集", edit_management_group_path(@sales)],
+                  ["メンバーを編集", edit_members_management_group_path(@sales)],
+                  ["下位グループを追加", new_management_group_path(parent_id: @sales)]],
+      css_select("#group-actions a").map { [it.text.strip, it["href"]] }
     assert_select "#group-detail" do
       assert_select "input, select, button", 0
       assert_select "dd", text: "営業本部"
@@ -178,11 +182,26 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
         assert_select "input#group_label_names[value=?]", "営業, 本部"
       end
 
+      # メンバーはメンバーの編集の画面で変える
+      assert_select "#direct-members", 0
+      assert_select "input[type=submit][value=?]", "保存する"
+      assert_select "a[href=?]", management_group_path(@sales), text: "キャンセル"
+    end
+  end
+
+  test "メンバーの編集の画面に今のメンバーを、グループ管理者を先に出す" do
+    login(@admin)
+    get edit_members_management_group_path(@sales)
+    assert_response :success
+
+    assert_select "#members-form[action=?]", update_members_management_group_path(@sales)
+    assert_select "#members-form" do
       assert_select "#direct-members tbody tr", 2
       assert_select "#direct-members tbody tr:first-child", text: /佐藤さん/
       assert_select "#direct-members tbody tr:first-child input[type=checkbox][name=?][value=leader][checked]",
         "group[members][#{@people["佐藤"].id}]"
       assert_select "#direct-members tbody tr:last-child input[type=checkbox][value=leader]:not([checked])"
+      assert_select "#direct-members tbody tr:last-child button", text: "削除"
       assert_select "#add-members"
       assert_select "dialog#member-dialog"
       assert_select "input[type=submit][value=?]", "保存する"
@@ -190,14 +209,15 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "グループを作ると、詳細の画面に移る。一覧に無いラベルはテナントのラベルに加わる" do
+  test "グループを作ると、続けてメンバーの編集の画面に移る。一覧に無いラベルはテナントのラベルに加わる" do
     login(@admin)
     post management_groups_path, params: { group: { name: " 第三営業部 ", parent_id: @sales.id, label_names: "営業、新設 ,営業" } }
 
     group = TenantContext.switch(tenant: @tenant) { Group.find_by!(name: "第三営業部") }
-    assert_redirected_to management_group_path(group)
+    assert_redirected_to edit_members_management_group_path(group)
     follow_redirect!
     assert_select "[role=status]", text: "登録しました。"
+    get management_group_path(group)
     assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
     assert_select "#group-labels span", text: /\A(営業|新設)\z/, count: 2
     TenantContext.switch(tenant: @tenant) { assert GroupLabel.exists?(name: "新設") }
@@ -263,33 +283,44 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "メンバーを外す・足す・グループ管理者を切り替えるを、まとめて保存する" do
+  test "メンバーを削除・追加・グループ管理者の切り替えを、まとめて保存する" do
     login(@admin)
-    patch management_group_path(@sales), params: { group: {
-      name: "営業本部", parent_id: @company.id, label_names: "",
+    patch update_members_management_group_path(@sales), params: { group: {
       members: { @people["山田"].id => "leader", @people["高橋"].id => "member" },
     } }
     assert_redirected_to management_group_path(@sales)
+    follow_redirect!
+    assert_select "[role=status]", text: "保存しました。"
 
     roles = TenantContext.switch(tenant: @tenant) do
       @sales.group_members.includes(:tenant_user).to_h { [it.tenant_user.display_name, it.role] }
     end
     assert_equal({ "山田さん" => "leader", "高橋さん" => "member" }, roles)
 
-    # 行をすべて外すと members は送られてこない
-    patch management_group_path(@sales), params: { group: { name: "営業本部", parent_id: @company.id, label_names: "" } }
+    # 行をすべて削除すると members は送られてこない
+    patch update_members_management_group_path(@sales)
     TenantContext.switch(tenant: @tenant) { assert_empty @sales.group_members }
   end
 
-  test "保存できなかったときは、送ったメンバーのとおりに出し直す" do
+  test "グループの編集では、名前などを変えてもメンバーは変わらない" do
     login(@admin)
     patch management_group_path(@sales), params: { group: {
-      name: "", parent_id: @company.id, label_names: "", members: { @people["高橋"].id => "leader" },
+      name: "営業統括本部", parent_id: @company.id, label_names: "", members: { @people["高橋"].id => "member" },
+    } }
+    assert_redirected_to management_group_path(@sales)
+    TenantContext.switch(tenant: @tenant) { assert_equal 2, @sales.group_members.count }
+  end
+
+  test "メンバーを保存できなかったときは、送ったメンバーのとおりに出し直す" do
+    login(@admin)
+    patch update_members_management_group_path(@sales), params: { group: {
+      members: { @people["高橋"].id => "leader", @people["山田"].id => "owner" },
     } }
     assert_response :unprocessable_entity
-    assert_select "#direct-members tbody tr", 1
+    assert_select "[role=alert]"
+    assert_select "#direct-members tbody tr", 2
     assert_select "#direct-members tbody tr", text: /高橋さん/
-    assert_select "#direct-members tbody tr input[type=checkbox][value=leader][checked]"
+    assert_select "#direct-members tbody tr:first-child input[type=checkbox][value=leader][checked]"
     TenantContext.switch(tenant: @tenant) { assert_equal 2, @sales.group_members.count }
   end
 
@@ -303,9 +334,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     login(@admin)
 
     [@people["高橋"], stranger].each do |tenant_user|
-      patch management_group_path(@sales1), params: { group: {
-        name: "第一営業部", parent_id: @sales.id, label_names: "", members: { tenant_user.id => "member" },
-      } }
+      patch update_members_management_group_path(@sales1), params: { group: { members: { tenant_user.id => "member" } } }
       assert_response :not_found
     end
     TenantContext.switch(tenant: @tenant) { assert_equal 2, @sales1.group_members.count }
@@ -423,7 +452,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "#group-tree", text: /営業本部|第一営業部/, count: 0
     assert_select "#suspension", text: /利用停止中です.*管理者さん/m
     assert_select "#suspension form[action=?] button:not([disabled])", reactivate_management_group_path(@sales)
-    assert_select "#edit-group, #add-child-group", 0
+    assert_select "#group-actions", 0
 
     TenantContext.switch(tenant: @tenant) do
       assert_equal [@sales.id] * 3, [@sales, @sales1, @sales2].map { it.reload.suspension_root_id }
@@ -434,11 +463,14 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
   test "停止中のグループは編集・削除・停止ができない" do
     login(@admin)
     [edit_management_group_path(@planning), confirm_destroy_management_group_path(@planning),
-     confirm_suspend_management_group_path(@planning), member_candidates_management_group_path(@planning)].each do |path|
+     confirm_suspend_management_group_path(@planning), member_candidates_management_group_path(@planning),
+     edit_members_management_group_path(@planning)].each do |path|
       get path
       assert_response :not_found
     end
     patch management_group_path(@planning), params: { group: { name: "新企画部", parent_id: @company.id } }
+    assert_response :not_found
+    patch update_members_management_group_path(@planning)
     assert_response :not_found
     delete management_group_path(@planning)
     assert_response :not_found
@@ -659,12 +691,14 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     params = { group: { name: "開発部", parent_id: @dev_hq.id, label_names: "" } }
 
     [@company, @dev, @dev_hq, @everyone].each do |group|
-      [:show, :edit, :sub_members, :member_candidates, :confirm_destroy, :confirm_suspend].each do |action|
+      [:show, :edit, :edit_members, :sub_members, :member_candidates, :confirm_destroy, :confirm_suspend].each do |action|
         get url_for(controller: "management/groups", action:, id: group.id, only_path: true)
         assert_response :not_found, "#{group.name} の #{action}"
       end
       patch management_group_path(group), params: params
       assert_response :not_found, "#{group.name} の update"
+      patch update_members_management_group_path(group)
+      assert_response :not_found, "#{group.name} の update_members"
       post suspend_management_group_path(group)
       assert_response :not_found, "#{group.name} の suspend"
       post reactivate_management_group_path(group)
@@ -684,9 +718,9 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
   test "グループ管理者は範囲の中を編集・作成できるが、最上位や範囲の外には置けない" do
     login(sato)
 
-    patch management_group_path(@sales1), params: { group: {
-      name: "法人営業部", parent_id: @sales.id, label_names: "", members: { @people["田中"].id => "leader" },
-    } }
+    patch management_group_path(@sales1), params: { group: { name: "法人営業部", parent_id: @sales.id, label_names: "" } }
+    assert_redirected_to management_group_path(@sales1)
+    patch update_members_management_group_path(@sales1), params: { group: { members: { @people["田中"].id => "leader" } } }
     assert_redirected_to management_group_path(@sales1)
 
     post management_groups_path, params: { group: { name: "第三営業部", parent_id: @sales.id, label_names: "" } }
@@ -717,9 +751,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "select#group_parent_id option[value='']", 0
     assert_select "select#group_parent_id option", text: /開発/, count: 0
 
-    patch management_group_path(@sales), params: { group: {
-      name: "営業統括本部", parent_id: @company.id, label_names: "", members: { @people["佐藤"].id => "leader" },
-    } }
+    patch management_group_path(@sales), params: { group: { name: "営業統括本部", parent_id: @company.id, label_names: "" } }
     assert_redirected_to management_group_path(@sales)
   end
 
@@ -758,15 +790,11 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     login(sato)
 
     # まだ開発部を管理しているので、グループ管理の一覧へ
-    patch management_group_path(@sales), params: { group: {
-      name: "営業本部", parent_id: @company.id, label_names: "", members: { @people["佐藤"].id => "member" },
-    } }
+    patch update_members_management_group_path(@sales), params: { group: { members: { @people["佐藤"].id => "member" } } }
     assert_redirected_to management_groups_path
 
     # どこも管理しなくなったので、トップへ
-    patch management_group_path(@dev), params: { group: {
-      name: "開発部", parent_id: @dev_hq.id, label_names: "", members: { @people["佐藤"].id => "member" },
-    } }
+    patch update_members_management_group_path(@dev), params: { group: { members: { @people["佐藤"].id => "member" } } }
     assert_redirected_to top_page_path
   end
 
