@@ -106,24 +106,46 @@ module Management
       @label_names = label_names_param
 
       if save_group
-        redirect_to management_group_path(@group), notice: t("messages.created")
+        # 作ったら続けて人を入れる
+        redirect_to edit_members_management_group_path(@group), notice: t("messages.created")
       else
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
-      @members = members_of(@group)
       @label_names = @group.labels.order(:name).pluck(:name)
     end
 
     def update
       @group.assign_attributes(params.expect(group: [:name, :parent_id]))
       @label_names = label_names_param
-      # 行を全部外すと members は送られてこない
+
+      if save_group
+        redirect_to management_group_path(@group), notice: t("messages.saved")
+      else
+        render :edit, status: :unprocessable_entity
+      end
+    end
+
+    def edit_members
+      @members = members_of(@group)
+    end
+
+    # 足す・削除・グループ管理者の切り替えを、まとめて保存する
+    def update_members
+      # 行を全部削除すると members は送られてこない
       roles = params.fetch(:group, {}).permit(members: {}).fetch(:members, nil).to_h.to_h { |id, role| [id.to_i, role] }
 
-      if save_group { @group.replace_members!(roles) }
+      saved = Group.transaction do
+        @group.replace_members!(roles)
+        true
+      rescue ActiveRecord::RecordInvalid => e
+        e.record.errors.full_messages.each { @group.errors.add(:base, it) }
+        raise ActiveRecord::Rollback
+      end
+
+      if saved
         # 自分のグループ管理者の印を外すと、範囲の外になって詳細（どこも管理していなければグループ管理も）を開けなくなる
         scope = GroupScope.new(current_tenant_user)
         destination =
@@ -136,7 +158,7 @@ module Management
         # 送られてきたとおりに出し直す
         users = TenantUser.includes(:user).where(id: roles.keys).index_by(&:id)
         @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
-        render :edit, status: :unprocessable_entity
+        render :edit_members, status: :unprocessable_entity
       end
     end
 
@@ -222,7 +244,6 @@ module Management
       Group.transaction do
         @group.save!
         @group.replace_labels!(@label_names)
-        yield if block_given?
         true
       rescue ActiveRecord::RecordInvalid => e
         e.record.errors.full_messages.each { @group.errors.add(:base, it) } unless e.record == @group

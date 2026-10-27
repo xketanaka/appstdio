@@ -85,6 +85,8 @@ Rails.application.routes.draw do
           get :sub_members
           get :member_candidates
           get :confirm_destroy
+          get :edit_members
+          patch :update_members
           get :confirm_suspend
           post :suspend
           post :reactivate
