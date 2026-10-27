@@ -57,7 +57,8 @@ module E2eScenarios
       spec = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("初版の中身"), filename: "仕様書.txt")
       Files::Node.create_file!(parent: my_drive, blob: spec, creator: owner)
       %w[メモ.txt 議事録.txt 変更前.txt 不要.txt].each do |name|
-        Files::Node.create!(tenant:, drive_id: my_drive.drive_id, parent: my_drive, kind: :file, name:, creator: owner)
+        blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("#{name} の中身"), filename: name)
+        Files::Node.create_file!(parent: my_drive, blob:, creator: owner)
       end
 
       {

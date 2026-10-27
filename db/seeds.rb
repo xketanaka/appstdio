@@ -29,10 +29,36 @@ if Rails.env.local?
     Group.find_or_create_by!(tenant: tenant, parent: parent, name: name)
   end
 
-  def node(parent, kind, name, creator, byte_size: 0)
-    Files::Node.kept.find_or_create_by!(parent: parent, name: name) do |node|
-      node.assign_attributes(tenant: parent.tenant, drive: parent.drive, kind: kind, creator: creator, byte_size: byte_size)
+  def folder(parent, name, creator)
+    Files::Node.kept.find_by(parent:, name:) || Files::Node.create_folder!(parent:, name:, creator:)
+  end
+
+  # ファイルは中身（版1）ごと作る。中身の無いファイルは、画面から作れない不整合なデータになる
+  # rake の file（ファイルのタスクを作る）とぶつかるので、名前を変えている
+  def sample_file(parent, name, creator, content)
+    Files::Node.kept.find_by(parent:, name:) || Files::Node.create_file!(
+      parent:, creator:, blob: ActiveStorage::Blob.create_and_upload!(io: StringIO.new(content), filename: name),
+    )
+  end
+
+  # 1ページに1行だけ書いた PDF。PDF のビューアで開ける最小の形
+  def pdf(text)
+    stream = "BT /F1 24 Tf 72 760 Td (#{text}) Tj ET"
+    objects = [
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+      "<< /Length #{stream.bytesize} >>\nstream\n#{stream}\nendstream",
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+    body = +"%PDF-1.4\n"
+    offsets = objects.each_with_index.map do |object, i|
+      body.bytesize.tap { body << "#{i + 1} 0 obj\n#{object}\nendobj\n" }
     end
+    xref = body.bytesize
+    body << "xref\n0 #{objects.size + 1}\n0000000000 65535 f \n"
+    offsets.each { body << format("%010d 00000 n \n", it) }
+    body << "trailer\n<< /Size #{objects.size + 1} /Root 1 0 R >>\nstartxref\n#{xref}\n%%EOF\n"
   end
 
   def grant(node, subject, role)
@@ -54,21 +80,23 @@ if Rails.env.local?
   sales1 = group(sample, "営業1課", sales)
   GroupMember.find_or_create_by!(tenant: sample, group: sales1, tenant_user: sample_member)
 
+  # 以前の seed は中身（版）の無いファイルを作っていた。残っていれば消して、中身ごと作り直す
+  Files::Node.file.where(current_version_id: nil).delete_all
+
   shared = Files::Drive.shared_root(sample)
-  sales_folder = node(shared, :folder, "営業", sample_admin)
+  sales_folder = folder(shared, "営業", sample_admin)
   grant(sales_folder, sales, :editor)
-  estimates = node(sales_folder, :folder, "見積", sample_admin)
-  node(estimates, :file, "見積書_A社.pdf", sample_member, byte_size: 1_258_291)
-  hr = node(shared, :folder, "人事", sample_admin)
+  estimates = folder(sales_folder, "見積", sample_admin)
+  sample_file(estimates, "見積書_A社.pdf", sample_member, pdf("Estimate for Company A"))
+  hr = folder(shared, "人事", sample_admin)
   grant(hr, Group.everyone_of(sample), :none)
-  review = node(hr, :file, "評価シート.xlsx", sample_admin, byte_size: 48_128)
+  review = sample_file(hr, "評価シート.csv", sample_admin, "氏名,評価\n一般ユーザ,A\n")
   grant(review, sample_member, :viewer)
-  node(shared, :file, "議事録.docx", sample_admin, byte_size: 25_088)
+  sample_file(shared, "議事録.md", sample_admin, "# 定例会議 議事録\n\n- 来期の予算について確認した\n")
   unless Files::Node.trashed.exists?(parent: sales_folder, name: "古い見積.pdf")
-    old = node(sales_folder, :file, "古い見積.pdf", sample_member, byte_size: 512_000)
-    old.update!(deleted_at: Time.current, deleted_root_id: old.id, deleted_by: sample_member)
+    Files::Node.trash!([sample_file(sales_folder, "古い見積.pdf", sample_member, pdf("Old estimate"))], actor: sample_member)
   end
-  node(Files::Drive.personal_root(sample_member), :file, "メモ.txt", sample_member, byte_size: 1_024)
+  sample_file(Files::Drive.personal_root(sample_member), "メモ.txt", sample_member, "来週の打ち合わせの準備をする\n")
 
   operator = Operator.find_or_initialize_by(email: "operator@example.com")
   operator.password = password if operator.new_record?
