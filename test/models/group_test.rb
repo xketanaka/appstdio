@@ -20,6 +20,16 @@ class GroupTest < ActiveSupport::TestCase
     assert_equal %w[営業 地域 本部], GroupLabel.pluck(:name).sort
   end
 
+  test "最上位から自分までの名前の並びを、まとめて引く" do
+    first = Group.create!(tenant: @tenant, parent: @sales, name: "1課")
+    team = Group.create!(tenant: @tenant, parent: first, name: "1班")
+    other = Group.create!(tenant: @tenant, parent: Group.create!(tenant: @tenant, name: "西日本"), name: "1課")
+
+    paths = Group.name_paths_of([team, other, @sales])
+
+    assert_equal({ team.id => %w[営業部 1課 1班], other.id => %w[西日本 1課], @sales.id => %w[営業部] }, paths)
+  end
+
   test "下位のグループの id を、停止中も含めて孫までたどる" do
     first = Group.create!(tenant: @tenant, parent: @sales, name: "1課")
     team = Group.create!(tenant: @tenant, parent: first, name: "1班")

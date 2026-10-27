@@ -8,13 +8,14 @@ module Files
       def index
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].to_s.strip)}%"
         groups = Group.active.where("name ILIKE ?", pattern).order(:kind, :name).limit(LIMIT)
+        paths = Group.name_paths_of(groups.to_a)
         users = TenantUser.where(status: [:active, :invited]).joins(:user)
           .where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
           .includes(:user).order(:display_name).limit(LIMIT)
 
         render json: {
-          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, detail: nil } } +
-            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, detail: it.user.email } },
+          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, path: paths.fetch(it.id), detail: nil } } +
+            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, path: nil, detail: it.user.email } },
         }
       end
     end

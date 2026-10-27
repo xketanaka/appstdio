@@ -8,6 +8,8 @@ module Files
       def show
         own = @node.permissions.includes(:group, :tenant_user).index_by(&:subject_key)
         inherited = Permission.nearest_on_path(@node.ancestor_ids).values.reject(&:role_none?)
+        groups = (own.values + inherited).filter_map(&:group)
+        @group_paths = Group.name_paths_of(groups)
         sources = Node.where(id: inherited.map(&:node_id)).includes(drive: :owner).index_by(&:id)
 
         render json: {
@@ -70,10 +72,10 @@ module Files
       def subject_json(setting)
         if setting.group
           { type: "group", id: setting.group_id, name: setting.group.name, everyone: setting.group.everyone?,
-            suspended: setting.group.suspended? }
+            suspended: setting.group.suspended?, path: @group_paths.fetch(setting.group_id) }
         else
           { type: "tenant_user", id: setting.tenant_user_id, name: setting.tenant_user.display_name, everyone: false,
-            suspended: setting.tenant_user.suspended? }
+            suspended: setting.tenant_user.suspended?, path: nil }
         end
       end
     end

@@ -70,6 +70,7 @@ const remove = (subject: Subject) => {
 const add = (candidate: ShareCandidate) => {
   const subject: Subject = {
     type: candidate.type, id: candidate.id, name: candidate.name, everyone: candidate.everyone, suspended: false,
+    path: candidate.path,
   }
   cancelled.delete(keyOf(subject))
   own.value.push({ subject, role: "viewer" })
@@ -160,7 +161,10 @@ const submit = async () => {
               class="min-w-0 flex-1"
               :class="{ 'text-slate-400 line-through': cancelled.has(keyOf(setting.subject)) }"
             >
-              <span class="font-medium">{{ setting.subject.name }}</span>
+              <span
+                class="font-medium"
+                :title="setting.subject.path?.join(' / ')"
+              >{{ setting.subject.name }}</span>
               <span
                 v-if="setting.subject.suspended"
                 class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
@@ -198,7 +202,10 @@ const submit = async () => {
             class="flex items-center gap-3 py-1.5 text-sm"
           >
             <span class="min-w-0 flex-1 truncate">
-              <span class="font-medium">{{ setting.subject.name }}</span>
+              <span
+                class="font-medium"
+                :title="setting.subject.path?.join(' / ')"
+              >{{ setting.subject.name }}</span>
               <span
                 v-if="setting.subject.suspended"
                 class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
@@ -270,6 +277,7 @@ const submit = async () => {
               <button
                 type="button"
                 class="flex w-full cursor-pointer items-baseline gap-2 px-4 py-2 text-left hover:bg-slate-100"
+                :title="candidate.path?.join(' / ')"
                 @click="add(candidate)"
               >
                 <span class="font-medium">{{ candidate.name }}</span>

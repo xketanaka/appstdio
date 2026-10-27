@@ -38,6 +38,23 @@ class Group < ApplicationRecord
     SQL
   end
 
+  # 最上位から自分までの名前の並び。{ id => ["全社", "営業部"] }。同じ名前のグループを見分けるのに使う。
+  # 祖先は階層ごとにまとめて読むので、クエリは深さの分だけ
+  def self.name_paths_of(groups)
+    known = groups.index_by(&:id)
+    missing = groups.filter_map(&:parent_id) - known.keys
+    until missing.empty?
+      where(id: missing).find_each { known[it.id] = it }
+      missing = known.values.filter_map(&:parent_id).uniq - known.keys
+    end
+
+    groups.to_h do |group|
+      chain = [group]
+      chain.unshift(known[chain.first.parent_id]) while chain.first.parent_id
+      [group.id, chain.map(&:name)]
+    end
+  end
+
   # ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える
   def replace_labels!(names)
     label_ids = names.map { |name| GroupLabel.find_or_create_by!(tenant:, name:).id }

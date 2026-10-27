@@ -16,10 +16,10 @@ vi.mock("../api", async (original) => ({
   },
 }))
 
-const everyone = { type: "group" as const, id: 1, name: "全員", everyone: true, suspended: false }
-const accounting = { type: "group" as const, id: 2, name: "経理部", everyone: false, suspended: false }
-const sales = { type: "group" as const, id: 3, name: "営業部", everyone: false, suspended: true }
-const ichiro = { type: "tenant_user" as const, id: 7, name: "一郎", everyone: false, suspended: false }
+const everyone = { type: "group" as const, id: 1, name: "全員", everyone: true, suspended: false, path: ["全員"] }
+const accounting = { type: "group" as const, id: 2, name: "経理部", everyone: false, suspended: false, path: ["管理本部", "経理部"] }
+const sales = { type: "group" as const, id: 3, name: "営業部", everyone: false, suspended: true, path: ["営業部"] }
+const ichiro = { type: "tenant_user" as const, id: 7, name: "一郎", everyone: false, suspended: false, path: null }
 
 const sharing = (): Sharing => ({
   inherited: [
@@ -68,6 +68,13 @@ test("継承した権限を継承元と一緒に上に、このフォルダの�
   expect(rows(wrapper, "share-own").map((li) => li.find("span").text())).toEqual(["営業部利用停止中", "一郎"])
 })
 
+test("グループの名前にマウスを載せると、最上位からのパスを出す", async () => {
+  const wrapper = await render()
+
+  expect(rows(wrapper, "share-inherited")[1].find("[title]").attributes("title")).toBe("管理本部 / 経理部")
+  expect(rows(wrapper, "share-own")[1].find("[title]").exists()).toBe(false)
+})
+
 test("ファイルでは見出しを「このファイル」にする", async () => {
   const wrapper = await render("file")
 
@@ -75,7 +82,7 @@ test("ファイルでは見出しを「このファイル」にする", async ()
 })
 
 test("保存すると、開いたときからの差分だけを送る", async () => {
-  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }, { type: "tenant_user", id: 8, name: "二郎", everyone: false, suspended: false, detail: "jiro@example.com" }] })
+  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }, { type: "tenant_user", id: 8, name: "二郎", everyone: false, suspended: false, path: null, detail: "jiro@example.com" }] })
   const wrapper = await render()
 
   const [everyoneRow, accountingRow] = rows(wrapper, "share-inherited")

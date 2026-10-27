@@ -526,6 +526,7 @@ class FilesTest < ActionDispatch::IntegrationTest
                      "一般さん" => { "role" => "manager", "cancelled" => false } }, inherited)
       assert_equal "営業", json["inherited"].find { it.dig("subject", "name") == "一般さん" }.dig("from", "label")
       assert_equal [["営業部", "editor"]], json["own"].map { [it.dig("subject", "name"), it["role"]] }
+      assert_equal ["営業部"], json["own"].first.dig("subject", "path")
     end
 
     test "見えない上位のフォルダは、継承元の名前を返さない" do
@@ -618,6 +619,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       get files_api_share_candidates_path, params: { q: "営業" }
 
       assert_equal ["営業部"], json["candidates"].pluck("name")
+      assert_equal [["営業部"]], json["candidates"].pluck("path")
 
       get files_api_share_candidates_path, params: { q: "" }
       names = json["candidates"].pluck("name")
