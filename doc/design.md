@@ -1,7 +1,7 @@
 # 画面デザインの指針
 
 画面の見た目の決まり。新しい画面を作るときも、既存の画面を直すときも、ここに従う。
-CSS の書き方の仕組み（Tailwind の構成、開閉する UI の作り方など）は `doc/architecture.md` の「CSS」を参照。
+CSS の書き方の仕組み（Tailwind の構成、開閉する UI の作り方など）は `doc/frontend.md` の「CSS」を参照。
 
 ## 方向性
 
@@ -36,7 +36,7 @@ CSS の書き方の仕組み（Tailwind の構成、開閉する UI の作り方
 
 ## 文字
 
-書体は Noto Sans JP（`doc/architecture.md` の「CSS」）。
+書体は Noto Sans JP（`doc/frontend.md` の「CSS」）。
 
 | 用途 | クラス |
 |---|---|
@@ -191,4 +191,4 @@ Google ドライブのスナックバーと同じ扱い。`rounded-xl`、`shadow
 1. 骨格（パネルの中身だけを書く、一覧か詳細か）を上の2通りから選ぶ
 2. ボタン・入力欄・左ペインの項目は部品のクラス（`btn` / `input` / `nav-item`）を使う
 3. 色・角丸・文字の大きさは、この文書の表にあるものだけを使う
-4. スマホ幅（390px 程度）でも崩れないか確かめる（`doc/architecture.md` の「PC とスマホの両対応」）
+4. スマホ幅（390px 程度）でも崩れないか確かめる（`doc/frontend.md` の「PC とスマホの両対応」）

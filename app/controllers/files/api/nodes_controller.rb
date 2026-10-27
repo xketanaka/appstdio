@@ -92,7 +92,7 @@ module Files
       end
 
       # 閲覧できれば、5分だけ有効な保存先の URL へ転送する。Active Storage の公開ルートは
-      # 権限を確かめないので使わない（architecture.md の「テナント分離」）
+      # 権限を確かめないので使わない（doc/database.md の「テナント分離」）
       def download
         file = Node.kept.file.find(params[:id])
         raise ActiveRecord::RecordNotFound unless access.effective_permission(file).readable?

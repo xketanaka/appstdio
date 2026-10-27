@@ -600,7 +600,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
   end
 
   test "自分の他のテナントでの所属は、候補にも「全員」の人数にも入れない" do
-    # tenant_users は RLS でも、ログインしている人の他のテナントでの所属が見える
+    # 以前は tenant_users の RLS が、ログインしている人の他のテナントでの所属も見せていた
     other = Tenant.setup!(name: "テナントB")
     TenantContext.switch(tenant: other) do
       TenantUser.create!(tenant: other, user: @admin, display_name: "Bの管理者さん", role: :admin, status: :active)

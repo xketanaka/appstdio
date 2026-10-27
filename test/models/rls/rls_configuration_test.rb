@@ -80,4 +80,17 @@ class RlsConfigurationTest < ActiveSupport::TestCase
     assert_empty unprotected,
       "RLS が有効になっていないテナントスコープのテーブルがあります: #{unprotected.join(", ")}"
   end
+
+  test "own_memberships は所有者の権限で動き、検索パスを固定している" do
+    function = ApplicationRecord.with_connection do |connection|
+      connection.select_one(<<~SQL)
+        SELECT p.prosecdef, p.proconfig, pg_get_userbyid(p.proowner) AS owner
+          FROM pg_proc p WHERE p.proname = 'own_memberships'
+      SQL
+    end
+
+    assert_equal true, function["prosecdef"], "SECURITY DEFINER でないと、tenant_users の RLS で今のテナントの行しか返さない"
+    assert_not_equal ENV.fetch("DB_USER", "appstdio_app"), function["owner"], "接続ロールの持ち物だと RLS を通る"
+    assert_match(/search_path/, function["proconfig"].to_s, "SECURITY DEFINER の関数は search_path を固定しないと乗っ取られうる")
+  end
 end
