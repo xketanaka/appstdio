@@ -5,7 +5,7 @@ import type { Row } from "../rows"
 import FileList from "./FileList.vue"
 
 const row = (overrides: Partial<Row>): Row => ({
-  id: 1, kind: "file", name: "議事録.docx", readable: true, editable: false,
+  id: 1, kind: "file", name: "議事録.docx", readable: true, editable: false, manageable: false,
   person: "管理者", time: "2026-10-05T19:20:00+09:00", byteSize: 25_088, folderId: null,
   ...overrides,
 })
@@ -115,4 +115,13 @@ test("閲覧できるファイルは、行のメニューからダウンロー�
   expect(menus).toEqual([["ダウンロード", "版の履歴"], [], ["ダウンロード", "新しい版をアップロード", "版の履歴"]])
   await wrapper.find("details button").trigger("click")
   expect(wrapper.emitted<[Row]>("download")?.[0][0].id).toBe(1)
+})
+
+test("管理者の権限がある行だけ、メニューから共有設定を開ける", async () => {
+  const wrapper = await render([row({}), row({ id: 2, manageable: true })])
+  const share = (tr: number) => wrapper.findAll("tbody tr")[tr].findAll("details button").find((button) => button.text() === "共有")
+
+  expect(share(0)).toBeUndefined()
+  await share(1)!.trigger("click")
+  expect(wrapper.emitted<[Row]>("share")?.[0][0].id).toBe(2)
 })

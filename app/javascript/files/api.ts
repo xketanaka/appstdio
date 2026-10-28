@@ -16,6 +16,8 @@ export type Entry = {
   readable: boolean
   // そのもの自身を編集できるか（ファイルなら新しい版を足せるか）
   editable: boolean
+  // 共有設定を変えられるか（そのもの自身の管理者か）
+  manageable: boolean
   owner: string | null
   updated_at: string | null
   byte_size: number | null
@@ -52,8 +54,33 @@ export type FolderPayload = {
   breadcrumbs: FolderLink[]
   via_shared: boolean
   can_edit: boolean
+  can_manage: boolean
   entries: Entry[]
 }
+
+export type Role = "viewer" | "editor" | "manager"
+
+// suspended は利用停止中の人・グループ。停止中のグループへの設定は効かないが、行は残る。
+// path はグループの最上位から自分までの名前の並び（人は null）
+export type Subject = {
+  type: "group" | "tenant_user"
+  id: number
+  name: string
+  everyone: boolean
+  suspended: boolean
+  path: string[] | null
+}
+
+// 継承元（from）は、上位のフォルダが見えない人には null
+export type InheritedSetting = { subject: Subject, role: Role, from: FolderLink | null, cancelled: boolean }
+
+export type Sharing = { inherited: InheritedSetting[], own: { subject: Subject, role: Role }[] }
+
+// 加える相手の候補。detail は人のメールアドレス
+export type ShareCandidate = Subject & { detail: string | null }
+
+// role が null ならこのものの設定を消す（継承に戻す）。"none" は継承の打ち消し
+export type SharingChange = { subject_type: Subject["type"], subject_id: number, role: Role | "none" | null }
 
 export type FolderSource = { drive: "shared" | "mine" } | { id: string }
 
@@ -119,6 +146,11 @@ export const api = {
   restoreNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/restore", { node_ids: nodeIds }),
   move: (nodeIds: number[], destinationId: number) =>
     request<void>("POST", "/files/api/nodes/move", { node_ids: nodeIds, destination_id: destinationId }),
+  sharing: (nodeId: number) => request<Sharing>("GET", `/files/api/nodes/${nodeId}/permissions`),
+  updateSharing: (nodeId: number, changes: SharingChange[]) =>
+    request<void>("PATCH", `/files/api/nodes/${nodeId}/permissions`, { changes }),
+  shareCandidates: (query: string) =>
+    request<{ candidates: ShareCandidate[] }>("GET", `/files/api/share_candidates?q=${encodeURIComponent(query)}`),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),
   trash: () => request<{ entries: TrashEntry[] }>("GET", "/files/api/trash"),
   enterPrivilegedMode: () => request<void>("POST", "/files/api/privileged_mode"),
