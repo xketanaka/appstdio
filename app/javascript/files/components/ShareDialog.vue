@@ -21,6 +21,7 @@ const submitting = ref(false)
 const query = ref("")
 const candidates = shallowRef<ShareCandidate[]>([])
 let searchTimer: ReturnType<typeof setTimeout> | undefined
+const searchInput = ref<HTMLInputElement | null>(null)
 
 const keyOf = (subject: Pick<Subject, "type" | "id">) => `${subject.type}:${subject.id}`
 
@@ -33,6 +34,8 @@ watch(() => state.sharingOf, async (target) => {
   candidates.value = []
   if (!target) return
   dialog.value?.showModal()
+  // 検索欄ではなくダイアログにフォーカスを当てる
+  dialog.value?.focus()
   try {
     const loaded = await api.sharing(target.id)
     inherited.value = loaded.inherited
@@ -84,6 +87,7 @@ const search = () => {
   searchTimer = setTimeout(async () => {
     try {
       const found = await api.shareCandidates(query.value)
+      if (document.activeElement !== searchInput.value) return
       const added = new Set(own.value.map((setting) => keyOf(setting.subject)))
       candidates.value = found.candidates.filter((candidate) => !added.has(keyOf(candidate)))
     } catch (error) {
@@ -130,7 +134,8 @@ const submit = async () => {
   <dialog
     ref="dialog"
     aria-labelledby="share-title"
-    class="m-auto w-[calc(100%-2rem)] max-w-xl rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40"
+    tabindex="-1"
+    class="m-auto outline-none w-[calc(100%-2rem)] max-w-xl rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40"
     @close="state.sharingOf = null"
   >
     <form @submit.prevent="submit">
@@ -162,6 +167,7 @@ const submit = async () => {
           >{{ t("share.search_label") }}</label>
           <input
             id="share-search"
+            ref="searchInput"
             v-model="query"
             type="search"
             autocomplete="off"

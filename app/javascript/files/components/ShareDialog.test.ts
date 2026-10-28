@@ -79,6 +79,17 @@ test("グループの名前にマウスを載せると、最上位からのパ�
   expect(rows(wrapper, "share-own")[1].find(":scope > div [title]").exists()).toBe(false)
 })
 
+test("開いた直後は検索欄ではなくダイアログにフォーカスを置き、候補を出さない", async () => {
+  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }] })
+  const wrapper = await render()
+  // jsdom の showModal はフォーカスを動かさないので、ブラウザで起きる focus を起こす
+  await wrapper.find("#share-search").trigger("focus")
+  await vi.runAllTimersAsync()
+
+  expect(document.activeElement).toBe(wrapper.find("dialog").element)
+  expect(wrapper.find("[aria-label=追加する相手の候補]").exists()).toBe(false)
+})
+
 test("ファイルでは見出しを「このファイル」にする", async () => {
   const wrapper = await render("file")
 
@@ -94,7 +105,9 @@ test("保存すると、開いたときからの差分だけを送る", async ()
   await accountingRow.find("button").trigger("click")
   await wrapper.find("select").setValue("manager")
   await wrapper.find("[aria-label='一郎 を外す']").trigger("click")
-  await wrapper.find("#share-search").setValue("じ")
+  const searchInput = wrapper.find<HTMLInputElement>("#share-search")
+  searchInput.element.focus()
+  await searchInput.setValue("じ")
   await vi.runAllTimersAsync()
   await wrapper.findAll("[aria-label=追加する相手の候補] button").find((each) => each.text().includes("jiro@example.com"))!.trigger("click")
   await wrapper.find("form").trigger("submit")
