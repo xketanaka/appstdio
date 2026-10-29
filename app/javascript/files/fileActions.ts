@@ -15,6 +15,11 @@ export function showVersions(row: Row) {
   state.versionsOf = { id: row.id, name: row.name }
 }
 
+// 共有設定を開く（App の ShareDialog が state.sharingOf を見て出す）
+export function showSharing(target: { id: number, name: string, kind: "folder" | "file" }) {
+  state.sharingOf = { id: target.id, name: target.name, kind: target.kind }
+}
+
 // 新しい版にするファイルを選ばせる。選んだら、そのファイルの新しい版として上げる
 export function chooseNewVersion(row: Row) {
   const input = document.createElement("input")

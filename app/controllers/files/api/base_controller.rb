@@ -90,6 +90,7 @@ module Files
           name: node.name,
           readable:,
           editable: permission.editable?,
+          manageable: permission.manageable?,
           owner: (node.creator&.display_name if readable),
           updated_at: (node.updated_at if readable),
           byte_size: (node.byte_size if readable && node.file?),

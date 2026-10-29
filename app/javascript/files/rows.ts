@@ -7,6 +7,7 @@ export type Row = {
   name: string
   readable: boolean
   editable: boolean
+  manageable: boolean
   person: string | null
   time: string | null
   byteSize: number | null
@@ -20,6 +21,7 @@ export function entryRow(entry: Entry): Row {
     name: entry.name,
     readable: entry.readable,
     editable: entry.editable,
+    manageable: entry.manageable,
     person: entry.owner,
     time: entry.updated_at,
     byteSize: entry.byte_size,
@@ -35,6 +37,7 @@ export function trashRow(entry: TrashEntry): Row {
     name: entry.name,
     readable: true,
     editable: false,
+    manageable: false,
     person: entry.deleted_by,
     time: entry.deleted_at,
     byteSize: entry.byte_size,

@@ -235,3 +235,22 @@ test("同じ名前で上げると新しい版になり、版の履歴でラベ�
   for await (const chunk of await download.createReadStream()) chunks.push(chunk as Buffer)
   expect(Buffer.concat(chunks).toString()).toBe("初版の中身")
 })
+
+test("フォルダの共有設定で人を探して加え、まとめて保存する", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto(`/files/folders/${data.folders.estimates}`)
+
+  await page.getByRole("button", { name: "共有", exact: true }).click()
+  const dialog = page.getByRole("dialog", { name: "「見積」の共有" })
+  await expect(dialog.getByRole("region", { name: "親フォルダから継承した権限" }))
+    .toContainText("全員閲覧者（組織共有ドライブから継承）")
+
+  await dialog.getByLabel("追加する相手").fill("一般")
+  await dialog.getByRole("button", { name: /一般さん/ }).click()
+  await dialog.getByLabel("一般さん の権限").selectOption({ label: "編集者" })
+  await dialog.getByRole("button", { name: "保存する" }).click()
+  await expect(page.getByRole("status").filter({ hasText: "「見積」の共有設定を保存しました" })).toBeVisible()
+
+  await page.getByRole("button", { name: "共有", exact: true }).click()
+  await expect(dialog.getByLabel("一般さん の権限")).toHaveValue("editor")
+})

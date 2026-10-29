@@ -12,7 +12,7 @@ import SelectionToolbar from "../components/SelectionToolbar.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
 import { endDrag, startDrag, useDropTargets } from "../dnd"
-import { chooseNewVersion, download, showVersions } from "../fileActions"
+import { chooseNewVersion, download, showSharing, showVersions } from "../fileActions"
 import { changed, notifyOperationError, showFolder, trashItems } from "../store"
 import { useLoad } from "../useLoad"
 import { uploadFiles } from "../uploads"
@@ -142,6 +142,15 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
           {{ data.folder.label }}
         </h1>
       </div>
+      <div class="flex shrink-0 items-center gap-2">
+      <button
+        v-if="data.can_manage"
+        type="button"
+        class="btn btn-secondary btn-sm"
+        @click="showSharing({ id: data.folder.id, name: data.folder.label, kind: 'folder' })"
+      >
+        {{ t("folder.share") }}
+      </button>
       <!-- data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.ts が拾っている） -->
       <details
         v-if="data.can_edit"
@@ -184,6 +193,7 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
           </button>
         </div>
       </details>
+      </div>
       <input
         ref="fileInput"
         type="file"
@@ -217,6 +227,7 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       @download="download"
       @upload-version="chooseNewVersion"
       @versions="showVersions"
+      @share="showSharing"
     >
       <template
         v-if="selected.size > 0"
