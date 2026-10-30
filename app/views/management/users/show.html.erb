@@ -1,0 +1,58 @@
+<% content_for :title do %><%= t(".title", name: @tenant_user.display_name) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <%= link_to t(".back"), management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+    <div id="user-detail">
+      <dl class="mb-6 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr] sm:gap-y-3">
+        <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:display_name) %></dt>
+        <dd class="mb-2 sm:mb-0"><%= @tenant_user.display_name %></dd>
+
+        <dt class="text-sm text-slate-500"><%= User.human_attribute_name(:email) %></dt>
+        <dd class="mb-2 break-all sm:mb-0"><%= @tenant_user.user.email %></dd>
+
+        <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:role) %></dt>
+        <dd class="mb-2 sm:mb-0"><%= t("enums.tenant_user.role.#{@tenant_user.role}") %></dd>
+
+        <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:status) %></dt>
+        <dd class="mb-2 sm:mb-0"><%= t("enums.tenant_user.status.#{@tenant_user.status}") %></dd>
+      </dl>
+
+      <section id="user-groups" class="mb-6">
+        <h3 class="mb-2 text-sm font-semibold"><%= t(".groups.heading", count: @memberships.size) %></h3>
+        <% if @memberships.empty? %>
+          <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".groups.empty") %></p>
+        <% else %>
+          <table class="w-full">
+            <tbody>
+              <% @memberships.each do |member, path| %>
+                <tr class="border-t border-slate-200">
+                  <td class="py-2">
+                    <span class="flex items-center gap-2">
+                      <%= link_to member.group.name, management_group_path(member.group),
+                            class: "truncate text-primary-700 hover:underline" %>
+                      <% if member.leader? %>
+                        <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".groups.leader") %></span>
+                      <% end %>
+                      <% if member.group.suspended? %>
+                        <span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800"><%= t(".groups.suspended") %></span>
+                      <% end %>
+                    </span>
+                    <% if path.size > 1 %>
+                      <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" > ") %></span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

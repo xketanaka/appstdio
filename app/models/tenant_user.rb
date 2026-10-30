@@ -1,6 +1,7 @@
 class TenantUser < ApplicationRecord
   belongs_to :tenant
   belongs_to :user
+  has_many :group_members
 
   enum :role, { owner: "owner", admin: "admin", member: "member" }, validate: true
   # deleted は利用者管理で削除した所属。行を残すのは、ファイルの作成者などの参照と、マイドライブを残すため

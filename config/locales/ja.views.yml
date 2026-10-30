@@ -57,6 +57,16 @@ ja:
       index:
         title: "利用者管理"
         heading: "利用者管理"
+      show:
+        title: "%{name} - 利用者管理"
+        heading: "利用者管理"
+        back: "« 利用者一覧へ戻る"
+        detail: "利用者の詳細"
+        groups:
+          heading: "所属グループ（%{count}件）"
+          empty: "所属しているグループはありません。"
+          leader: "グループ管理者"
+          suspended: "停止中"
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"
