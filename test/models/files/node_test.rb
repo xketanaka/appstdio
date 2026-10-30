@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Files::NodeTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @tenant = Tenant.setup!(name: "テナントA")
     user = User.create!(email: "a@example.com", password: "password1234")
@@ -208,6 +210,54 @@ class Files::NodeTest < ActiveSupport::TestCase
       assert_equal 3, restored.number
       assert_equal "版1", restored.reload.body.download.force_encoding("UTF-8")
       assert_equal({ "version" => 3, "restored_from" => 1 }, Files::Activity.updated.order(:id).last.detail)
+    end
+  end
+
+  describe ".purge!" do
+    setup do
+      @folder = Files::Node.create_folder!(parent: @root, name: "営業", creator: @member)
+      @file = Files::Node.create_file!(
+        parent: @folder, blob: ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版1"), filename: "見積.txt"),
+        creator: @member,
+      )
+      @file.add_version!(blob: ActiveStorage::Blob.create_and_upload!(io: StringIO.new("版2です"), filename: "a.txt"), creator: @member)
+      Files::Node.trash!([@folder], actor: @member)
+    end
+
+    test "配下も含めて見えなくし、版の中身を外して使用量から引き、操作履歴を残す" do
+      blobs = @file.versions.map { it.body.blob }
+
+      perform_enqueued_jobs { Files::Node.purge!([@folder.reload], actor: @member) }
+
+      assert [@folder, @file].all? { it.reload.purged_at }
+      assert_empty Files::Node.trashed
+      assert @file.versions.all?(&:purged_at)
+      assert_not @file.versions.any? { it.body.attached? }
+      assert_not blobs.any? { ActiveStorage::Blob.exists?(it.id) }, "中身も消す"
+      assert_equal 0, @tenant.files_setting.reload.storage_used_bytes
+      assert_equal [[@folder.id, @member.id]], Files::Activity.purged.pluck(:node_id, :actor_id)
+    end
+
+    test "ほかのファイルの版も指している中身は消さない" do
+      shared = @file.current_version.body.blob
+      other = Files::Node.create_file!(parent: @root, blob: shared, creator: @member)
+
+      perform_enqueued_jobs { Files::Node.purge!([@folder.reload], actor: @member) }
+
+      assert_equal "版2です", other.current_version.body.download.force_encoding("UTF-8")
+      assert_equal shared.byte_size, @tenant.files_setting.reload.storage_used_bytes
+    end
+
+    test "完全に削除したものは、もう一度削除しても使用量を引かず、復元もしない" do
+      Files::Node.purge!([@folder.reload], actor: @member)
+      @tenant.files_setting.update!(storage_used_bytes: 100)
+
+      Files::Node.purge!([@folder], actor: @member)
+      Files::Node.restore!([@folder], actor: @member)
+
+      assert_equal 100, @tenant.files_setting.reload.storage_used_bytes
+      assert_equal 1, Files::Activity.purged.count
+      assert_not_nil @folder.reload.deleted_at
     end
   end
 end

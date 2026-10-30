@@ -41,6 +41,12 @@ module Files
         render json: { errors: e.messages }, status: :unprocessable_content
       end
 
+      # 完全に削除できるのも、元に戻せる人と同じ（doc/files.md の「ゴミ箱」）
+      def purge
+        Node.purge!(editable_children!(Node.trash_roots, params[:node_ids]), actor: current_tenant_user)
+        head :no_content
+      end
+
       # ダイレクトアップロードの1段目。確かめてから、ブラウザが中身を送る先を返す。
       # 同じ名前のファイルがあれば、新しいファイルではなくその新しい版にする（doc/files.md の「版」）。
       # そのときは、そのファイル自身の編集権限が要る
@@ -105,7 +111,7 @@ module Files
 
       private
 
-      # 名前の変更・移動・削除・復元は、どれも親フォルダの編集権限が要る（doc/files.md）。
+      # 名前の変更・移動・削除・復元・完全削除は、どれも親フォルダの編集権限が要る（doc/files.md）。
       # also には、移動先など、親と一緒に編集権限を確かめるフォルダを渡す
       def editable_children!(scope, ids, also: [])
         ids = Array(ids).map(&:to_i).uniq
