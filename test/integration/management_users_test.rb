@@ -48,6 +48,49 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#user-groups p", text: "所属しているグループはありません。"
   end
 
+  test "利用者を追加すると招待中で登録し、選んだグループに入れて詳細へ進む" do
+    login(@admin)
+    get management_users_path
+    assert_select "a#new-user[href=?]", new_management_user_path
+
+    get new_management_user_path
+    assert_response :success
+    # 停止中のグループと「全員」は選べない。グループ名の下に上位の並びを出す
+    assert_equal ["全社", "営業部 全社", "開発部 全社"], css_select("#group-choices li").map { it.text.squish }
+    assert_select "#user-form input[type=radio][name=?]", "tenant_user[role]", 2
+    assert_select "#user-form input[type=radio][value=member][checked]"
+
+    post management_users_path, params: { tenant_user: {
+      email: "new@example.com", display_name: "新人さん", role: "member", group_ids: ["", @sales.id, @dev.id],
+    } }
+    tenant_user = TenantContext.switch(tenant: @tenant) { TenantUser.find_by!(display_name: "新人さん") }
+    assert_redirected_to management_user_path(tenant_user)
+    follow_redirect!
+    assert_select "#user-detail dd", text: "招待中"
+    assert_equal ["営業部 全社", "開発部 全社"], css_select("#user-groups tr").map { it.text.squish }
+  end
+
+  test "追加できなければ、入力したとおりに出し直す" do
+    login(@admin)
+    post management_users_path, params: { tenant_user: {
+      email: "sato@example.com", display_name: "別の佐藤さん", role: "admin", group_ids: ["", @dev.id],
+    } }
+
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /メールアドレスの利用者はすでに登録されています。/
+    assert_select "#user-form input[name=?][value=?]", "tenant_user[email]", "sato@example.com"
+    assert_select "#user-form input[name=?][value=?]", "tenant_user[display_name]", "別の佐藤さん"
+    assert_select "#user-form input[type=radio][value=admin][checked]"
+    assert_select "#group-choices input[checked][value=?]", @dev.id.to_s
+    assert_select "#group-choices input[checked]", 1
+  end
+
+  test "オーナーの権限では追加できない" do
+    login(@admin)
+    post management_users_path, params: { tenant_user: { email: "new@example.com", display_name: "新人さん", role: "owner" } }
+    assert_response :not_found
+  end
+
   test "削除済みの人は一覧に出さず、詳細も開けない" do
     TenantContext.switch(tenant: @tenant) { @sato.update!(status: :deleted) }
     login(@admin)

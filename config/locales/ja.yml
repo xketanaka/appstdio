@@ -23,6 +23,10 @@ ja:
               taken: "が同じ上位グループの中のものと重複しています。"
             parent:
               invalid: "には、自分自身とその下位・「全員」・利用停止中のグループを選べません。"
+        tenant_user:
+          attributes:
+            email:
+              already_member: "の利用者はすでに登録されています。"
         tenant_setting:
           attributes:
             logo:
@@ -88,6 +92,7 @@ ja:
         user: "ユーザ"
         user_id: "ユーザ"
         display_name: "表示名"
+        email: "メールアドレス"
         role: "権限"
         status: "状態"
         created_at: "作成日時"

@@ -57,6 +57,18 @@ ja:
       index:
         title: "利用者管理"
         heading: "利用者管理"
+        new: "利用者を追加"
+      new:
+        title: "利用者を追加 - 利用者管理"
+        heading: "利用者管理"
+        back: "« 利用者一覧へ戻る"
+        detail: "利用者を追加"
+        groups:
+          label: "所属グループ"
+          empty: "グループがありません。"
+        invited_note: "追加した利用者は「招待中」になります。"
+        submit: "追加する"
+        cancel: "キャンセル"
       show:
         title: "%{name} - 利用者管理"
         heading: "利用者管理"
