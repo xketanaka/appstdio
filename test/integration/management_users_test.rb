@@ -26,7 +26,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     TenantContext.clear
   end
 
-  test "一覧の名前から詳細を開くと、所属グループを最上位からの並びで出す" do
+  test "一覧の名前から詳細を開くと、有効な所属グループを最上位からの並びで出す" do
     login(@admin)
     get management_users_path
     assert_select "#user-list a[href=?]", management_user_path(@sato), text: "佐藤さん"
@@ -35,9 +35,10 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#user-detail dd", text: "佐藤さん"
     assert_select "#user-detail dd", text: "sato@example.com"
-    assert_select "#user-groups h3", text: "所属グループ（2件）"
+    # 停止中の旧企画部は出さない
+    assert_select "#user-groups h3", text: "所属グループ（1件）"
     rows = css_select("#user-groups tr").map { it.text.squish }
-    assert_equal ["営業部 グループ管理者 全社", "旧企画部 停止中"], rows
+    assert_equal ["営業部 グループ管理者 全社"], rows
     assert_select "#user-groups a[href=?]", management_group_path(@sales)
   end
 

@@ -78,7 +78,6 @@ ja:
           heading: "所属グループ（%{count}件）"
           empty: "所属しているグループはありません。"
           leader: "グループ管理者"
-          suspended: "停止中"
         destroy: "この利用者を削除"
       confirm_destroy:
         title: "%{name}の削除 - 利用者管理"

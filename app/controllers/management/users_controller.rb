@@ -11,7 +11,7 @@ module Management
     end
 
     def show
-      memberships = @tenant_user.group_members.includes(:group).to_a
+      memberships = @tenant_user.group_members.joins(:group).merge(Group.active).includes(:group).to_a
       paths = Group.name_paths_of(memberships.map(&:group))
       # 同じ名前のグループを見分けられるよう、最上位からの並びで出す
       @memberships = memberships.sort_by { paths[it.group_id] }.map { [it, paths[it.group_id]] }

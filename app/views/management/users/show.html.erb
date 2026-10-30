@@ -39,9 +39,6 @@
                       <% if member.leader? %>
                         <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".groups.leader") %></span>
                       <% end %>
-                      <% if member.group.suspended? %>
-                        <span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800"><%= t(".groups.suspended") %></span>
-                      <% end %>
                     </span>
                     <% if path.size > 1 %>
                       <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" > ") %></span>
