@@ -57,22 +57,37 @@ const render = async (kind: "folder" | "file" = "folder") => {
 const rows = (wrapper: Awaited<ReturnType<typeof render>>, section: string) =>
   wrapper.findAll(`section[aria-labelledby=${section}] li`)
 
-test("継承した権限を継承元と一緒に上に、このフォルダの権限を下に出す", async () => {
+test("このフォルダの権限を上に、継承した権限を継承元と一緒に下に出す", async () => {
   const wrapper = await render()
 
+  expect(wrapper.findAll("h3").map((h3) => h3.text())).toEqual(["このフォルダに設定された権限", "親フォルダから継承した権限"])
+  expect(rows(wrapper, "share-own").map((li) => li.find("div").text())).toEqual(["営業部利用停止中", "一郎"])
   expect(rows(wrapper, "share-inherited").map((li) => li.text())).toEqual([
-    "全員閲覧者（組織共有ドライブから継承）打ち消す",
-    "経理部閲覧者（上位のフォルダから継承）打ち消しをやめる",
+    "全員組織共有ドライブから継承閲覧者",
+    "経理部上位のフォルダから継承打ち消し中",
   ])
-  expect(wrapper.find("#share-own").text()).toBe("このフォルダに設定された権限")
-  expect(rows(wrapper, "share-own").map((li) => li.find("span").text())).toEqual(["営業部利用停止中", "一郎"])
+  expect(rows(wrapper, "share-inherited").map((li) => li.find("button").attributes("aria-label"))).toEqual([
+    "全員 の継承を打ち消す",
+    "経理部 の打ち消しをやめる",
+  ])
 })
 
 test("グループの名前にマウスを載せると、最上位からのパスを出す", async () => {
   const wrapper = await render()
 
   expect(rows(wrapper, "share-inherited")[1].find("[title]").attributes("title")).toBe("管理本部 / 経理部")
-  expect(rows(wrapper, "share-own")[1].find("[title]").exists()).toBe(false)
+  expect(rows(wrapper, "share-own")[1].find(":scope > div [title]").exists()).toBe(false)
+})
+
+test("開いた直後は検索欄ではなくダイアログにフォーカスを置き、候補を出さない", async () => {
+  vi.mocked(api.shareCandidates).mockResolvedValue({ candidates: [{ ...everyone, detail: null }] })
+  const wrapper = await render()
+  // jsdom の showModal はフォーカスを動かさないので、ブラウザで起きる focus を起こす
+  await wrapper.find("#share-search").trigger("focus")
+  await vi.runAllTimersAsync()
+
+  expect(document.activeElement).toBe(wrapper.find("dialog").element)
+  expect(wrapper.find("[aria-label=追加する相手の候補]").exists()).toBe(false)
 })
 
 test("ファイルでは見出しを「このファイル」にする", async () => {
@@ -90,9 +105,11 @@ test("保存すると、開いたときからの差分だけを送る", async ()
   await accountingRow.find("button").trigger("click")
   await wrapper.find("select").setValue("manager")
   await wrapper.find("[aria-label='一郎 を外す']").trigger("click")
-  await wrapper.find("#share-search").setValue("じ")
+  const searchInput = wrapper.find<HTMLInputElement>("#share-search")
+  searchInput.element.focus()
+  await searchInput.setValue("じ")
   await vi.runAllTimersAsync()
-  await wrapper.findAll("[aria-label=追加する相手の候補] button").find((each) => each.text().startsWith("二郎"))!.trigger("click")
+  await wrapper.findAll("[aria-label=追加する相手の候補] button").find((each) => each.text().includes("jiro@example.com"))!.trigger("click")
   await wrapper.find("form").trigger("submit")
   await flushPromises()
 

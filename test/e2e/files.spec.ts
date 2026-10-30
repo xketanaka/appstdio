@@ -242,8 +242,9 @@ test("フォルダの共有設定で人を探して加え、まとめて保存�
 
   await page.getByRole("button", { name: "共有", exact: true }).click()
   const dialog = page.getByRole("dialog", { name: "「見積」の共有" })
+  await expect(dialog).toBeFocused()
   await expect(dialog.getByRole("region", { name: "親フォルダから継承した権限" }))
-    .toContainText("全員閲覧者（組織共有ドライブから継承）")
+    .toContainText("全員組織共有ドライブから継承閲覧者")
 
   await dialog.getByLabel("追加する相手").fill("一般")
   await dialog.getByRole("button", { name: /一般さん/ }).click()
