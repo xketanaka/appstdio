@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref } from "vue"
 import { api } from "../api"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
+import PurgeDialog from "../components/PurgeDialog.vue"
 import SelectionToolbar from "../components/SelectionToolbar.vue"
 import { t } from "../i18n"
 import { trashRow, type Row } from "../rows"
@@ -17,7 +18,7 @@ const { data, status } = useLoad(api.trash, () => null)
 const rows = computed(() => data.value?.entries.map(trashRow) ?? [])
 const { selected, select, clear } = useSelection(() => rows.value.map((row) => row.id))
 
-// ゴミ箱に出ているのは、元の親フォルダを編集できるものだけなので、どれも元に戻す操作ができる
+// ゴミ箱に出ているのは、元の親フォルダを編集できるものだけなので、どれも元に戻す・完全に削除する操作ができる
 const restore = async (items: Row[]) => {
   try {
     await restoreItems(items)
@@ -25,6 +26,8 @@ const restore = async (items: Row[]) => {
     notifyOperationError("restore", error)
   }
 }
+
+const purgeDialog = ref<InstanceType<typeof PurgeDialog> | null>(null)
 </script>
 
 <template>
@@ -45,6 +48,7 @@ const restore = async (items: Row[]) => {
     @select="select"
     @clear="clear"
     @restore="restore([$event])"
+    @purge="purgeDialog?.open([$event])"
   >
     <template
       v-if="selected.size > 0"
@@ -61,6 +65,13 @@ const restore = async (items: Row[]) => {
         >
           {{ t("selection.restore") }}
         </button>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm"
+          @click="purgeDialog?.open(rows.filter((row) => selected.has(row.id)))"
+        >
+          {{ t("selection.purge") }}
+        </button>
       </SelectionToolbar>
     </template>
   </FileList>
@@ -68,4 +79,5 @@ const restore = async (items: Row[]) => {
     v-else
     :status="status"
   />
+  <PurgeDialog ref="purgeDialog" />
 </template>

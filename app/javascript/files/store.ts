@@ -46,9 +46,9 @@ export function notify(message: string, { error = false, action }: Omit<Partial<
 }
 
 // 移せなかった理由の文。「時間をおいて」と促すのは、それで直りうる失敗（サーバの誤りや通信）だけにする
-// 操作（移動・名前の変更・ゴミ箱・復元）ができなかった理由の文。文言は files_app の
+// 操作（移動・名前の変更・ゴミ箱・復元など）ができなかった理由の文。文言は files_app の
 // <operation>.forbidden / not_found / failed。元に戻すときの 404 は <operation>.undo_not_found
-type Operation = "move" | "rename" | "trash" | "restore" | "versions" | "share"
+type Operation = "move" | "rename" | "trash" | "restore" | "purge" | "versions" | "share"
 
 export function operationErrorMessages(operation: Operation, error: unknown, { undo = false } = {}) {
   if (error instanceof ValidationError) return error.messages
@@ -154,6 +154,12 @@ async function undoTrash(items: Item[]) {
 export async function restoreItems(items: Item[]) {
   await api.restoreNodes(items.map((item) => item.id))
   notify(done("restore", items))
+  await changed()
+}
+
+export async function purgeItems(items: Item[]) {
+  await api.purgeNodes(items.map((item) => item.id))
+  notify(done("purge", items))
   await changed()
 }
 

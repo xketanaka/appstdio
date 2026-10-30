@@ -104,6 +104,7 @@ ja:
       move: "移動"
       trash: "削除"
       restore: "元に戻す"
+      purge: "完全に削除"
     rename:
       title: "名前を変更"
       name: "新しい名前"
@@ -126,6 +127,18 @@ ja:
       forbidden: "元に戻す権限がありません。元のフォルダの編集権限が必要です"
       not_found: "元に戻すものが見つからないか、ゴミ箱から消えています"
       failed: "元に戻せませんでした。時間をおいてもう一度お試しください"
+    purge:
+      title: "完全に削除しますか？"
+      confirm_one: "「%{name}」を完全に削除します。この操作は取り消せません。"
+      confirm_other: "%{count}件を完全に削除します。この操作は取り消せません。"
+      folder: "フォルダの中のものもすべて削除されます。"
+      submit: "完全に削除"
+      cancel: "キャンセル"
+      done_one: "「%{name}」を完全に削除しました"
+      done_other: "%{count}件を完全に削除しました"
+      forbidden: "完全に削除する権限がありません。元のフォルダの編集権限が必要です"
+      not_found: "削除するものが見つからないか、ゴミ箱から消えています"
+      failed: "完全に削除できませんでした。時間をおいてもう一度お試しください"
     move:
       title_one: "「%{name}」を移動"
       title_other: "%{count}件を移動"

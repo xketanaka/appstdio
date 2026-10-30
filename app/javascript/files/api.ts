@@ -144,6 +144,7 @@ export const api = {
   rename: (id: number, name: string) => request<void>("PATCH", `/files/api/nodes/${id}/rename`, { name }),
   trashNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/trash", { node_ids: nodeIds }),
   restoreNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/restore", { node_ids: nodeIds }),
+  purgeNodes: (nodeIds: number[]) => request<void>("POST", "/files/api/nodes/purge", { node_ids: nodeIds }),
   move: (nodeIds: number[], destinationId: number) =>
     request<void>("POST", "/files/api/nodes/move", { node_ids: nodeIds, destination_id: destinationId }),
   sharing: (nodeId: number) => request<Sharing>("GET", `/files/api/nodes/${nodeId}/permissions`),
