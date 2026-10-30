@@ -15,11 +15,7 @@ module Management
       @setting.assign_attributes(attributes)
       @files_setting.enabled = params[:files_enabled] == "1"
 
-      saved = TenantSetting.transaction do
-        (@setting.save && @files_setting.save) || raise(ActiveRecord::Rollback)
-      end
-
-      if saved
+      if @setting.save_with(@files_setting)
         redirect_to management_tenant_setting_path, notice: t("messages.saved")
       else
         render :edit, status: :unprocessable_entity
