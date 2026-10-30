@@ -125,3 +125,14 @@ test("管理者の権限がある行だけ、メニューから共有設定を�
   await share(1)!.trigger("click")
   expect(wrapper.emitted<[Row]>("share")?.[0][0].id).toBe(2)
 })
+
+test("ゴミ箱では、行のメニューから元に戻すことも、完全に削除することもできる", async () => {
+  const router = testRouter()
+  await router.push("/trash")
+  const wrapper = mount(FileList, { props: { rows: [row({})], empty: "", trash: true, canEdit: true }, global: { plugins: [router] } })
+  const buttons = wrapper.findAll("details button")
+
+  expect(buttons.map((button) => button.text())).toEqual(["元に戻す", "完全に削除"])
+  await buttons[1].trigger("click")
+  expect(wrapper.emitted<[Row]>("purge")?.[0][0].id).toBe(1)
+})
