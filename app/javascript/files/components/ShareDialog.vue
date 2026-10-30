@@ -74,7 +74,7 @@ const remove = (subject: Subject) => {
 const add = (candidate: ShareCandidate) => {
   const subject: Subject = {
     type: candidate.type, id: candidate.id, name: candidate.name, everyone: candidate.everyone, suspended: false,
-    path: candidate.path,
+    deleted: false, path: candidate.path,
   }
   cancelled.delete(keyOf(subject))
   own.value.push({ subject, role: "viewer" })
@@ -220,6 +220,10 @@ const submit = async () => {
                 v-if="setting.subject.suspended"
                 class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
               >{{ t("share.suspended") }}</span>
+              <span
+                v-else-if="setting.subject.deleted"
+                class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+              >{{ t("share.deleted") }}</span>
             </div>
             <select
               v-model="setting.role"
@@ -285,6 +289,10 @@ const submit = async () => {
                   v-if="setting.subject.suspended"
                   class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900"
                 >{{ t("share.suspended") }}</span>
+                <span
+                  v-else-if="setting.subject.deleted"
+                  class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                >{{ t("share.deleted") }}</span>
               </div>
               <p class="truncate text-xs text-slate-500">
                 {{ setting.from ? t("share.from", { name: setting.from.label }) : t("share.from_hidden") }}

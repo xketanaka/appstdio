@@ -577,6 +577,18 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_not json["inherited"].first.dig("subject", "suspended")
     end
 
+    test "利用者管理で削除された人には、そのことを返す" do
+      TenantContext.switch(tenant: @tenant) do
+        grant(@estimates, @owner, :viewer)
+        @owner.mark_deleted!
+      end
+      login(@member_user)
+      get files_api_node_permissions_path(@estimates)
+
+      subject = json["own"].find { it.dig("subject", "name") == "管理者さん" }["subject"]
+      assert_equal [false, true], subject.values_at("suspended", "deleted")
+    end
+
     test "利用停止中のグループは新しく加えられない" do
       TenantContext.switch(tenant: @tenant) { @sales_group.suspend!(by: @owner) }
       login(@member_user)

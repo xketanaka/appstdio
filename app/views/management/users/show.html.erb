@@ -54,5 +54,12 @@
         <% end %>
       </section>
     </div>
+
+    <% if @tenant_user.deletable_by?(current_tenant_user) %>
+      <div class="flex justify-end border-t border-slate-200 pt-4">
+        <%= link_to t(".destroy"), confirm_destroy_management_user_path(@tenant_user), id: "destroy-user",
+              class: "btn btn-danger" %>
+      </div>
+    <% end %>
   </div>
 </div>

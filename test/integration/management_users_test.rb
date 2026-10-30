@@ -91,6 +91,46 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "詳細から確認の画面を経て削除すると、一覧から消え、テナントにも入れなくなる" do
+    login(@admin)
+    get management_user_path(@sato)
+    assert_select "a#destroy-user[href=?]", confirm_destroy_management_user_path(@sato)
+
+    get confirm_destroy_management_user_path(@sato)
+    assert_response :success
+    assert_select "#destroy-confirmation", text: /「佐藤さん」（sato@example.com）を削除します。/
+    assert_select "form[action=?] button", management_user_path(@sato), text: "削除する"
+
+    delete management_user_path(@sato)
+    assert_redirected_to management_users_path
+    follow_redirect!
+    assert_select "#user-list", text: /佐藤さん/, count: 0
+    assert_equal 0, TenantContext.switch(tenant: @tenant) { GroupMember.where(tenant_user: @sato).count }
+
+    delete logout_path
+    post login_path, params: { email: "sato@example.com", password: PASSWORD }
+    follow_redirect!
+    assert_select "form[action=?]", select_tenant_path, 0
+  end
+
+  test "オーナーと自分自身は削除できない" do
+    owner = TenantContext.switch(tenant: @tenant) do
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "owner@example.com", password: PASSWORD),
+        display_name: "オーナーさん", role: :owner, status: :active)
+    end
+    login(@admin)
+
+    [owner, @admin_member].each do |tenant_user|
+      get management_user_path(tenant_user)
+      assert_select "#destroy-user", 0
+      get confirm_destroy_management_user_path(tenant_user)
+      assert_response :not_found
+      delete management_user_path(tenant_user)
+      assert_response :not_found
+    end
+    assert TenantContext.switch(tenant: @tenant) { owner.reload.active? }
+  end
+
   test "削除済みの人は一覧に出さず、詳細も開けない" do
     TenantContext.switch(tenant: @tenant) { @sato.update!(status: :deleted) }
     login(@admin)

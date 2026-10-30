@@ -80,7 +80,9 @@ Rails.application.routes.draw do
     end
 
     namespace :management do
-      resources :users, only: [:index, :show, :new, :create]
+      resources :users, only: [:index, :show, :new, :create, :destroy] do
+        get :confirm_destroy, on: :member
+      end
       resources :groups do
         get :suspended, on: :collection
         member do

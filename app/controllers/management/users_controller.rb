@@ -3,12 +3,14 @@ module Management
     # 追加の画面で選べる権限。オーナーは選べない
     ROLES = %w[member admin].freeze
 
+    before_action :set_tenant_user, only: [:show, :confirm_destroy, :destroy]
+    before_action :deletable_required, only: [:confirm_destroy, :destroy]
+
     def index
       @tenant_users = TenantUser.not_deleted.includes(:user).order(:id)
     end
 
     def show
-      @tenant_user = TenantUser.not_deleted.includes(:user).find(params[:id])
       memberships = @tenant_user.group_members.includes(:group).to_a
       paths = Group.name_paths_of(memberships.map(&:group))
       # 同じ名前のグループを見分けられるよう、最上位からの並びで出す
@@ -37,7 +39,23 @@ module Management
       end
     end
 
+    def confirm_destroy
+    end
+
+    def destroy
+      @tenant_user.mark_deleted!
+      redirect_to management_users_path, notice: t("messages.deleted")
+    end
+
     private
+
+    def set_tenant_user
+      @tenant_user = TenantUser.not_deleted.includes(:user).find(params[:id])
+    end
+
+    def deletable_required
+      raise ActiveRecord::RecordNotFound unless @tenant_user.deletable_by?(current_tenant_user)
+    end
 
     # 所属グループの選択肢。有効なグループを、最上位からの並びの順に
     def load_group_choices

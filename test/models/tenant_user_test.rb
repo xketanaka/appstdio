@@ -79,4 +79,27 @@ class TenantUserTest < ActiveSupport::TestCase
     end
     assert_not User.exists?(email: "new@example.com")
   end
+
+  test "削除すると行は残して削除済みにし、グループからは外す" do
+    user = User.create!(email: "taro@example.com", password: "password1234")
+    tenant_user = TenantUser.create!(tenant: @tenant, user:, display_name: "太郎さん", status: :active)
+    GroupMember.create!(tenant: @tenant, group: @sales, tenant_user:, role: :leader)
+
+    tenant_user.mark_deleted!
+
+    assert tenant_user.reload.deleted?
+    assert_not GroupMember.exists?(tenant_user:)
+  end
+
+  test "オーナーと自分自身は削除できない" do
+    owner, admin, member = [:owner, :admin, :member].map do |role|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{role}@example.com", password: "password1234"),
+        display_name: role, role:, status: :active)
+    end
+
+    assert member.deletable_by?(admin)
+    assert admin.deletable_by?(owner)
+    assert_not owner.deletable_by?(admin)
+    assert_not admin.deletable_by?(admin)
+  end
 end

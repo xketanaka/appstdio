@@ -79,6 +79,18 @@ ja:
           empty: "所属しているグループはありません。"
           leader: "グループ管理者"
           suspended: "停止中"
+        destroy: "この利用者を削除"
+      confirm_destroy:
+        title: "%{name}の削除 - 利用者管理"
+        heading: "利用者管理"
+        detail: "利用者の削除"
+        message: "「%{name}」（%{email}）を削除します。"
+        notes:
+          login: "このテナントに入れなくなり、利用者の一覧にも出なくなります。"
+          groups: "所属しているグループからは外れます。"
+          readd: "同じメールアドレスで追加し直すことができます。"
+        submit: "削除する"
+        cancel: "キャンセル"
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"

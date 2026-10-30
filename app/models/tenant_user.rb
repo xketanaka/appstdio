@@ -47,6 +47,20 @@ class TenantUser < ApplicationRecord
     tenant_user
   end
 
+  # 利用者管理から削除できるか。オーナーと自分自身は削除できない
+  def deletable_by?(tenant_user)
+    !owner? && id != tenant_user.id
+  end
+
+  # 行は消さずに削除済みにし、グループからは外す。削除済みの人を出さないよう、グループの側で
+  # 状態を見て回らずに済ませるため。ファイルの権限の行は残す（追加し直して戻したときに元に戻る）
+  def mark_deleted!
+    transaction do
+      GroupMember.where(tenant_user: self).delete_all
+      update!(status: :deleted)
+    end
+  end
+
   def admin_or_owner?
     owner? || admin?
   end
