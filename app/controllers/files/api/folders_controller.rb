@@ -30,6 +30,7 @@ module Files
           breadcrumbs: breadcrumbs.map { |node| { id: node.id, label: node_label(node) } },
           via_shared: breadcrumbs.size < ancestors.size,
           can_edit: permission.editable?,
+          can_manage: permission.manageable?,
           entries: entries.map { |node| entry_json(node, permissions[node]) },
         }
       end

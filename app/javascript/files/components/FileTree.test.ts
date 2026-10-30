@@ -38,6 +38,7 @@ const payload = (overrides: Partial<FolderPayload>): FolderPayload => ({
   breadcrumbs: [{ id: 1, label: "組織共有ドライブ" }, { id: 2, label: "営業" }],
   via_shared: false,
   can_edit: false,
+  can_manage: false,
   entries: [],
   ...overrides,
 })

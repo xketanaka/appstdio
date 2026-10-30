@@ -44,6 +44,7 @@ Rails.application.routes.draw do
 
       namespace :api, defaults: { format: :json } do
         get "tree" => "trees#show"
+        get "share_candidates" => "share_candidates#index"
         get "tree/children" => "trees#children"
         get "drives/shared" => "folders#show", defaults: { drive: "shared" }
         get "drives/mine" => "folders#show", defaults: { drive: "personal" }
@@ -61,6 +62,7 @@ Rails.application.routes.draw do
             get :download
             patch :rename
           end
+          resource :permissions, only: [:show, :update]
           resources :versions, only: [:index, :create, :update] do
             collection do
               post :prepare_upload

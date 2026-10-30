@@ -5,6 +5,7 @@ import { api } from "./api"
 import FileTree from "./components/FileTree.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
+import ShareDialog from "./components/ShareDialog.vue"
 import UploadPanel from "./components/UploadPanel.vue"
 import VersionsPanel from "./components/VersionsPanel.vue"
 import { t } from "./i18n"
@@ -93,5 +94,6 @@ const leavePrivilegedMode = async () => {
     <NoticeBar />
     <UploadPanel />
     <VersionsPanel />
+    <ShareDialog />
   </div>
 </template>
