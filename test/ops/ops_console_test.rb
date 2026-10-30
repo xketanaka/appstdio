@@ -44,6 +44,15 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     assert_select "#tenant-table tbody tr:last-child td:nth-child(3)", text: "0"
   end
 
+  test "所属ユーザ数に、利用者管理で削除した人は数えない" do
+    deleted = User.create!(email: "deleted@example.com", password: PASSWORD)
+    TenantUser.create!(tenant: @tenant_a, user: deleted, display_name: "削除さん", status: :deleted)
+    login_as_operator
+    get ops_root_path
+
+    assert_select "#tenant-table tbody tr:first-child td:nth-child(3)", text: "1"
+  end
+
   test "テナントコンテキストを設定しなくても所属情報が見える" do
     assert_nil TenantContext.tenant_id
     assert_equal 1, TenantUser.count

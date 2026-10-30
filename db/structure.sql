@@ -646,7 +646,7 @@ CREATE TABLE public.tenant_users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT tenant_users_role_check CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'member'::character varying])::text[]))),
-    CONSTRAINT tenant_users_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying])::text[])))
+    CONSTRAINT tenant_users_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying, 'deleted'::character varying])::text[])))
 );
 
 
@@ -2037,6 +2037,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261030100000'),
 ('20261026100000'),
 ('20261022100000'),
 ('20261021120000'),
