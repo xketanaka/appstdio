@@ -1,0 +1,24 @@
+<% content_for :title do %><%= t(".title", name: @tenant_user.display_name) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+    <div id="destroy-confirmation" class="text-sm">
+      <p class="mb-3"><%= t(".message", name: @tenant_user.display_name, email: @tenant_user.user.email) %></p>
+      <ul class="mb-6 list-disc space-y-1 pl-5 text-slate-500">
+        <li><%= t(".notes.login") %></li>
+        <li><%= t(".notes.groups") %></li>
+        <li><%= t(".notes.readd") %></li>
+      </ul>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
+      <%= button_to t(".submit"), management_user_path(@tenant_user), method: :delete, class: "btn btn-danger" %>
+      <%= link_to t(".cancel"), edit_management_user_path(@tenant_user), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
+    </div>
+  </div>
+</div>

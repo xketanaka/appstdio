@@ -1,20 +1,22 @@
-// グループのメンバーの編集の画面の、メンバーの欄。行を削除する・ダイアログで探して足す、をフォームの中で行い、
-// 送信はフォームの「保存する」でまとめて行う。
+// フォームの中で、ダイアログから探して選んだものを行として並べる欄。行を削除する・ダイアログで探して足す、を
+// フォームの中で行い、送信はフォームの「保存する」でまとめて行う。グループのメンバーの編集と、利用者の
+// 所属グループの選択で使う。
 //
-// <group-members data-candidates-url="/management/groups/1/member_candidates"
-//                data-count-text="所属メンバー（%{count}人）" data-load-error="読み込めませんでした。">
+// <pick-list data-candidates-url="/management/groups/1/member_candidates"
+//            data-count-text="所属メンバー（%{count}人）" data-load-error="読み込めませんでした。">
 //   <h3 data-count>…</h3> <button data-open-dialog>
-//   <p data-empty> <table><tbody data-rows> 行（tr[data-member-row="tenant_user_id"]）
-//   <template data-row-template> 足すときに複製する行
-//   <dialog> <input data-search> <ul data-candidates> <button data-add-members> <button data-close-dialog>
-// </group-members>
+//   <p data-empty> <table><tbody data-rows> 行（tr[data-row="id"]。中に button[data-remove-row]）
+//   <template data-row-template> 足すときに複製する行。[data-name] [data-detail] に候補の名前と補足を入れ、
+//                                 input の name と value の __ID__ を候補の id に置き換える
+//   <dialog> <input data-search> <ul data-candidates> <button data-add> <button data-close-dialog>
+// </pick-list>
 //
-// 候補の一覧はサーバが返す HTML（li の中に input[type=checkbox][value=tenant_user_id][data-name][data-email]）
+// 候補の一覧はサーバが返す HTML（li の中に input[type=checkbox][value=id][data-name][data-detail]）
 import { observeLoadMore } from "~/components/load_more"
 
 const SEARCH_DELAY = 300
 
-export class GroupMembers extends HTMLElement {
+export class PickList extends HTMLElement {
   #searchTimer?: ReturnType<typeof setTimeout>
   #request = 0
 
@@ -45,9 +47,9 @@ export class GroupMembers extends HTMLElement {
       this.#open()
     } else if (target.closest("[data-close-dialog]")) {
       this.#dialog().close()
-    } else if (target.closest("[data-add-members]")) {
+    } else if (target.closest("[data-add]")) {
       this.#add()
-    } else if (target.closest("[data-remove-member]")) {
+    } else if (target.closest("[data-remove-row]")) {
       target.closest("tr")?.remove()
       this.#refresh()
     }
@@ -94,11 +96,12 @@ export class GroupMembers extends HTMLElement {
     const checked = this.#candidates().querySelectorAll<HTMLInputElement>("input[type=checkbox]:checked:not(:disabled)")
     for (const input of checked) {
       const row = (template.content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement
-      row.dataset.memberRow = input.value
+      row.dataset.row = input.value
       row.querySelector("[data-name]")!.textContent = input.dataset.name ?? ""
-      row.querySelector("[data-email]")!.textContent = input.dataset.email ?? ""
+      row.querySelector("[data-detail]")!.textContent = input.dataset.detail ?? ""
       row.querySelectorAll("input").forEach((field) => {
-        field.name = `group[members][${input.value}]`
+        field.name = field.name.replace("__ID__", input.value)
+        field.value = field.value.replace("__ID__", input.value)
       })
       this.querySelector("[data-rows]")!.append(row)
     }
@@ -107,7 +110,7 @@ export class GroupMembers extends HTMLElement {
   }
 
   #markAdded() {
-    const added = new Set([...this.querySelectorAll<HTMLElement>("[data-member-row]")].map((row) => row.dataset.memberRow))
+    const added = new Set([...this.querySelectorAll<HTMLElement>("[data-row]")].map((row) => row.dataset.row))
     this.#candidates().querySelectorAll<HTMLInputElement>("input[type=checkbox]").forEach((input) => {
       if (!added.has(input.value)) return
       input.checked = true
@@ -116,7 +119,7 @@ export class GroupMembers extends HTMLElement {
   }
 
   #refresh() {
-    const count = this.querySelectorAll("[data-member-row]").length
+    const count = this.querySelectorAll("[data-row]").length
     this.querySelector("[data-count]")!.textContent = (this.dataset.countText ?? "").replace("%{count}", String(count))
     this.querySelector<HTMLElement>("[data-empty]")!.hidden = count > 0
     this.querySelector<HTMLElement>("table")!.hidden = count === 0
@@ -135,4 +138,4 @@ export class GroupMembers extends HTMLElement {
   }
 }
 
-if (!customElements.get("group-members")) customElements.define("group-members", GroupMembers)
+if (!customElements.get("pick-list")) customElements.define("pick-list", PickList)

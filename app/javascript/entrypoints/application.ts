@@ -1,5 +1,5 @@
 import "~/components/label_input"
-import "~/components/group_members"
+import "~/components/pick_list"
 import { observeLoadMore } from "~/components/load_more"
 
 const closeDropdowns = (except: Element | null) => {
