@@ -1,24 +1,24 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import type { GroupMembers } from "./group_members"
-import "./group_members"
+import type { PickList } from "./pick_list"
+import "./pick_list"
 
 // jsdom には IntersectionObserver が無い
 vi.mock("~/components/load_more", () => ({ observeLoadMore: vi.fn() }))
 
 const row = (id: string, name: string) => `
-  <tr data-member-row="${id}">
-    <td><span data-name>${name}</span><span data-email></span></td>
+  <tr data-row="${id}">
+    <td><span data-name>${name}</span><span data-detail></span></td>
     <td><input type="hidden" name="group[members][${id}]" value="member">
         <input type="checkbox" name="group[members][${id}]" value="leader"></td>
-    <td><button type="button" data-remove-member>削除</button></td>
+    <td><button type="button" data-remove-row>削除</button></td>
   </tr>`
 
 const candidate = (id: string, name: string) => `
-  <li><label><input type="checkbox" value="${id}" data-name="${name}" data-email="${id}@example.com">${name}</label></li>`
+  <li><label><input type="checkbox" value="${id}" data-name="${name}" data-detail="${id}@example.com">${name}</label></li>`
 
-describe("<group-members>", () => {
-  let element: GroupMembers
-  const rows = () => [...element.querySelectorAll<HTMLElement>("[data-member-row]")]
+describe("<pick-list>", () => {
+  let element: PickList
+  const rows = () => [...element.querySelectorAll<HTMLElement>("[data-row]")]
   const candidates = () => [...element.querySelectorAll<HTMLInputElement>("[data-candidates] input")]
   const click = (selector: string) => element.querySelector<HTMLElement>(selector)!.click()
   const respond = (html: string) => {
@@ -38,22 +38,22 @@ describe("<group-members>", () => {
 
     document.body.innerHTML = `
       <form>
-        <group-members data-candidates-url="/management/groups/9/member_candidates"
+        <pick-list data-candidates-url="/management/groups/9/member_candidates"
                        data-count-text="所属メンバー（%{count}人）" data-load-error="読み込めませんでした。">
           <h3 data-count>所属メンバー（1人）</h3>
           <button type="button" data-open-dialog>メンバーを追加</button>
           <p data-empty hidden>いません</p>
           <table><tbody data-rows>${row("1", "佐藤さん")}</tbody></table>
-          <template data-row-template>${row("", "")}</template>
+          <template data-row-template>${row("__ID__", "")}</template>
           <dialog>
             <input type="search" data-search>
             <ul data-candidates></ul>
             <button type="button" data-close-dialog>キャンセル</button>
-            <button type="button" data-add-members>追加する</button>
+            <button type="button" data-add>追加する</button>
           </dialog>
-        </group-members>
+        </pick-list>
       </form>`
-    element = document.querySelector("group-members")!
+    element = document.querySelector("pick-list")!
   })
 
   afterEach(() => {
@@ -77,18 +77,33 @@ describe("<group-members>", () => {
     await vi.waitFor(() => expect(candidates()).toHaveLength(3))
     candidates()[1].checked = true
     candidates()[2].checked = true
-    click("[data-add-members]")
+    click("[data-add]")
 
     expect(element.querySelector("dialog")!.open).toBe(false)
-    expect(rows().map((tr) => [tr.dataset.memberRow, tr.querySelector("[data-name]")!.textContent]))
+    expect(rows().map((tr) => [tr.dataset.row, tr.querySelector("[data-name]")!.textContent]))
       .toEqual([["1", "佐藤さん"], ["2", "山田さん"], ["3", "田中さん"]])
     expect([...rows()[2].querySelectorAll("input")].map((input) => input.name))
       .toEqual(["group[members][3]", "group[members][3]"])
     expect(element.querySelector("[data-count]")!.textContent).toBe("所属メンバー（3人）")
   })
 
+  test("足す行の input の value の __ID__ も、選んだものの id に置き換える", async () => {
+    element.querySelector("template")!.innerHTML = `
+      <tr data-row=""><td><span data-name></span><span data-detail></span>
+        <input type="hidden" name="tenant_user[group_ids][]" value="__ID__"></td></tr>`
+    click("[data-open-dialog]")
+    await vi.waitFor(() => expect(candidates()).toHaveLength(3))
+    candidates()[1].checked = true
+    click("[data-add]")
+
+    const added = rows()[1]
+    expect(added.querySelector("[data-detail]")!.textContent).toBe("2@example.com")
+    expect(added.querySelector("input")!.value).toBe("2")
+    expect(added.querySelector("input")!.name).toBe("tenant_user[group_ids][]")
+  })
+
   test("行を外すと、人数を数え直し、いなくなれば空の案内を出す", () => {
-    click("[data-remove-member]")
+    click("[data-remove-row]")
 
     expect(rows()).toHaveLength(0)
     expect(element.querySelector("[data-count]")!.textContent).toBe("所属メンバー（0人）")

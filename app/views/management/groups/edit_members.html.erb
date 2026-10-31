@@ -6,7 +6,7 @@
   <%= render "partial/errors", object: @group %>
 
   <%= form_with url: update_members_management_group_path(@group), method: :patch, id: "members-form" do %>
-    <%= tag.group_members data: { candidates_url: member_candidates_management_group_path(@group),
+    <%= tag.pick_list data: { candidates_url: member_candidates_management_group_path(@group),
                                   count_text: t(".members.heading", count: "%{count}"),
                                   load_error: t(".members.dialog.load_error") } do %>
       <section id="direct-members" class="mb-6">
@@ -24,7 +24,7 @@
             <% end %>
           </tbody>
         </table>
-        <template data-row-template><%= render "member_row" %></template>
+        <template data-row-template><%= render "member_row", tenant_user_id: "__ID__" %></template>
       </section>
 
       <dialog id="member-dialog" aria-labelledby="member-dialog-title"
@@ -36,7 +36,7 @@
         <ul class="mt-3 h-80 overflow-y-auto" data-candidates aria-label="<%= t(".members.dialog.candidates") %>"></ul>
         <div class="mt-6 flex justify-end gap-2">
           <%= button_tag t(".members.dialog.cancel"), type: "button", data: { close_dialog: true }, class: "btn btn-secondary" %>
-          <%= button_tag t(".members.dialog.submit"), type: "button", data: { add_members: true }, class: "btn btn-primary" %>
+          <%= button_tag t(".members.dialog.submit"), type: "button", data: { add: true }, class: "btn btn-primary" %>
         </div>
       </dialog>
     <% end %>
