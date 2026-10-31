@@ -1,5 +1,7 @@
 module Management
   class UsersController < BaseController
+    PER_PAGE = 30
+
     before_action :set_tenant_user, only: [:show, :edit, :update, :confirm_destroy, :destroy]
     before_action :deletable_required, only: [:confirm_destroy, :destroy]
 
@@ -16,29 +18,27 @@ module Management
 
     def new
       @tenant_user = TenantUser.new(role: :member)
-      @group_ids = []
-      load_group_choices
+      @groups = []
     end
 
     def create
       attributes = params.expect(tenant_user: [:email, :display_name, :role, group_ids: []])
       raise ActiveRecord::RecordNotFound unless current_tenant_user.assignable_roles.include?(attributes[:role])
 
-      @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i)
+      @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @tenant_user = TenantUser.invite(tenant: current_tenant, email: attributes[:email].to_s, group_ids: @group_ids,
         display_name: attributes[:display_name], role: attributes[:role])
 
       if @tenant_user.errors.empty?
         redirect_to management_user_path(@tenant_user), notice: t("messages.created")
       else
-        load_group_choices
+        @groups = groups_with_paths(Group.department.active.where(id: @group_ids))
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
-      @group_ids = @tenant_user.group_members.joins(:group).merge(Group.active).pluck(:group_id)
-      load_group_choices
+      @groups = groups_with_paths(Group.department.active.where(id: @tenant_user.group_members.select(:group_id)))
     end
 
     def update
@@ -51,7 +51,7 @@ module Management
         raise ActiveRecord::RecordNotFound
       end
 
-      @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i)
+      @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       if @tenant_user.update_with_groups({ display_name: attributes[:display_name], role:, status: }, @group_ids)
         # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
         if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?
@@ -60,9 +60,22 @@ module Management
           redirect_to management_user_path(@tenant_user), notice: t("messages.saved")
         end
       else
-        load_group_choices
+        @groups = groups_with_paths(Group.department.active.where(id: @group_ids))
         render :edit, status: :unprocessable_entity
       end
+    end
+
+    # 所属グループの追加のダイアログの候補。有効なグループをグループ名で探す。ダイアログがスクロールに
+    # 合わせて読み足す
+    def group_candidates
+      page = [params[:page].to_i, 1].max
+      groups = Group.department.active
+      groups = groups.where("groups.name ILIKE ?", "%#{Group.sanitize_sql_like(params[:q].strip)}%") if params[:q].present?
+      groups = groups.order(:name, :id).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if groups.size > PER_PAGE)
+      @candidates = groups.first(PER_PAGE)
+      @paths = Group.name_paths_of(@candidates)
+      render partial: "group_candidates", layout: false
     end
 
     def confirm_destroy
@@ -83,11 +96,11 @@ module Management
       raise ActiveRecord::RecordNotFound unless @tenant_user.deletable_by?(current_tenant_user)
     end
 
-    # 所属グループの選択肢。有効なグループを、最上位からの並びの順に
-    def load_group_choices
-      groups = Group.department.active.to_a
+    # 所属グループの欄の行。[グループ, 最上位からの名前の並び] を、その並びの順に
+    def groups_with_paths(groups)
+      groups = groups.to_a
       paths = Group.name_paths_of(groups)
-      @group_choices = groups.sort_by { paths[it.id] }.map { [it, paths[it.id]] }
+      groups.sort_by { paths[it.id] }.map { [it, paths[it.id]] }
     end
   end
 end

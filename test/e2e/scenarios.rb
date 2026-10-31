@@ -32,6 +32,25 @@ module E2eScenarios
     end
   end
 
+  # オーナーと、営業部に所属する佐藤さん。グループは 全社 > 営業部・開発部
+  def users
+    key = SecureRandom.hex(4)
+    tenant = Tenant.setup!(name: "E2E #{key}")
+    owner_user = User.create!(email: "owner-#{key}@example.com", password: PASSWORD)
+    sato_user = User.create!(email: "sato-#{key}@example.com", password: PASSWORD)
+
+    TenantContext.switch(tenant: tenant) do
+      TenantUser.create!(tenant:, user: owner_user, display_name: "管理者さん", role: :owner, status: :active)
+      sato = TenantUser.create!(tenant:, user: sato_user, display_name: "佐藤さん", role: :member, status: :active)
+      company = Group.create!(tenant:, name: "全社")
+      sales = Group.create!(tenant:, parent: company, name: "営業部")
+      Group.create!(tenant:, parent: company, name: "開発部")
+      GroupMember.create!(tenant:, group: sales, tenant_user: sato)
+
+      { owner: { email: owner_user.email, password: PASSWORD }, users: { sato: sato.id } }
+    end
+  end
+
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
   # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない。
   # オーナーのマイドライブ: 下書き、メモ.txt、保管（ダイアログでの移動で使う）、

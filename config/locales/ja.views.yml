@@ -60,8 +60,20 @@ ja:
         new: "利用者を追加"
       fields:
         groups:
-          label: "所属グループ"
-          empty: "グループがありません。"
+          heading: "所属グループ（%{count}件）"
+          add: "所属グループを追加"
+          empty: "所属しているグループはありません。"
+          dialog:
+            title: "所属グループを追加"
+            search: "グループ名で探す"
+            candidates: "候補"
+            cancel: "キャンセル"
+            submit: "追加する"
+            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      group_row:
+        remove: "削除"
+      group_candidates:
+        empty: "見つかりませんでした。"
       new:
         title: "利用者を追加 - 利用者管理"
         heading: "利用者管理"

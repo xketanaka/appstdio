@@ -1,0 +1,19 @@
+<% if @candidates.empty? && @next_page.nil? && params[:page].to_i <= 1 %>
+  <li class="py-3 text-center text-sm text-slate-500"><%= t(".empty") %></li>
+<% end %>
+<% @candidates.each do |group| %>
+  <% parents = @paths[group.id][...-1].join(" > ") %>
+  <li class="border-t border-slate-100 first:border-t-0">
+    <label class="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 hover:bg-canvas has-disabled:cursor-default has-disabled:text-slate-400">
+      <input type="checkbox" value="<%= group.id %>" class="accent-primary-600"
+             data-name="<%= group.name %>" data-detail="<%= parents %>">
+      <span class="min-w-0">
+        <span class="block truncate"><%= group.name %></span>
+        <span class="block truncate text-xs text-slate-500"><%= parents %></span>
+      </span>
+    </label>
+  </li>
+<% end %>
+<% if @next_page %>
+  <%= render "management/groups/load_more", url: group_candidates_management_users_path(q: params[:q].presence, page: @next_page) %>
+<% end %>

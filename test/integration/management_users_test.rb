@@ -56,8 +56,10 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
 
     get new_management_user_path
     assert_response :success
-    # 停止中のグループと「全員」は選べない。グループ名の下に上位の並びを出す
-    assert_equal ["全社", "営業部 全社", "開発部 全社"], css_select("#group-choices li").map { it.text.squish }
+    assert_select "pick-list[data-candidates-url=?]", group_candidates_management_users_path do
+      assert_select "button#add-groups", text: "所属グループを追加"
+      assert_select "tbody tr[data-row]", 0
+    end
     assert_select "#user-form input[type=radio][name=?]", "tenant_user[role]", 2
     assert_select "#user-form input[type=radio][value=member][checked]"
 
@@ -71,6 +73,26 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_equal ["営業部 全社", "開発部 全社"], css_select("#user-groups tr").map { it.text.squish }
   end
 
+  test "所属グループの候補は、有効なグループをグループ名で探し、上位の並びを添えて1ページずつ返す" do
+    login(@admin)
+    get group_candidates_management_users_path
+    assert_response :success
+    assert_not_includes response.body, "<html"
+    # 停止中のグループと「全員」は出さない
+    assert_equal ["営業部 全社", "開発部 全社", "全社"], css_select("li").map { it.text.squish }
+    assert_select "li input[type=checkbox][value=?][data-name=?][data-detail=?]", @sales.id.to_s, "営業部", "全社"
+
+    get group_candidates_management_users_path(q: "営業")
+    assert_equal ["営業部 全社"], css_select("li").map { it.text.squish }
+
+    TenantContext.switch(tenant: @tenant) { 31.times { Group.create!(tenant: @tenant, parent: @dev, name: format("チーム%02d", it)) } }
+    get group_candidates_management_users_path(q: "チーム")
+    assert_select "li:not([data-load-more])", 30
+    assert_select "li[data-load-more=?]", group_candidates_management_users_path(q: "チーム", page: 2)
+    get group_candidates_management_users_path(q: "チーム", page: 2)
+    assert_select "li", 1
+  end
+
   test "追加できなければ、入力したとおりに出し直す" do
     login(@admin)
     post management_users_path, params: { tenant_user: {
@@ -82,8 +104,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#user-form input[name=?][value=?]", "tenant_user[email]", "sato@example.com"
     assert_select "#user-form input[name=?][value=?]", "tenant_user[display_name]", "別の佐藤さん"
     assert_select "#user-form input[type=radio][value=admin][checked]"
-    assert_select "#group-choices input[checked][value=?]", @dev.id.to_s
-    assert_select "#group-choices input[checked]", 1
+    assert_equal [@dev.id.to_s], css_select("#user-groups tbody tr").map { it["data-row"] }
   end
 
   test "管理者はオーナーを追加できない" do
@@ -162,7 +183,10 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
     # 招待中でなければ、招待中には戻せない
     assert_equal %w[active suspended], css_select("#status-choices input").map { it["value"] }
-    assert_equal [@company.id, @sales.id].map(&:to_s).sort, css_select("#group-choices input[checked]").map { it["value"] }.sort
+    # 停止中の旧企画部の所属は出さない
+    assert_equal ["全社", "営業部 全社"], css_select("#user-groups tbody tr").map { it.text.squish.delete_suffix(" 削除") }
+    assert_select "#user-groups tbody tr[data-row=?] input[type=hidden][name=?][value=?]", @sales.id.to_s,
+      "tenant_user[group_ids][]", @sales.id.to_s
 
     patch management_user_path(@sato), params: { tenant_user: {
       display_name: "佐藤花子さん", role: "admin", status: "suspended", group_ids: ["", @sales.id, @dev.id],
@@ -246,7 +270,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: /表示名/
     assert_select "#role-choices input[value=admin][checked]"
-    assert_equal [@dev.id.to_s], css_select("#group-choices input[checked]").map { it["value"] }
+    assert_equal [@dev.id.to_s], css_select("#user-groups tbody tr").map { it["data-row"] }
     assert TenantContext.switch(tenant: @tenant) { @sato.reload.member? }
   end
 

@@ -81,6 +81,7 @@ Rails.application.routes.draw do
 
     namespace :management do
       resources :users do
+        get :group_candidates, on: :collection
         get :confirm_destroy, on: :member
       end
       resources :groups do
