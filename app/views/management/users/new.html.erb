@@ -24,7 +24,7 @@
       <fieldset class="mb-5">
         <legend class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(:role) %></legend>
         <div class="flex flex-wrap gap-x-6 gap-y-2">
-          <% Management::UsersController::ROLES.each do |role| %>
+          <% current_tenant_user.assignable_roles.each do |role| %>
             <label class="flex items-center gap-2 text-sm">
               <%= f.radio_button :role, role, class: "accent-primary-600" %>
               <%= t("enums.tenant_user.role.#{role}") %>

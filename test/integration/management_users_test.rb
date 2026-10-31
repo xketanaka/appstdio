@@ -86,10 +86,27 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#group-choices input[checked]", 1
   end
 
-  test "オーナーの権限では追加できない" do
+  test "管理者はオーナーを追加できない" do
     login(@admin)
+    get new_management_user_path
+    assert_select "#user-form input[type=radio][value=owner]", 0
+
     post management_users_path, params: { tenant_user: { email: "new@example.com", display_name: "新人さん", role: "owner" } }
     assert_response :not_found
+  end
+
+  test "オーナーはオーナーを追加できる" do
+    owner = TenantContext.switch(tenant: @tenant) do
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "owner@example.com", password: PASSWORD),
+        display_name: "オーナーさん", role: :owner, status: :active)
+    end
+    login(owner.user)
+    get new_management_user_path
+    assert_select "#user-form input[type=radio][name=?]", "tenant_user[role]", 3
+    assert_select "#user-form label", text: "オーナー"
+
+    post management_users_path, params: { tenant_user: { email: "new@example.com", display_name: "新人さん", role: "owner" } }
+    assert TenantContext.switch(tenant: @tenant) { TenantUser.find_by!(display_name: "新人さん").owner? }
   end
 
   test "詳細から確認の画面を経て削除すると、一覧から消え、テナントにも入れなくなる" do

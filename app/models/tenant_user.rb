@@ -47,6 +47,11 @@ class TenantUser < ApplicationRecord
     tenant_user
   end
 
+  # 利用者管理で、この人が他の人に付けられる権限。オーナーを付けられるのはオーナーだけ
+  def assignable_roles
+    owner? ? %w[member admin owner] : %w[member admin]
+  end
+
   # 利用者管理から削除できるか。オーナーと自分自身は削除できない
   def deletable_by?(tenant_user)
     !owner? && id != tenant_user.id

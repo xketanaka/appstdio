@@ -1,8 +1,5 @@
 module Management
   class UsersController < BaseController
-    # 追加の画面で選べる権限。オーナーは選べない
-    ROLES = %w[member admin].freeze
-
     before_action :set_tenant_user, only: [:show, :confirm_destroy, :destroy]
     before_action :deletable_required, only: [:confirm_destroy, :destroy]
 
@@ -25,7 +22,7 @@ module Management
 
     def create
       attributes = params.expect(tenant_user: [:email, :display_name, :role, group_ids: []])
-      raise ActiveRecord::RecordNotFound unless ROLES.include?(attributes[:role])
+      raise ActiveRecord::RecordNotFound unless current_tenant_user.assignable_roles.include?(attributes[:role])
 
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i)
       @tenant_user = TenantUser.invite(tenant: current_tenant, email: attributes[:email].to_s, group_ids: @group_ids,
