@@ -55,6 +55,14 @@ class Group < ApplicationRecord
     end
   end
 
+  # グループを最上位からの名前の並びの順（ツリーをたどる順）に並べ、[グループ, 並び] の配列で返す。
+  # 名前はツリーと同じく DB の照合順序で比べる（Ruby の文字列の比較は文字コードの順で、ツリーとずれる）
+  def self.sort_by_name_path(groups)
+    paths = name_paths_of(groups)
+    ranks = where(name: paths.values.flatten.uniq).distinct.order(:name).pluck(:name).each_with_index.to_h
+    groups.sort_by { |group| [paths[group.id].map { ranks[it] }, group.id] }.map { [it, paths[it.id]] }
+  end
+
   # 名前・上位などを保存し、ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える。
   # ラベルの検証（長さ）で落ちたらグループの保存も戻し、ラベルの誤りをグループの誤りとして出す。保存できなければ false
   def save_with_labels(names)

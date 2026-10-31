@@ -79,7 +79,8 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_not_includes response.body, "<html"
     # 停止中のグループと「全員」は出さない
-    assert_equal ["営業部 全社", "開発部 全社", "全社"], css_select("li").map { it.text.squish }
+    # 上位の並びの順（全社の下に営業部・開発部）
+    assert_equal ["全社", "営業部 全社", "開発部 全社"], css_select("li").map { it.text.squish }
     assert_select "li input[type=checkbox][value=?][data-name=?][data-detail=?]", @sales.id.to_s, "営業部", "全社"
 
     get group_candidates_management_users_path(q: "営業")

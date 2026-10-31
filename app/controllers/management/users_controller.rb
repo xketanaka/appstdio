@@ -10,10 +10,9 @@ module Management
     end
 
     def show
-      memberships = @tenant_user.group_members.joins(:group).merge(Group.active).includes(:group).to_a
-      paths = Group.name_paths_of(memberships.map(&:group))
-      # 同じ名前のグループを見分けられるよう、最上位からの並びで出す
-      @memberships = memberships.sort_by { paths[it.group_id] }.map { [it, paths[it.group_id]] }
+      memberships = @tenant_user.group_members.joins(:group).merge(Group.active).includes(:group).index_by(&:group_id)
+      # 同じ名前のグループを見分けられるよう、最上位からの並びを添えて、その順に出す
+      @memberships = Group.sort_by_name_path(memberships.values.map(&:group)).map { |group, path| [memberships[group.id], path] }
     end
 
     def new
@@ -32,13 +31,13 @@ module Management
       if @tenant_user.errors.empty?
         redirect_to management_user_path(@tenant_user), notice: t("messages.created")
       else
-        @groups = groups_with_paths(Group.department.active.where(id: @group_ids))
+        @groups = Group.sort_by_name_path(Group.department.active.where(id: @group_ids).to_a)
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
-      @groups = groups_with_paths(Group.department.active.where(id: @tenant_user.group_members.select(:group_id)))
+      @groups = Group.sort_by_name_path(Group.department.active.where(id: @tenant_user.group_members.select(:group_id)).to_a)
     end
 
     def update
@@ -60,21 +59,21 @@ module Management
           redirect_to management_user_path(@tenant_user), notice: t("messages.saved")
         end
       else
-        @groups = groups_with_paths(Group.department.active.where(id: @group_ids))
+        @groups = Group.sort_by_name_path(Group.department.active.where(id: @group_ids).to_a)
         render :edit, status: :unprocessable_entity
       end
     end
 
-    # 所属グループの追加のダイアログの候補。有効なグループをグループ名で探す。ダイアログがスクロールに
-    # 合わせて読み足す
+    # 所属グループの追加のダイアログの候補。有効なグループをグループ名で探し、最上位からの並びの順に
+    # 30件ずつ返す。ダイアログがスクロールに合わせて読み足す。並べるために当てはまるものを全件読むが、
+    # グループ管理のツリーも全件を読んで描いているので、同じ前提に立つ
     def group_candidates
       page = [params[:page].to_i, 1].max
       groups = Group.department.active
       groups = groups.where("groups.name ILIKE ?", "%#{Group.sanitize_sql_like(params[:q].strip)}%") if params[:q].present?
-      groups = groups.order(:name, :id).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
-      @next_page = (page + 1 if groups.size > PER_PAGE)
-      @candidates = groups.first(PER_PAGE)
-      @paths = Group.name_paths_of(@candidates)
+      candidates = Group.sort_by_name_path(groups.to_a).drop((page - 1) * PER_PAGE)
+      @next_page = (page + 1 if candidates.size > PER_PAGE)
+      @candidates = candidates.first(PER_PAGE)
       render partial: "group_candidates", layout: false
     end
 
@@ -94,13 +93,6 @@ module Management
 
     def deletable_required
       raise ActiveRecord::RecordNotFound unless @tenant_user.deletable_by?(current_tenant_user)
-    end
-
-    # 所属グループの欄の行。[グループ, 最上位からの名前の並び] を、その並びの順に
-    def groups_with_paths(groups)
-      groups = groups.to_a
-      paths = Group.name_paths_of(groups)
-      groups.sort_by { paths[it.id] }.map { [it, paths[it.id]] }
     end
   end
 end

@@ -30,6 +30,19 @@ class GroupTest < ActiveSupport::TestCase
     assert_equal({ team.id => %w[営業部 1課 1班], other.id => %w[西日本 1課], @sales.id => %w[営業部] }, paths)
   end
 
+  test "最上位からの名前の並びの順に、ツリーと同じく DB の照合順序で並べる" do
+    first = Group.create!(tenant: @tenant, parent: @sales, name: "1課")
+    company = Group.create!(tenant: @tenant, name: "全社")
+    dev = Group.create!(tenant: @tenant, parent: company, name: "開発部")
+    tree_order = Group.where(id: [@sales, company]).order(:name).to_a
+
+    sorted = Group.sort_by_name_path([dev, first, company, @sales])
+
+    # 上位が先、その下位が続く。根どうしの順はツリー（order(:name)）と同じ
+    expected = tree_order.flat_map { it == @sales ? [[@sales, %w[営業部]], [first, %w[営業部 1課]]] : [[company, %w[全社]], [dev, %w[全社 開発部]]] }
+    assert_equal expected, sorted
+  end
+
   test "ラベルが保存できなければグループの保存も戻し、ラベルの誤りをグループの誤りとして出す" do
     group = Group.new(tenant: @tenant, name: "新しい部")
 
