@@ -61,7 +61,8 @@ export type FolderPayload = {
 export type Role = "viewer" | "editor" | "manager"
 
 // suspended は利用停止中の人・グループ。停止中のグループへの設定は効かないが、行は残る。
-// deleted は利用者管理で削除された人。設定の行は残る（追加し直すと戻る）。
+// deleted は利用者管理で削除された人。削除しても、その人に付けた権限の設定は消さずに残す
+// （同じメールアドレスで追加し直すと元の所属に戻り、その設定がまた効く）。
 // path はグループの最上位から自分までの名前の並び（人は null）
 export type Subject = {
   type: "group" | "tenant_user"
