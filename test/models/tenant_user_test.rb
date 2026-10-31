@@ -102,4 +102,19 @@ class TenantUserTest < ActiveSupport::TestCase
     assert_not owner.deletable_by?(admin)
     assert_not admin.deletable_by?(admin)
   end
+
+  test "停止中のオーナーしか残らない変更は、有効なオーナーがいなくなるので受け付けない" do
+    owner, suspended_owner = %w[a b].map do |name|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{name}@example.com", password: "password1234"),
+        display_name: name, role: :owner, status: :active)
+    end
+    suspended_owner.update!(status: :suspended)
+
+    assert_not owner.update_with_groups({ status: "suspended" }, [])
+    assert_equal [:last_owner], owner.errors.map(&:type)
+    assert owner.reload.active?
+
+    assert suspended_owner.update_with_groups({ status: "active" }, [])
+    assert owner.update_with_groups({ role: "admin" }, [])
+  end
 end

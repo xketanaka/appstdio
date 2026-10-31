@@ -1,6 +1,6 @@
 module Management
   class UsersController < BaseController
-    before_action :set_tenant_user, only: [:show, :confirm_destroy, :destroy]
+    before_action :set_tenant_user, only: [:show, :edit, :update, :confirm_destroy, :destroy]
     before_action :deletable_required, only: [:confirm_destroy, :destroy]
 
     def index
@@ -33,6 +33,35 @@ module Management
       else
         load_group_choices
         render :new, status: :unprocessable_entity
+      end
+    end
+
+    def edit
+      @group_ids = @tenant_user.group_members.joins(:group).merge(Group.active).pluck(:group_id)
+      load_group_choices
+    end
+
+    def update
+      attributes = params.expect(tenant_user: [:display_name, :role, :status, group_ids: []])
+      # 変えられない権限・状態は画面に欄が無く、送られてこない
+      role = attributes[:role] || @tenant_user.role
+      status = attributes[:status] || @tenant_user.status
+      unless current_tenant_user.role_choices_for(@tenant_user).include?(role) &&
+          current_tenant_user.status_choices_for(@tenant_user).include?(status)
+        raise ActiveRecord::RecordNotFound
+      end
+
+      @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i)
+      if @tenant_user.update_with_groups({ display_name: attributes[:display_name], role:, status: }, @group_ids)
+        # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
+        if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?
+          redirect_to top_page_path, notice: t("messages.saved")
+        else
+          redirect_to management_user_path(@tenant_user), notice: t("messages.saved")
+        end
+      else
+        load_group_choices
+        render :edit, status: :unprocessable_entity
       end
     end
 

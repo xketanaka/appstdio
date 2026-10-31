@@ -80,7 +80,7 @@ Rails.application.routes.draw do
     end
 
     namespace :management do
-      resources :users, only: [:index, :show, :new, :create, :destroy] do
+      resources :users do
         get :confirm_destroy, on: :member
       end
       resources :groups do

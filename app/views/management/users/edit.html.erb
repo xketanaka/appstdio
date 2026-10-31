@@ -1,0 +1,33 @@
+<% content_for :title do %><%= t(".title", name: @tenant_user.display_name_was) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+    <%= render "partial/errors", object: @tenant_user %>
+
+    <%= form_with model: @tenant_user, url: management_user_path(@tenant_user), id: "user-form" do |f| %>
+      <div class="mb-5">
+        <p class="mb-1.5 text-sm font-semibold"><%= User.human_attribute_name(:email) %></p>
+        <p class="break-all"><%= @tenant_user.user.email %></p>
+      </div>
+
+      <%= render "fields", form: f, roles: current_tenant_user.role_choices_for(@tenant_user),
+            statuses: current_tenant_user.status_choices_for(@tenant_user) %>
+
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
+        <div class="flex items-center gap-4">
+          <%= f.submit t("actions.save"), class: "btn btn-primary" %>
+          <%= link_to t(".cancel"), management_user_path(@tenant_user), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
+        </div>
+        <% if @tenant_user.deletable_by?(current_tenant_user) %>
+          <%= link_to t(".destroy"), confirm_destroy_management_user_path(@tenant_user), id: "destroy-user",
+                class: "btn btn-danger" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

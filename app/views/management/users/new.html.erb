@@ -16,48 +16,7 @@
         <%= f.email_field :email, autofocus: true, autocomplete: "off", class: "input" %>
       </div>
 
-      <div class="mb-5">
-        <%= f.label :display_name, class: "mb-1.5 block text-sm font-semibold" %>
-        <%= f.text_field :display_name, autocomplete: "off", class: "input" %>
-      </div>
-
-      <fieldset class="mb-5">
-        <legend class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(:role) %></legend>
-        <div class="flex flex-wrap gap-x-6 gap-y-2">
-          <% current_tenant_user.assignable_roles.each do |role| %>
-            <label class="flex items-center gap-2 text-sm">
-              <%= f.radio_button :role, role, class: "accent-primary-600" %>
-              <%= t("enums.tenant_user.role.#{role}") %>
-            </label>
-          <% end %>
-        </div>
-      </fieldset>
-
-      <fieldset id="group-choices" class="mb-6">
-        <legend class="mb-1.5 text-sm font-semibold"><%= t(".groups.label") %></legend>
-        <%# 1つも選ばなかったときも group_ids を送る %>
-        <%= hidden_field_tag "tenant_user[group_ids][]", "", id: nil %>
-        <% if @group_choices.empty? %>
-          <p class="text-sm text-slate-500"><%= t(".groups.empty") %></p>
-        <% else %>
-          <ul class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 py-1">
-            <% @group_choices.each do |group, path| %>
-              <li>
-                <label class="flex items-start gap-2.5 px-3 py-1.5 hover:bg-canvas">
-                  <%= check_box_tag "tenant_user[group_ids][]", group.id, @group_ids.include?(group.id),
-                        id: "group_#{group.id}", class: "mt-1 accent-primary-600" %>
-                  <span class="min-w-0">
-                    <span class="block truncate text-sm"><%= group.name %></span>
-                    <% if path.size > 1 %>
-                      <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" > ") %></span>
-                    <% end %>
-                  </span>
-                </label>
-              </li>
-            <% end %>
-          </ul>
-        <% end %>
-      </fieldset>
+      <%= render "fields", form: f, roles: current_tenant_user.assignable_roles %>
 
       <p class="mb-4 text-sm text-slate-500"><%= t(".invited_note") %></p>
 

@@ -1,0 +1,50 @@
+<%# locals: (form:, roles:, statuses: nil) %>
+<%# 追加と編集に共通の欄。選べるものが1つしかない権限・状態は、変えられないので文字で出す %>
+<div class="mb-5">
+  <%= form.label :display_name, class: "mb-1.5 block text-sm font-semibold" %>
+  <%= form.text_field :display_name, autocomplete: "off", class: "input" %>
+</div>
+
+<% { role: roles, status: statuses }.compact.each do |attribute, choices| %>
+  <fieldset id="<%= attribute %>-choices" class="mb-5">
+    <legend class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(attribute) %></legend>
+    <% if choices.one? %>
+      <p class="text-sm"><%= t("enums.tenant_user.#{attribute}.#{choices.first}") %></p>
+    <% else %>
+      <div class="flex flex-wrap gap-x-6 gap-y-2">
+        <% choices.each do |value| %>
+          <label class="flex items-center gap-2 text-sm">
+            <%= form.radio_button attribute, value, class: "accent-primary-600" %>
+            <%= t("enums.tenant_user.#{attribute}.#{value}") %>
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+  </fieldset>
+<% end %>
+
+<fieldset id="group-choices" class="mb-6">
+  <legend class="mb-1.5 text-sm font-semibold"><%= t(".groups.label") %></legend>
+  <%# 1つも選ばなかったときも group_ids を送る %>
+  <%= hidden_field_tag "tenant_user[group_ids][]", "", id: nil %>
+  <% if @group_choices.empty? %>
+    <p class="text-sm text-slate-500"><%= t(".groups.empty") %></p>
+  <% else %>
+    <ul class="max-h-72 overflow-y-auto rounded-xl border border-slate-200 py-1">
+      <% @group_choices.each do |group, path| %>
+        <li>
+          <label class="flex items-start gap-2.5 px-3 py-1.5 hover:bg-canvas">
+            <%= check_box_tag "tenant_user[group_ids][]", group.id, @group_ids.include?(group.id),
+                  id: "group_#{group.id}", class: "mt-1 accent-primary-600" %>
+            <span class="min-w-0">
+              <span class="block truncate text-sm"><%= group.name %></span>
+              <% if path.size > 1 %>
+                <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" > ") %></span>
+              <% end %>
+            </span>
+          </label>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</fieldset>

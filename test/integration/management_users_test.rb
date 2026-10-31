@@ -109,9 +109,9 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert TenantContext.switch(tenant: @tenant) { TenantUser.find_by!(display_name: "新人さん").owner? }
   end
 
-  test "詳細から確認の画面を経て削除すると、一覧から消え、テナントにも入れなくなる" do
+  test "編集の画面から確認の画面を経て削除すると、一覧から消え、テナントにも入れなくなる" do
     login(@admin)
-    get management_user_path(@sato)
+    get edit_management_user_path(@sato)
     assert_select "a#destroy-user[href=?]", confirm_destroy_management_user_path(@sato)
 
     get confirm_destroy_management_user_path(@sato)
@@ -139,7 +139,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     login(@admin)
 
     [owner, @admin_member].each do |tenant_user|
-      get management_user_path(tenant_user)
+      get edit_management_user_path(tenant_user)
       assert_select "#destroy-user", 0
       get confirm_destroy_management_user_path(tenant_user)
       assert_response :not_found
@@ -147,6 +147,107 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
       assert_response :not_found
     end
     assert TenantContext.switch(tenant: @tenant) { owner.reload.active? }
+  end
+
+  test "詳細の「編集」から、表示名・権限・状態・所属グループを変える。停止中のグループの所属とグループ管理者の印は残す" do
+    TenantContext.switch(tenant: @tenant) { GroupMember.create!(tenant: @tenant, group: @company, tenant_user: @sato) }
+    login(@admin)
+    get management_user_path(@sato)
+    assert_select "a#edit-user[href=?]", edit_management_user_path(@sato)
+
+    get edit_management_user_path(@sato)
+    assert_response :success
+    assert_select "#user-form", text: /sato@example.com/
+    assert_select "#user-form input[name=?]", "tenant_user[email]", 0
+    assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
+    # 招待中でなければ、招待中には戻せない
+    assert_equal %w[active suspended], css_select("#status-choices input").map { it["value"] }
+    assert_equal [@company.id, @sales.id].map(&:to_s).sort, css_select("#group-choices input[checked]").map { it["value"] }.sort
+
+    patch management_user_path(@sato), params: { tenant_user: {
+      display_name: "佐藤花子さん", role: "admin", status: "suspended", group_ids: ["", @sales.id, @dev.id],
+    } }
+    assert_redirected_to management_user_path(@sato)
+
+    TenantContext.switch(tenant: @tenant) do
+      @sato.reload
+      assert_equal ["佐藤花子さん", "admin", "suspended"], @sato.values_at(:display_name, :role, :status)
+      roles = GroupMember.where(tenant_user: @sato).to_h { [it.group_id, it.role] }
+      assert_equal({ @sales.id => "leader", @dev.id => "member", @planning.id => "member" }, roles)
+    end
+  end
+
+  test "招待中の人は、有効にできる" do
+    invited = TenantContext.switch(tenant: @tenant) do
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "new@example.com", password: PASSWORD),
+        display_name: "新人さん", status: :invited)
+    end
+    login(@admin)
+    get edit_management_user_path(invited)
+    assert_equal %w[invited active suspended], css_select("#status-choices input").map { it["value"] }
+
+    patch management_user_path(invited), params: { tenant_user: { display_name: "新人さん", role: "member", status: "active", group_ids: [""] } }
+    assert TenantContext.switch(tenant: @tenant) { invited.reload.active? }
+  end
+
+  test "管理者は、オーナーの権限・状態を変えられず、オーナーにもできない" do
+    owner = create_owner("owner@example.com", "オーナーさん")
+    login(@admin)
+
+    get edit_management_user_path(owner)
+    assert_select "#role-choices input", 0
+    assert_select "#role-choices p", text: "オーナー"
+    assert_select "#status-choices input", 0
+
+    [{ role: "admin" }, { status: "suspended" }].each do |change|
+      patch management_user_path(owner), params: { tenant_user: { display_name: "オーナーさん", group_ids: [""], **change } }
+      assert_response :not_found
+    end
+    patch management_user_path(@sato), params: { tenant_user: { display_name: "佐藤さん", role: "owner", status: "active", group_ids: [""] } }
+    assert_response :not_found
+    assert TenantContext.switch(tenant: @tenant) { owner.reload.owner? && !@sato.reload.owner? }
+  end
+
+  test "オーナーは、他のオーナーを管理者にできるが、有効なオーナーが1人もいなくなる変更はできない" do
+    owner = create_owner("owner@example.com", "オーナーさん")
+    other = create_owner("owner2@example.com", "二人目のオーナーさん")
+    login(owner.user)
+
+    get edit_management_user_path(other)
+    assert_equal %w[member admin owner], css_select("#role-choices input").map { it["value"] }
+    patch management_user_path(other), params: { tenant_user: { display_name: "二人目のオーナーさん", role: "admin", status: "active", group_ids: [""] } }
+    assert_redirected_to management_user_path(other)
+
+    # 残った自分を管理者に下げると、有効なオーナーがいなくなる
+    patch management_user_path(owner), params: { tenant_user: { display_name: "オーナーさん", role: "admin", group_ids: [""] } }
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /有効なオーナーが1人もいなくなるため/
+    assert_select "#role-choices input[value=admin][checked]"
+    assert TenantContext.switch(tenant: @tenant) { owner.reload.owner? }
+  end
+
+  test "自分の状態は変えられないが、権限は下げられる。メンバーに下げたら管理の画面を離れる" do
+    login(@admin)
+    get edit_management_user_path(@admin_member)
+    assert_select "#status-choices input", 0
+    patch management_user_path(@admin_member), params: { tenant_user: { display_name: "管理者さん", status: "suspended", group_ids: [""] } }
+    assert_response :not_found
+
+    patch management_user_path(@admin_member), params: { tenant_user: { display_name: "管理者さん", role: "member", group_ids: [""] } }
+    assert_redirected_to top_page_path
+    get management_users_path
+    assert_response :not_found
+  end
+
+  test "表示名が空なら、入力したとおりに出し直す" do
+    login(@admin)
+    patch management_user_path(@sato), params: { tenant_user: { display_name: "", role: "admin", status: "active", group_ids: ["", @dev.id] } }
+
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /表示名/
+    assert_select "#role-choices input[value=admin][checked]"
+    assert_equal [@dev.id.to_s], css_select("#group-choices input[checked]").map { it["value"] }
+    assert TenantContext.switch(tenant: @tenant) { @sato.reload.member? }
   end
 
   test "削除済みの人は一覧に出さず、詳細も開けない" do
@@ -172,6 +273,13 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def create_owner(email, display_name)
+    TenantContext.switch(tenant: @tenant) do
+      TenantUser.create!(tenant: @tenant, user: User.create!(email:, password: PASSWORD), display_name:,
+        role: :owner, status: :active)
+    end
+  end
 
   def login(user)
     post login_path, params: { email: user.email, password: PASSWORD }

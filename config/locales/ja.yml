@@ -24,6 +24,7 @@ ja:
             parent:
               invalid: "には、自分自身とその下位・「全員」・利用停止中のグループを選べません。"
         tenant_user:
+          last_owner: "有効なオーナーが1人もいなくなるため、この権限・状態には変えられません。"
           attributes:
             email:
               already_member: "の利用者はすでに登録されています。"

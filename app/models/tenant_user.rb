@@ -52,6 +52,50 @@ class TenantUser < ApplicationRecord
     owner? ? %w[member admin owner] : %w[member admin]
   end
 
+  # 利用者の編集で、この人が target に付けられる権限。オーナーの権限は、オーナーでなければ変えられない
+  def role_choices_for(target)
+    target.owner? && !owner? ? [target.role] : assignable_roles
+  end
+
+  # 利用者の編集で、この人が target に付けられる状態。自分の状態は変えられない（停止して締め出されないように）。
+  # オーナーの状態は、オーナーでなければ変えられない。招待中には戻せない
+  def status_choices_for(target)
+    return [target.status] if target.id == id || (target.owner? && !owner?)
+
+    target.invited? ? %w[invited active suspended] : %w[active suspended]
+  end
+
+  # 表示名・権限・状態を保存し、有効なグループの中で所属を付け直す。残すグループでは、グループ管理者の
+  # 印をそのままにする。停止中のグループの所属は、画面に出さないので触らない。
+  # 有効なオーナーが1人もいなくなる変更は受け付けない。保存できなければ false で、誤りを持たせる。
+  # 選べないグループが混ざっていたら（画面からは起きない）見つからない扱いにする
+  def update_with_groups(attributes, group_ids)
+    groups = Group.department.active.where(tenant_id:, id: group_ids).to_a
+    raise ActiveRecord::RecordNotFound, "group not selectable" if groups.size != group_ids.uniq.size
+
+    leaving_owner = owner? && active?
+    assign_attributes(attributes)
+    leaving_owner &&= !(owner? && active?)
+
+    transaction do
+      # 同時に2人のオーナーを外して、どちらも「他にいる」と判定しないよう、オーナーの行を id の順に押さえる
+      # （順をそろえないと、互いの行を待ってデッドロックになる）
+      if leaving_owner && (TenantUser.where(tenant_id:, role: :owner, status: :active).order(:id).lock.ids - [id]).empty?
+        errors.add(:base, :last_owner)
+        raise ActiveRecord::Rollback
+      end
+
+      save!
+      current = GroupMember.where(tenant_user: self).joins(:group).merge(Group.active)
+      current.where.not(group_id: group_ids).delete_all
+      (group_ids - current.pluck(:group_id)).each { group_members.create!(tenant:, group_id: it) }
+      true
+    rescue ActiveRecord::RecordInvalid => e
+      e.record.errors.full_messages.each { errors.add(:base, it) } unless e.record == self
+      raise ActiveRecord::Rollback
+    end
+  end
+
   # 利用者管理から削除できるか。オーナーと自分自身は削除できない
   def deletable_by?(tenant_user)
     !owner? && id != tenant_user.id
