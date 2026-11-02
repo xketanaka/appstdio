@@ -406,6 +406,29 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_response :not_found
     end
 
+    test "完全に削除するとゴミ箱から消え、復元できない。ゴミ箱に無いものは消せない" do
+      post purge_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      assert_response :not_found
+
+      post trash_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      post purge_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      assert_response :no_content
+      get files_api_trash_path
+      assert_empty json["entries"]
+      post restore_files_api_nodes_path, params: { node_ids: [@sales.id] }, as: :json
+      assert_response :not_found
+    end
+
+    test "完全削除も、親フォルダを編集できなければ 403" do
+      TenantContext.switch(tenant: @tenant) do
+        grant(@sales, @member, :viewer)
+        Files::Node.trash!([@estimates], actor: @owner)
+      end
+
+      post purge_files_api_nodes_path, params: { node_ids: [@estimates.id] }, as: :json
+      assert_response :forbidden
+    end
+
     test "親フォルダを編集できなければ 403" do
       TenantContext.switch(tenant: @tenant) { grant(@sales, @member, :viewer) }
 

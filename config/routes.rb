@@ -55,6 +55,7 @@ Rails.application.routes.draw do
             post :move
             post :trash
             post :restore
+            post :purge
             post :prepare_upload
             post :upload
           end

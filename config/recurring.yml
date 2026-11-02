@@ -16,3 +16,6 @@ production:
   purge_unattached_blobs:
     class: Files::PurgeUnattachedBlobsJob
     schedule: every day at 4am
+  purge_expired_trash:
+    class: Files::PurgeExpiredTrashJob
+    schedule: every day at 3am

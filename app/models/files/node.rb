@@ -138,10 +138,39 @@ module Files
 
       transaction do
         nodes.each do |node|
-          where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil, purge_after: nil)
+          # 同時に完全削除されたものは戻さない
+          trashed.where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil, purge_after: nil)
           Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :restored)
         end
       end
+    end
+
+    # ゴミ箱から完全に削除する（doc/files.md の「ゴミ箱」）。配下も含めて purged_at を付けて残し、
+    # 版の中身を外して使用量から引く。actor は自動の削除では nil。
+    # 外した中身は、ほかの版も指していなければ（「最新に戻す」で共有していなければ）消す
+    def self.purge!(roots, actor:)
+      now = Time.current
+      blob_ids = transaction do
+        roots.flat_map do |root|
+          # 同時に完全削除・復元されたものを二重に引かないよう、押さえてから確かめる
+          next [] unless trash_roots.lock.find_by(id: root.id)
+
+          node_ids = where(deleted_root_id: root.id).ids
+          versions = Version.kept.where(node_id: node_ids)
+          version_ids = versions.ids
+          attachments = ActiveStorage::Attachment.where(record_type: Version.name, record_id: version_ids)
+          blob_ids = attachments.pluck(:blob_id)
+
+          Setting.where(tenant_id: root.tenant_id)
+            .update_all(["storage_used_bytes = GREATEST(storage_used_bytes - ?, 0)", versions.sum(:byte_size)])
+          attachments.delete_all
+          Version.where(id: version_ids).update_all(purged_at: now)
+          where(id: node_ids).update_all(purged_at: now)
+          Activity.create!(tenant_id: root.tenant_id, node: root, actor:, action: :purged)
+          blob_ids
+        end
+      end
+      ActiveStorage::Blob.unattached.where(id: blob_ids).find_each(&:purge_later)
     end
 
     # 新しい版を足して最新にする（doc/files.md の「版」）。容量を数え、操作履歴を残す。

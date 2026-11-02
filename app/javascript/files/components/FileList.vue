@@ -15,7 +15,7 @@ const props = defineProps<{
   trash?: boolean
   selectable?: boolean
   selected?: ReadonlySet<number>
-  // 親フォルダ（今のフォルダ）を編集できるか。名前の変更・移動・削除・復元に要る
+  // 親フォルダ（今のフォルダ）を編集できるか。名前の変更・移動・削除・復元・完全削除に要る
   canEdit?: boolean
   // 行をドラッグして、フォルダの行へ落として移せるか
   draggable?: boolean
@@ -29,6 +29,7 @@ const emit = defineEmits<{
   rename: [row: Row]
   trash: [row: Row]
   restore: [row: Row]
+  purge: [row: Row]
   download: [row: Row]
   uploadVersion: [row: Row]
   versions: [row: Row]
@@ -44,12 +45,11 @@ const dropTarget = (row: Row) =>
 const personColumn = props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
 const rowActions = props.trash ? ["restore", "purge"] : ["download", "upload_version", "versions", "share", "rename", "move", "destroy"]
-// 行のメニューで押せる操作。まだ作っていない操作（完全に削除）は押せない表示にする
+// 行のメニューで押せる操作
 const available = (action: string, row: Row) => {
   if (action === "download" || action === "versions") return !props.trash && row.kind === "file" && row.readable
   if (action === "upload_version") return !props.trash && row.kind === "file" && row.editable
   if (action === "share") return row.manageable
-  if (action === "purge") return false
   return !!props.canEdit
 }
 
@@ -58,6 +58,7 @@ const runAction = (action: string, row: Row) => {
   else if (action === "rename") emit("rename", row)
   else if (action === "destroy") emit("trash", row)
   else if (action === "restore") emit("restore", row)
+  else if (action === "purge") emit("purge", row)
   else if (action === "upload_version") emit("uploadVersion", row)
   else if (action === "versions") emit("versions", row)
   else if (action === "share") emit("share", row)

@@ -161,7 +161,7 @@ test("ファイルを選んで、またはパソコンから落としてアッ�
   expect(Buffer.concat(chunks).toString()).toBe("報告の中身")
 })
 
-test("名前を変え、削除して知らせから戻し、ゴミ箱からも元に戻す", async ({ page }) => {
+test("名前を変え、削除して知らせから戻し、ゴミ箱から元に戻したり完全に削除したりする", async ({ page }) => {
   await login(page, data.owner)
   await page.goto("/files/my_drive")
   const list = page.locator("#file-list")
@@ -197,6 +197,17 @@ test("名前を変え、削除して知らせから戻し、ゴミ箱からも�
 
   await page.locator("#side-pane").getByRole("link", { name: "マイドライブ" }).click()
   await expect(unneeded).toHaveCount(1)
+
+  await unneeded.click()
+  await page.keyboard.press("Delete")
+  await page.locator("#side-pane").getByRole("link", { name: "ゴミ箱" }).click()
+  await list.getByRole("row", { name: /不要\.txt/ }).click()
+  await page.getByRole("toolbar").getByRole("button", { name: "完全に削除" }).click()
+  const confirm = page.getByRole("dialog", { name: "完全に削除しますか？" })
+  await expect(confirm.getByRole("button", { name: "キャンセル" })).toBeFocused()
+  await confirm.getByRole("button", { name: "完全に削除" }).click()
+  await expect(notice).toContainText("「不要.txt」を完全に削除しました")
+  await expect(list.getByRole("row", { name: /不要\.txt/ })).toHaveCount(0)
 })
 
 test("同じ名前で上げると新しい版になり、版の履歴でラベルを付けて古い版を最新に戻せる", async ({ page }) => {
