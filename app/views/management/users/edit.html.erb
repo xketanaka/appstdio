@@ -6,10 +6,7 @@
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
     <h2 class="mb-1 text-sm text-slate-500"><%= t(".detail") %></h2>
-    <div id="user-header" class="mb-6">
-      <p class="text-lg break-words"><%= @tenant_user.display_name_was %></p>
-      <p class="text-sm break-all text-slate-500"><%= @tenant_user.user.email %></p>
-    </div>
+    <p id="user-header" class="mb-6 text-lg break-all"><%= @tenant_user.user.email %></p>
 
     <%= render "partial/errors", object: @tenant_user %>
 

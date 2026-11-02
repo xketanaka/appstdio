@@ -182,7 +182,8 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
 
     get edit_management_user_path(@sato)
     assert_response :success
-    assert_select "#user-header", text: /佐藤さん\s*sato@example.com/
+    # 誰の編集かは、変えられないメールアドレスで示す。表示名はすぐ下の入力欄にあるので見出しに出さない
+    assert_select "#user-header", text: "sato@example.com"
     assert_select "#user-form input[name=?]", "tenant_user[email]", 0
     assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
     # 招待中でなければ、招待中には戻せない
