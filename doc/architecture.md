@@ -10,7 +10,7 @@
 | `doc/database.md` | テナント分離（Row Level Security）、enum を持つ列の型 |
 | `doc/frontend.md` | Vite / Vue.js、CSS（Tailwind CSS） |
 | `doc/design.md` | 画面の見た目の決まり |
-| `doc/files.md` / `doc/groups.md` | 機能ごとの仕様 |
+| `doc/files.md` / `doc/groups.md` / `doc/users.md` | 機能ごとの仕様 |
 
 ## 用語
 

@@ -1,0 +1,60 @@
+<%# locals: (form:, roles:, statuses: nil) %>
+<%# 追加と編集に共通の欄。選べるものが1つしかない権限・状態は、変えられないので文字で出す %>
+<div class="mb-5">
+  <%= form.label :display_name, class: "mb-1.5 block text-sm font-semibold" %>
+  <%= form.text_field :display_name, autocomplete: "off", class: "input" %>
+</div>
+
+<% { role: roles, status: statuses }.compact.each do |attribute, choices| %>
+  <fieldset id="<%= attribute %>-choices" class="mb-5">
+    <legend class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(attribute) %></legend>
+    <% if choices.one? %>
+      <p class="text-sm"><%= t("enums.tenant_user.#{attribute}.#{choices.first}") %></p>
+    <% else %>
+      <div class="flex flex-wrap gap-x-6 gap-y-2">
+        <% choices.each do |value| %>
+          <label class="flex items-center gap-2 text-sm">
+            <%= form.radio_button attribute, value, class: "accent-primary-600" %>
+            <%= t("enums.tenant_user.#{attribute}.#{value}") %>
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+  </fieldset>
+<% end %>
+
+<%# 1つも選ばなかったときも group_ids を送る %>
+<%= hidden_field_tag "tenant_user[group_ids][]", "", id: nil %>
+<%= tag.pick_list data: { candidates_url: group_candidates_management_users_path,
+                          count_text: t(".groups.heading", count: "%{count}"),
+                          load_error: t(".groups.dialog.load_error") } do %>
+  <section id="user-groups" class="mb-6">
+    <div class="mb-2 flex items-center justify-between gap-4">
+      <h3 class="text-sm font-semibold" data-count><%= t(".groups.heading", count: @groups.size) %></h3>
+      <%= button_tag t(".groups.add"), type: "button", id: "add-groups", data: { open_dialog: true },
+            class: "btn btn-secondary btn-sm" %>
+    </div>
+    <p class="border-t border-slate-200 py-4 text-sm text-slate-500" data-empty <%= "hidden" if @groups.any? %>><%= t(".groups.empty") %></p>
+    <table class="w-full" <%= "hidden" if @groups.empty? %>>
+      <tbody data-rows>
+        <% @groups.each do |group, path| %>
+          <%= render "group_row", group_id: group.id, name: group.name, path: %>
+        <% end %>
+      </tbody>
+    </table>
+    <template data-row-template><%= render "group_row", group_id: "__ID__" %></template>
+  </section>
+
+  <dialog id="group-dialog" aria-labelledby="group-dialog-title"
+          class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40">
+    <h2 id="group-dialog-title" class="text-lg font-medium"><%= t(".groups.dialog.title") %></h2>
+    <label for="group-search" class="sr-only"><%= t(".groups.dialog.search") %></label>
+    <input type="search" id="group-search" autocomplete="off" data-search
+           placeholder="<%= t(".groups.dialog.search") %>" class="input mt-4">
+    <ul class="mt-3 h-80 overflow-y-auto" data-candidates aria-label="<%= t(".groups.dialog.candidates") %>"></ul>
+    <div class="mt-6 flex justify-end gap-2">
+      <%= button_tag t(".groups.dialog.cancel"), type: "button", data: { close_dialog: true }, class: "btn btn-secondary" %>
+      <%= button_tag t(".groups.dialog.submit"), type: "button", data: { add: true }, class: "btn btn-primary" %>
+    </div>
+  </dialog>
+<% end %>

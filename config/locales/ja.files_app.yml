@@ -80,6 +80,7 @@ ja:
       from: "%{name}から継承"
       from_hidden: "上位のフォルダから継承"
       suspended: "利用停止中"
+      deleted: "削除済み"
       cancel_inherited: "%{name} の継承を打ち消す"
       uncancel: "%{name} の打ち消しをやめる"
       cancelled: "打ち消し中"

@@ -72,10 +72,10 @@ module Files
       def subject_json(setting)
         if setting.group
           { type: "group", id: setting.group_id, name: setting.group.name, everyone: setting.group.everyone?,
-            suspended: setting.group.suspended?, path: @group_paths.fetch(setting.group_id) }
+            suspended: setting.group.suspended?, deleted: false, path: @group_paths.fetch(setting.group_id) }
         else
           { type: "tenant_user", id: setting.tenant_user_id, name: setting.tenant_user.display_name, everyone: false,
-            suspended: setting.tenant_user.suspended?, path: nil }
+            suspended: setting.tenant_user.suspended?, deleted: setting.tenant_user.deleted?, path: nil }
         end
       end
     end

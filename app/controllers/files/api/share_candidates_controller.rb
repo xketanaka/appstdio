@@ -14,8 +14,8 @@ module Files
           .includes(:user).order(:display_name).limit(LIMIT)
 
         render json: {
-          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, path: paths.fetch(it.id), detail: nil } } +
-            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, path: nil, detail: it.user.email } },
+          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, deleted: false, path: paths.fetch(it.id), detail: nil } } +
+            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, deleted: false, path: nil, detail: it.user.email } },
         }
       end
     end

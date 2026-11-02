@@ -1,0 +1,13 @@
+<%# locals: (group_id:, name: nil, path: []) %>
+<%# group_id に "__ID__" を渡して描くと、ダイアログで足す行の元（pick_list.ts が名前と送信する値を入れる） %>
+<tr class="border-t border-slate-200" data-row="<%= group_id %>">
+  <td class="py-2 pr-3">
+    <span class="block truncate" data-name><%= name %></span>
+    <span class="block truncate text-xs text-slate-500" data-detail><%= path[...-1]&.join(" > ") %></span>
+    <%= hidden_field_tag "tenant_user[group_ids][]", group_id, id: nil %>
+  </td>
+  <td class="w-px py-2 text-right whitespace-nowrap">
+    <%= button_tag t(".remove"), type: "button", data: { remove_row: true },
+          class: "cursor-pointer rounded-full px-3 py-1 text-sm text-slate-500 hover:bg-slate-900/5" %>
+  </td>
+</tr>

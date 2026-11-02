@@ -1,6 +1,7 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
-<div class="shrink-0 px-6 pt-5 pb-3">
+<div class="flex shrink-0 items-center justify-between gap-4 px-6 pt-5 pb-3">
   <h1 class="truncate text-title"><%= t(".heading") %></h1>
+  <%= link_to t(".new"), new_management_user_path, id: "new-user", class: "btn btn-primary btn-sm shrink-0" %>
 </div>
 
 <div class="min-h-0 flex-1 overflow-auto px-3">
@@ -17,7 +18,8 @@
       <% @tenant_users.each do |tenant_user| %>
         <tr class="border-b border-slate-100 hover:bg-canvas">
           <td class="px-3 py-2.5">
-            <span class="block truncate"><%= tenant_user.display_name %></span>
+            <%= link_to tenant_user.display_name, management_user_path(tenant_user),
+                  class: "block truncate text-primary-700 hover:underline" %>
             <span class="mt-0.5 block text-xs text-slate-500 lg:hidden">
               <span class="sm:hidden"><%= t("enums.tenant_user.role.#{tenant_user.role}") %>・</span>
               <%= tenant_user.user.email %>

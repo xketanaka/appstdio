@@ -57,6 +57,58 @@ ja:
       index:
         title: "利用者管理"
         heading: "利用者管理"
+        new: "利用者を追加"
+      fields:
+        groups:
+          heading: "所属グループ（%{count}件）"
+          add: "所属グループを追加"
+          empty: "所属しているグループはありません。"
+          dialog:
+            title: "所属グループを追加"
+            search: "グループ名で探す"
+            candidates: "候補"
+            cancel: "キャンセル"
+            submit: "追加する"
+            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      group_row:
+        remove: "削除"
+      group_candidates:
+        empty: "見つかりませんでした。"
+      new:
+        title: "利用者を追加 - 利用者管理"
+        heading: "利用者管理"
+        back: "« 利用者一覧へ戻る"
+        detail: "利用者を追加"
+        invited_note: "追加した利用者は「招待中」になります。"
+        submit: "追加する"
+        cancel: "キャンセル"
+      show:
+        title: "%{name} - 利用者管理"
+        heading: "利用者管理"
+        back: "« 利用者一覧へ戻る"
+        detail: "利用者の詳細"
+        groups:
+          heading: "所属グループ（%{count}件）"
+          empty: "所属しているグループはありません。"
+          leader: "グループ管理者"
+        edit: "編集"
+      edit:
+        title: "%{name}の編集 - 利用者管理"
+        heading: "利用者管理"
+        detail: "利用者の編集"
+        cancel: "キャンセル"
+        destroy: "この利用者を削除"
+      confirm_destroy:
+        title: "%{name}の削除 - 利用者管理"
+        heading: "利用者管理"
+        detail: "利用者の削除"
+        message: "「%{name}」（%{email}）を削除します。"
+        notes:
+          login: "このテナントに入れなくなり、利用者の一覧にも出なくなります。"
+          groups: "所属しているグループからは外れます。"
+          readd: "同じメールアドレスで追加し直すことができます。"
+        submit: "削除する"
+        cancel: "キャンセル"
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"
