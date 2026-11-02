@@ -6,7 +6,7 @@
     <span class="flex items-center justify-between gap-4">
       <span class="min-w-0 truncate">
         <% if path.empty? %>
-          <span class="text-slate-500"><%= t(".no_parent") %></span>
+          <span><%= t(".no_parent") %></span>
         <% else %>
           <% path.each_with_index do |group, i| %>
             <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>

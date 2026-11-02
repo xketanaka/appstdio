@@ -6,28 +6,31 @@
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
     <%= link_to t(".back"), management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
-    <div class="mb-5 flex items-center justify-between gap-4">
-      <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
-      <%= link_to t(".edit"), edit_management_user_path(@tenant_user), id: "edit-user", class: "btn btn-secondary btn-sm" %>
-    </div>
+    <header id="user-header" class="mb-6 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 class="text-lg font-medium break-words"><%= @tenant_user.display_name %></h2>
+          <% if @tenant_user.invited? %>
+            <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800"><%= t("enums.tenant_user.status.invited") %></span>
+          <% elsif @tenant_user.suspended? %>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"><%= t("enums.tenant_user.status.suspended") %></span>
+          <% end %>
+        </div>
+        <p class="text-sm break-all text-slate-500"><%= @tenant_user.user.email %></p>
+      </div>
+      <%= link_to t(".edit"), edit_management_user_path(@tenant_user), id: "edit-user", class: "btn btn-secondary btn-sm shrink-0" %>
+    </header>
 
     <div id="user-detail">
-      <dl class="mb-6 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr] sm:gap-y-3">
-        <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:display_name) %></dt>
-        <dd class="mb-2 sm:mb-0"><%= @tenant_user.display_name %></dd>
-
-        <dt class="text-sm text-slate-500"><%= User.human_attribute_name(:email) %></dt>
-        <dd class="mb-2 break-all sm:mb-0"><%= @tenant_user.user.email %></dd>
-
+      <dl class="mb-8 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr]">
         <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:role) %></dt>
-        <dd class="mb-2 sm:mb-0"><%= t("enums.tenant_user.role.#{@tenant_user.role}") %></dd>
-
-        <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:status) %></dt>
-        <dd class="mb-2 sm:mb-0"><%= t("enums.tenant_user.status.#{@tenant_user.status}") %></dd>
+        <dd><%= t("enums.tenant_user.role.#{@tenant_user.role}") %></dd>
       </dl>
 
-      <section id="user-groups" class="mb-6">
-        <h3 class="mb-2 text-sm font-semibold"><%= t(".groups.heading", count: @memberships.size) %></h3>
+      <section id="user-groups" class="mb-8">
+        <div class="mb-1 flex min-h-8 items-center">
+          <h3 class="text-sm font-semibold"><%= t(".groups.heading", count: @memberships.size) %></h3>
+        </div>
         <% if @memberships.empty? %>
           <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".groups.empty") %></p>
         <% else %>
@@ -44,7 +47,7 @@
                       <% end %>
                     </span>
                     <% if path.size > 1 %>
-                      <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" > ") %></span>
+                      <span class="block truncate text-xs text-slate-500"><%= path[...-1].join(" › ") %></span>
                     <% end %>
                   </td>
                 </tr>

@@ -5,16 +5,12 @@
 
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
-    <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+    <h2 class="mb-1 text-sm text-slate-500"><%= t(".detail") %></h2>
+    <p id="user-header" class="mb-6 text-lg break-all"><%= @tenant_user.user.email %></p>
 
     <%= render "partial/errors", object: @tenant_user %>
 
     <%= form_with model: @tenant_user, url: management_user_path(@tenant_user), id: "user-form" do |f| %>
-      <div class="mb-5">
-        <p class="mb-1.5 text-sm font-semibold"><%= User.human_attribute_name(:email) %></p>
-        <p class="break-all"><%= @tenant_user.user.email %></p>
-      </div>
-
       <%= render "fields", form: f, roles: current_tenant_user.role_choices_for(@tenant_user),
             statuses: current_tenant_user.status_choices_for(@tenant_user) %>
 

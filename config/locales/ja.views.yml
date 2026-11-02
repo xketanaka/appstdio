@@ -86,7 +86,6 @@ ja:
         title: "%{name} - 利用者管理"
         heading: "利用者管理"
         back: "« 利用者一覧へ戻る"
-        detail: "利用者の詳細"
         groups:
           heading: "所属グループ（%{count}件）"
           empty: "所属しているグループはありません。"
@@ -125,7 +124,7 @@ ja:
         hint: "Enter かカンマで確定します。登録済みのラベルは候補から選べます。"
       parent_field:
         label: "上位グループ"
-        no_parent: "（なし）"
+        no_parent: "最上位"
         change: "変更"
       index:
         title: "グループ管理"
@@ -133,7 +132,8 @@ ja:
         select: "左の一覧からグループを選んでください。"
       show:
         title: "%{name} - グループ管理"
-        detail: "グループの詳細"
+        parent: "上位グループ"
+        labels: "ラベル"
         actions: "グループの操作"
         edit: "グループを編集"
         edit_members: "メンバーを編集"
@@ -148,21 +148,16 @@ ja:
         submit: "作成する"
         cancel: "キャンセル"
       everyone_detail:
-        name: "グループ名"
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
-        no_parent: "（なし）"
-        no_labels: "（なし）"
-        fields:
-          name: "グループ名"
-          parent: "上位グループ"
-          labels: "ラベル"
         members:
           heading: "所属メンバー（%{count}人）"
           leader: "管理者"
           empty: "直接所属しているメンバーはいません。"
         sub_members:
           heading: "下位グループに所属するメンバー（%{count}人）"
+          show: "表示する"
+          hide: "閉じる"
           empty: "下位グループに所属しているメンバーはいません。"
       load_more:
         loading: "読み込み中…"
@@ -240,7 +235,7 @@ ja:
       suspended_rows:
         with_descendants: "下位グループ %{count}件も一緒に停止"
         with_root: "「%{name}」と一緒に停止"
-        no_parent: "（なし）"
+        no_parent: "最上位"
       member_row:
         leader: "管理者"
         remove: "削除"
