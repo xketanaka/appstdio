@@ -33,8 +33,11 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
 
     get management_user_path(@sato)
     assert_response :success
-    assert_select "#user-detail dd", text: "佐藤さん"
-    assert_select "#user-detail dd", text: "sato@example.com"
+    # 名前を見出しにしてメールアドレスを添え、有効なら状態の印は出さない。権限は行で出す
+    assert_select "#user-header h2", text: "佐藤さん"
+    assert_select "#user-header p", text: "sato@example.com"
+    assert_select "#user-header", text: /有効|招待中|停止中/, count: 0
+    assert_select "#user-detail dd", text: "メンバー"
     # 停止中の旧企画部は出さない
     assert_select "#user-groups h3", text: "所属グループ（1件）"
     rows = css_select("#user-groups tr").map { it.text.squish }
@@ -69,7 +72,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     tenant_user = TenantContext.switch(tenant: @tenant) { TenantUser.find_by!(display_name: "新人さん") }
     assert_redirected_to management_user_path(tenant_user)
     follow_redirect!
-    assert_select "#user-detail dd", text: "招待中"
+    assert_select "#user-header", text: /招待中/
     assert_equal ["営業部 全社", "開発部 全社"], css_select("#user-groups tr").map { it.text.squish }
   end
 
@@ -179,7 +182,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
 
     get edit_management_user_path(@sato)
     assert_response :success
-    assert_select "#user-form", text: /sato@example.com/
+    assert_select "#user-header", text: /佐藤さん\s*sato@example.com/
     assert_select "#user-form input[name=?]", "tenant_user[email]", 0
     assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
     # 招待中でなければ、招待中には戻せない
@@ -193,6 +196,8 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
       display_name: "佐藤花子さん", role: "admin", status: "suspended", group_ids: ["", @sales.id, @dev.id],
     } }
     assert_redirected_to management_user_path(@sato)
+    follow_redirect!
+    assert_select "#user-header", text: /佐藤花子さん\s*停止中/
 
     TenantContext.switch(tenant: @tenant) do
       @sato.reload
