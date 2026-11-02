@@ -69,15 +69,17 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
                   ["メンバーを編集", edit_members_management_group_path(@sales)],
                   ["下位グループを追加", new_management_group_path(parent_id: @sales)]],
       css_select("#group-actions a").map { [it.text.strip, it["href"]] }
+    assert_select "#group-header h2", text: "営業本部"
     assert_select "#group-detail" do
       assert_select "input, select, button", 0
-      assert_select "dd", text: "営業本部"
+      assert_select "#direct-members h3", text: "所属メンバー（2人）"
       assert_select "#direct-members tr", 2
 
       # 下位グループのメンバーは人数だけ出して閉じておき、一覧は開いたときに読み込む。
       # 田中さんは2つの部にいるが1人と数える
       assert_select "details#sub-members:not([open])" do
-        assert_select "summary", text: "下位グループに所属するメンバー（3人）"
+        assert_select "summary h3", text: "下位グループに所属するメンバー（3人）"
+        assert_select "summary", text: /表示する/
         assert_select "li[data-load-more=?]", sub_members_management_group_path(@sales, page: 1)
       end
     end
@@ -121,7 +123,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     login(@admin)
 
     get management_group_path(@sales)
-    assert_select "#sub-members summary", text: "下位グループに所属するメンバー（2人）"
+    assert_select "#sub-members summary h3", text: "下位グループに所属するメンバー（2人）"
     get sub_members_management_group_path(@sales, page: 1)
     assert_select "li", 2
     assert_select "li", text: /第二営業部|高橋さん/, count: 0
@@ -135,32 +137,33 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     TenantContext.switch(tenant: @tenant) { [@sales1, @sales2].each { it.reload.reactivate } }
     TenantContext.switch(tenant: @tenant) { @sales.suspend!(by: @admin_member) }
     get management_group_path(@sales)
-    assert_select "#sub-members summary", text: "下位グループに所属するメンバー（3人）"
+    assert_select "#sub-members summary h3", text: "下位グループに所属するメンバー（3人）"
   end
 
-  test "詳細ではラベルをチップで出し、グループ管理者を先頭に印を付けて並べる" do
+  test "詳細ではラベルを名前の下にチップで出し、グループ管理者を先頭に印を付けて並べる" do
     login(@admin)
 
     get management_group_path(@sales)
-    assert_select "#group-labels span", 2
+    assert_select "#group-header #group-labels li", 2
     assert_select "#group-labels", text: /営業\s*本部/
     assert_select "#direct-members tr:first-child", text: /佐藤さん\s*管理者/
     assert_select "#direct-members tr:last-child", text: /管理者/, count: 0
 
+    # ラベルが無ければ欄ごと出さない
     get management_group_path(@company)
-    assert_select "#group-labels", text: "（なし）"
+    assert_select "#group-labels", 0
     assert_select "#direct-members", text: /管理者/, count: 0
   end
 
-  test "上位グループは階層をたどって表示する" do
+  test "上位グループは名前の上に階層をたどって表示し、最上位なら出さない" do
     login(@admin)
 
     get management_group_path(@sales1)
-    assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
+    assert_select "#group-header #group-parent-path", text: /全社\s*›\s*営業本部\s*›/
     assert_select "#group-parent-path a[href=?]", management_group_path(@sales)
 
     get management_group_path(@company)
-    assert_select "#group-parent-path", text: /（なし）/
+    assert_select "#group-parent-path", 0
   end
 
   test "編集の画面に今の値を出し、上位には自分と下位・「全員」・利用停止中を選べない" do
@@ -218,8 +221,8 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "[role=status]", text: "登録しました。"
     get management_group_path(group)
-    assert_select "#group-parent-path", text: /全社\s*>\s*営業本部/
-    assert_select "#group-labels span", text: /\A(営業|新設)\z/, count: 2
+    assert_select "#group-parent-path", text: /全社\s*›\s*営業本部/
+    assert_select "#group-labels li", text: /\A(営業|新設)\z/, count: 2
     TenantContext.switch(tenant: @tenant) { assert GroupLabel.exists?(name: "新設") }
   end
 
@@ -611,7 +614,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     end
 
     get new_management_group_path
-    assert_select "#group-parent summary", text: /（なし）/
+    assert_select "#group-parent summary", text: /最上位/
   end
 
   test "「全員」グループは読み取り専用で、所属している人数を出す" do

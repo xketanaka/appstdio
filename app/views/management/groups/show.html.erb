@@ -5,27 +5,44 @@
   <% else %>
     <%= link_to t(".back"), management_groups_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline lg:hidden" %>
   <% end %>
-  <div class="mb-5 flex items-center justify-between gap-4">
-    <h2 class="text-sm text-slate-500"><%= t(".detail") %></h2>
-    <% unless @group.everyone? || @group.suspended? %>
-      <%# data-dropdown で、外側のクリックと Esc で閉じる（application.ts） %>
-      <details id="group-actions" class="relative" data-dropdown>
-        <summary aria-label="<%= t(".actions") %>" title="<%= t(".actions") %>"
-                 class="flex size-8 cursor-pointer list-none items-center justify-center rounded-full bg-white text-primary-700 ring-1 ring-slate-300 ring-inset hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-primary-600 [&::-webkit-details-marker]:hidden">
-          <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
-            <circle cx="12" cy="5" r="1.75" /><circle cx="12" cy="12" r="1.75" /><circle cx="12" cy="19" r="1.75" />
-          </svg>
-        </summary>
-        <div class="absolute right-0 z-10 mt-1 w-48 rounded-xl bg-white py-1.5 text-sm text-slate-800 shadow-lg ring-1 ring-slate-900/10">
-          <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group", class: "block px-4 py-2 hover:bg-canvas" %>
-          <%= link_to t(".edit_members"), edit_members_management_group_path(@group), id: "edit-members",
-                class: "block px-4 py-2 hover:bg-canvas" %>
-          <%= link_to t(".add_child"), new_management_group_path(parent_id: @group.id), id: "add-child-group",
-                class: "block px-4 py-2 hover:bg-canvas" %>
-        </div>
-      </details>
+  <header id="group-header" class="mb-6">
+    <% if @parent_path.present? %>
+      <nav id="group-parent-path" aria-label="<%= t(".parent") %>" class="mb-0.5 flex flex-wrap items-center gap-x-1 text-sm">
+        <% @parent_path.each do |group| %>
+          <%= link_to group.name, management_group_path(group), class: "text-primary-700 hover:underline" %>
+          <span class="text-slate-400" aria-hidden="true">›</span>
+        <% end %>
+      </nav>
     <% end %>
-  </div>
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="min-w-0 text-lg font-medium break-words"><%= @group.name %></h2>
+      <% unless @group.everyone? || @group.suspended? %>
+        <%# data-dropdown で、外側のクリックと Esc で閉じる（application.ts） %>
+        <details id="group-actions" class="relative" data-dropdown>
+          <summary aria-label="<%= t(".actions") %>" title="<%= t(".actions") %>"
+                   class="flex size-8 cursor-pointer list-none items-center justify-center rounded-full bg-white text-primary-700 ring-1 ring-slate-300 ring-inset hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-primary-600 [&::-webkit-details-marker]:hidden">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
+              <circle cx="12" cy="5" r="1.75" /><circle cx="12" cy="12" r="1.75" /><circle cx="12" cy="19" r="1.75" />
+            </svg>
+          </summary>
+          <div class="absolute right-0 z-10 mt-1 w-48 rounded-xl bg-white py-1.5 text-sm text-slate-800 shadow-lg ring-1 ring-slate-900/10">
+            <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group", class: "block px-4 py-2 hover:bg-canvas" %>
+            <%= link_to t(".edit_members"), edit_members_management_group_path(@group), id: "edit-members",
+                  class: "block px-4 py-2 hover:bg-canvas" %>
+            <%= link_to t(".add_child"), new_management_group_path(parent_id: @group.id), id: "add-child-group",
+                  class: "block px-4 py-2 hover:bg-canvas" %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+    <% if @labels.present? %>
+      <ul id="group-labels" aria-label="<%= t(".labels") %>" class="mt-2 flex flex-wrap gap-1.5">
+        <% @labels.each do |label| %>
+          <li class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700"><%= label %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </header>
   <% if @group.suspended? %>
     <%= render "suspension" %>
   <% end %>
