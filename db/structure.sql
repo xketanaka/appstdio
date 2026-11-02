@@ -272,7 +272,6 @@ CREATE TABLE public.files_nodes (
     deleted_at timestamp(6) without time zone,
     deleted_root_id bigint,
     deleted_by_id bigint,
-    purge_after timestamp(6) without time zone,
     purged_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
@@ -2037,6 +2036,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261103100000'),
 ('20261030100000'),
 ('20261026100000'),
 ('20261022100000'),

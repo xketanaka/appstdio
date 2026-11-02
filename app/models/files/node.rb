@@ -114,7 +114,7 @@ module Files
           next if kept.where(id: node.id).none?
 
           kept.where("? = ANY(ancestor_ids)", node.id).update_all(deleted_at: now, deleted_root_id: node.id, deleted_by_id: actor.id)
-          node.update!(deleted_at: now, deleted_root_id: node.id, deleted_by: actor, purge_after: now + 3.months)
+          node.update!(deleted_at: now, deleted_root_id: node.id, deleted_by: actor)
           Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :deleted)
         end
       end
@@ -139,7 +139,7 @@ module Files
       transaction do
         nodes.each do |node|
           # 同時に完全削除されたものは戻さない
-          trashed.where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil, purge_after: nil)
+          trashed.where(deleted_root_id: node.id).update_all(deleted_at: nil, deleted_root_id: nil, deleted_by_id: nil)
           Activity.create!(tenant_id: node.tenant_id, node:, actor:, action: :restored)
         end
       end
