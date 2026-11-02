@@ -125,7 +125,7 @@ ja:
         hint: "Enter かカンマで確定します。登録済みのラベルは候補から選べます。"
       parent_field:
         label: "上位グループ"
-        no_parent: "（なし）"
+        no_parent: "最上位"
         change: "変更"
       index:
         title: "グループ管理"
@@ -236,7 +236,7 @@ ja:
       suspended_rows:
         with_descendants: "下位グループ %{count}件も一緒に停止"
         with_root: "「%{name}」と一緒に停止"
-        no_parent: "（なし）"
+        no_parent: "最上位"
       member_row:
         leader: "管理者"
         remove: "削除"

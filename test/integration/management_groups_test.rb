@@ -614,7 +614,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     end
 
     get new_management_group_path
-    assert_select "#group-parent summary", text: /（なし）/
+    assert_select "#group-parent summary", text: /最上位/
   end
 
   test "「全員」グループは読み取り専用で、所属している人数を出す" do
