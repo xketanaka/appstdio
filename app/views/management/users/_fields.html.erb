@@ -28,7 +28,7 @@
 <%= tag.pick_list data: { candidates_url: group_candidates_management_users_path,
                           count_text: t(".groups.heading", count: "%{count}"),
                           load_error: t(".groups.dialog.load_error") } do %>
-  <section id="user-groups" class="mb-6">
+  <section id="user-groups" class="mt-8 mb-6">
     <div class="mb-2 flex items-center justify-between gap-4">
       <h3 class="text-sm font-semibold" data-count><%= t(".groups.heading", count: @groups.size) %></h3>
       <%= button_tag t(".groups.add"), type: "button", id: "add-groups", data: { open_dialog: true },
