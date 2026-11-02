@@ -1,34 +1,8 @@
 <div id="group-detail">
-  <dl class="mb-6 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr] sm:gap-y-3">
-    <dt class="text-sm text-slate-500"><%= t(".fields.name") %></dt>
-    <dd class="mb-2 sm:mb-0"><%= @group.name %></dd>
-
-    <dt class="text-sm text-slate-500"><%= t(".fields.parent") %></dt>
-    <dd id="group-parent-path" class="mb-2 sm:mb-0">
-      <% if @parent_path.empty? %>
-        <span class="text-slate-500"><%= t(".no_parent") %></span>
-      <% else %>
-        <% @parent_path.each_with_index do |group, i| %>
-          <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
-          <%= link_to group.name, management_group_path(group), class: "text-primary-700 hover:underline" %>
-        <% end %>
-      <% end %>
-    </dd>
-
-    <dt class="text-sm text-slate-500"><%= t(".fields.labels") %></dt>
-    <dd id="group-labels" class="mb-2 flex flex-wrap gap-1.5 sm:mb-0">
-      <% if @labels.empty? %>
-        <span class="text-slate-500"><%= t(".no_labels") %></span>
-      <% else %>
-        <% @labels.each do |label| %>
-          <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-sm text-slate-700"><%= label %></span>
-        <% end %>
-      <% end %>
-    </dd>
-  </dl>
-
-  <section id="direct-members" class="mb-6">
-    <h3 class="mb-2 text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
+  <section id="direct-members" class="mb-8">
+    <div class="mb-1 flex min-h-8 items-center">
+      <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
+    </div>
     <% if @members.empty? %>
       <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
     <% else %>
@@ -53,19 +27,19 @@
   </section>
 
   <% if @has_children %>
-    <details id="sub-members" class="group mb-6">
-      <summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-             class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
-          <path d="M8 4l10 8-10 8V4Z" />
-        </svg>
-        <%= t(".sub_members.heading", count: @sub_members_count) %>
+    <details id="sub-members" class="group mb-8">
+      <summary class="mb-1 flex min-h-8 cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+        <h3 class="text-sm font-semibold"><%= t(".sub_members.heading", count: @sub_members_count) %></h3>
+        <span class="btn btn-secondary btn-sm shrink-0">
+          <span class="group-open:hidden"><%= t(".sub_members.show") %></span>
+          <span class="hidden group-open:inline"><%= t(".sub_members.hide") %></span>
+        </span>
       </summary>
       <% if @sub_members_count.zero? %>
-        <p class="mt-2 border-t border-slate-100 py-4 text-sm text-slate-500"><%= t(".sub_members.empty") %></p>
+        <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".sub_members.empty") %></p>
       <% else %>
         <%# 開くと data-load-more の行が見えるようになり、そこで初めて1ページ目を読み込む %>
-        <ul id="sub-member-list" class="mt-2">
+        <ul id="sub-member-list">
           <%= render "load_more", url: sub_members_management_group_path(@group, page: 1) %>
         </ul>
       <% end %>
