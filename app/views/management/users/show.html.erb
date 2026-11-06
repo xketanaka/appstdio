@@ -19,6 +19,13 @@
           <% end %>
         </div>
         <p class="text-sm break-all text-slate-500"><%= @tenant_user.user.email %></p>
+        <% if @labels.present? %>
+          <ul id="user-labels" aria-label="<%= t(".labels") %>" class="mt-2 flex flex-wrap gap-1.5">
+            <% @labels.each do |label| %>
+              <li class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700"><%= label %></li>
+            <% end %>
+          </ul>
+        <% end %>
       </div>
       <% unless @tenant_user.suspended? %>
         <%= link_to t(".edit"), edit_management_user_path(@tenant_user), id: "edit-user", class: "btn btn-secondary btn-sm shrink-0" %>

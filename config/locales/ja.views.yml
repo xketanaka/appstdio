@@ -104,6 +104,7 @@ ja:
         heading: "利用者管理"
         back: "« 利用者一覧へ戻る"
         back_to_suspended: "« 利用停止中の利用者へ戻る"
+        labels: "ラベル"
         groups:
           heading: "所属グループ（%{count}件）"
           empty: "所属しているグループはありません。"

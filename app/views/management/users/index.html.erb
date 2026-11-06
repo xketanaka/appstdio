@@ -18,8 +18,13 @@
       <% @tenant_users.each do |tenant_user| %>
         <tr class="border-b border-slate-100 hover:bg-canvas">
           <td class="px-3 py-2.5">
-            <%= link_to tenant_user.display_name, management_user_path(tenant_user),
-                  class: "block truncate text-primary-700 hover:underline" %>
+            <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <%= link_to tenant_user.display_name, management_user_path(tenant_user),
+                    class: "truncate text-primary-700 hover:underline" %>
+              <% tenant_user.labels.sort_by(&:name).each do |label| %>
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"><%= label.name %></span>
+              <% end %>
+            </span>
             <span class="mt-0.5 block text-xs text-slate-500 lg:hidden">
               <span class="sm:hidden"><%= t("enums.tenant_user.role.#{tenant_user.role}") %>・</span>
               <%= tenant_user.user.email %>

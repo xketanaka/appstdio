@@ -632,6 +632,71 @@ ALTER SEQUENCE public.tenant_settings_id_seq OWNED BY public.tenant_settings.id;
 
 
 --
+-- Name: tenant_user_labelings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tenant_user_labelings (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    tenant_user_id bigint NOT NULL,
+    tenant_user_label_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: tenant_user_labelings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tenant_user_labelings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tenant_user_labelings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tenant_user_labelings_id_seq OWNED BY public.tenant_user_labelings.id;
+
+
+--
+-- Name: tenant_user_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tenant_user_labels (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    name character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: tenant_user_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tenant_user_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tenant_user_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tenant_user_labels_id_seq OWNED BY public.tenant_user_labels.id;
+
+
+--
 -- Name: tenant_users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -841,6 +906,20 @@ ALTER TABLE ONLY public.tenant_settings ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: tenant_user_labelings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labelings ALTER COLUMN id SET DEFAULT nextval('public.tenant_user_labelings_id_seq'::regclass);
+
+
+--
+-- Name: tenant_user_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labels ALTER COLUMN id SET DEFAULT nextval('public.tenant_user_labels_id_seq'::regclass);
+
+
+--
 -- Name: tenant_users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -991,6 +1070,22 @@ ALTER TABLE ONLY public.tenant_settings
 
 
 --
+-- Name: tenant_user_labelings tenant_user_labelings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labelings
+    ADD CONSTRAINT tenant_user_labelings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tenant_user_labels tenant_user_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labels
+    ADD CONSTRAINT tenant_user_labels_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tenant_users tenant_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1012,6 +1107,13 @@ ALTER TABLE ONLY public.tenants
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_on_tenant_user_id_tenant_user_label_id_7236d75314; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_on_tenant_user_id_tenant_user_label_id_7236d75314 ON public.tenant_user_labelings USING btree (tenant_user_id, tenant_user_label_id);
 
 
 --
@@ -1281,6 +1383,27 @@ CREATE UNIQUE INDEX index_tenant_settings_on_tenant_id ON public.tenant_settings
 
 
 --
+-- Name: index_tenant_user_labelings_on_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_tenant_user_labelings_on_tenant_id ON public.tenant_user_labelings USING btree (tenant_id);
+
+
+--
+-- Name: index_tenant_user_labelings_on_tenant_user_label_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_tenant_user_labelings_on_tenant_user_label_id ON public.tenant_user_labelings USING btree (tenant_user_label_id);
+
+
+--
+-- Name: index_tenant_user_labels_on_tenant_id_and_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_tenant_user_labels_on_tenant_id_and_name ON public.tenant_user_labels USING btree (tenant_id, name);
+
+
+--
 -- Name: index_tenant_users_on_tenant_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1418,6 +1541,14 @@ ALTER TABLE ONLY public.files_nodes
 
 
 --
+-- Name: tenant_user_labelings fk_rails_5652c355ed; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labelings
+    ADD CONSTRAINT fk_rails_5652c355ed FOREIGN KEY (tenant_user_label_id) REFERENCES public.tenant_user_labels(id) ON DELETE CASCADE;
+
+
+--
 -- Name: files_activities fk_rails_5e3aef7a16; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1490,6 +1621,14 @@ ALTER TABLE ONLY public.tenant_users
 
 
 --
+-- Name: tenant_user_labelings fk_rails_8f2ec4eaca; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labelings
+    ADD CONSTRAINT fk_rails_8f2ec4eaca FOREIGN KEY (tenant_user_id) REFERENCES public.tenant_users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: active_storage_variant_records fk_rails_993965df05; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1554,6 +1693,14 @@ ALTER TABLE ONLY public.files_versions
 
 
 --
+-- Name: tenant_user_labels fk_rails_de79cf4997; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labels
+    ADD CONSTRAINT fk_rails_de79cf4997 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
+
+
+--
 -- Name: tenant_users fk_rails_e15916f8bf; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1583,6 +1730,14 @@ ALTER TABLE ONLY public.files_permissions
 
 ALTER TABLE ONLY public.group_members
     ADD CONSTRAINT fk_rails_e9fdb70ec5 FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tenant_user_labelings fk_rails_ea86057b82; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_user_labelings
+    ADD CONSTRAINT fk_rails_ea86057b82 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -2006,6 +2161,74 @@ CREATE POLICY tenant_settings_update ON public.tenant_settings FOR UPDATE TO app
 
 
 --
+-- Name: tenant_user_labelings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.tenant_user_labelings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: tenant_user_labelings tenant_user_labelings_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labelings_delete ON public.tenant_user_labelings FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labelings tenant_user_labelings_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labelings_insert ON public.tenant_user_labelings FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labelings tenant_user_labelings_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labelings_select ON public.tenant_user_labelings FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labelings tenant_user_labelings_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labelings_update ON public.tenant_user_labelings FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labels; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.tenant_user_labels ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: tenant_user_labels tenant_user_labels_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labels_delete ON public.tenant_user_labels FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labels tenant_user_labels_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labels_insert ON public.tenant_user_labels FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labels tenant_user_labels_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labels_select ON public.tenant_user_labels FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: tenant_user_labels tenant_user_labels_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY tenant_user_labels_update ON public.tenant_user_labels FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
 -- Name: tenant_users; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -2046,6 +2269,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261106120000'),
 ('20261106110000'),
 ('20261106100000'),
 ('20261103100000'),
