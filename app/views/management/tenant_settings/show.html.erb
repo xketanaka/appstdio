@@ -55,6 +55,15 @@
     <dl id="tenant-features" class="grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] sm:gap-y-3">
       <dt class="text-sm text-slate-500"><%= Files::Setting.human_attribute_name(:enabled) %></dt>
       <dd class="mb-2 sm:mb-0"><%= t(".files_enabled.#{@files_setting.enabled?}") %></dd>
+
+      <dt class="text-sm text-slate-500"><%= Files::Setting.human_attribute_name(:version_retention_days) %></dt>
+      <dd class="mb-2 sm:mb-0">
+        <% if @files_setting.version_retention_days %>
+          <%= t(".version_retention_days", count: @files_setting.version_retention_days) %>
+        <% else %>
+          <span class="text-slate-500"><%= t(".unlimited") %></span>
+        <% end %>
+      </dd>
     </dl>
   </div>
 </div>
