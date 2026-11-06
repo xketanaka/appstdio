@@ -140,6 +140,24 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "#sub-members summary h3", text: "下位グループに所属するメンバー（3人）"
   end
 
+  test "利用停止中の人は、グループの詳細・下位のメンバー・メンバーの編集に出さない" do
+    TenantContext.switch(tenant: @tenant) do
+      @people["山田"].suspend(by: @admin_member)
+      @people["鈴木"].suspend(by: @admin_member)
+    end
+    login(@admin)
+
+    get management_group_path(@sales)
+    assert_select "#direct-members h3", text: "所属メンバー（1人）"
+    assert_select "#direct-members", text: /山田さん/, count: 0
+    # 下位は田中・鈴木・高橋の3人のうち、停止中の鈴木さんを除く
+    assert_select "#sub-members summary h3", text: "下位グループに所属するメンバー（2人）"
+
+    get edit_members_management_group_path(@sales)
+    assert_select "#direct-members tbody tr", 1
+    assert_select "#direct-members", text: /山田さん/, count: 0
+  end
+
   test "詳細ではラベルを名前の下にチップで出し、グループ管理者を先頭に印を付けて並べる" do
     login(@admin)
 

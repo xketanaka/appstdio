@@ -235,14 +235,15 @@ module Management
       @group.save_with_labels(@label_names)
     end
 
-    # グループ管理者を先に、それぞれ表示名の順に並べる
+    # グループ管理者を先に、それぞれ表示名の順に並べる。利用停止中の人は出さない（所属は残っていて、再開すれば出る）
     def members_of(group)
-      group.group_members.includes(tenant_user: :user).to_a
+      group.group_members.where.not(tenant_user_id: TenantUser.suspended.select(:id)).includes(tenant_user: :user).to_a
         .sort_by { |member| [member.leader? ? 0 : 1, member.tenant_user.display_name, member.id] }
     end
 
     def sub_members_of(group)
-      TenantUser.where(id: GroupMember.where(group_id: visible_descendant_ids(group)).select(:tenant_user_id))
+      TenantUser.where.not(status: :suspended)
+        .where(id: GroupMember.where(group_id: visible_descendant_ids(group)).select(:tenant_user_id))
     end
 
     # 詳細に出す下位。停止中の下位のメンバーは上位のメンバーとして数えない（ファイルの権限も届かない）ので、
