@@ -6,6 +6,7 @@ import FileTree from "./components/FileTree.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
 import ShareDialog from "./components/ShareDialog.vue"
+import StorageMeter from "./components/StorageMeter.vue"
 import UploadPanel from "./components/UploadPanel.vue"
 import VersionsPanel from "./components/VersionsPanel.vue"
 import { t } from "./i18n"
@@ -73,6 +74,7 @@ const leavePrivilegedMode = async () => {
         <div class="pt-1 pb-2">
           <FileTree />
           <PrivilegedModeSwitch />
+          <StorageMeter />
         </div>
       </details>
 
@@ -85,6 +87,7 @@ const leavePrivilegedMode = async () => {
         </div>
         <FileTree />
         <PrivilegedModeSwitch />
+        <StorageMeter />
       </aside>
 
       <section class="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white md:mr-4 md:mb-4 md:ml-0">

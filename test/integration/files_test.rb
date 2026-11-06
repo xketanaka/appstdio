@@ -750,6 +750,15 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_nil json["my_drive"], "マイドライブはまだ作られていない"
     end
 
+    test "テナント全体の使用量と上限を返す" do
+      TenantContext.switch(tenant: @tenant) { @tenant.files_setting.update!(storage_used_bytes: 1024) }
+      login(@member_user)
+
+      get files_api_tree_path
+
+      assert_equal({ "used_bytes" => 1024, "limit_bytes" => 10.gigabytes }, json["storage"])
+    end
+
     test "指定した親の直下のフォルダを返す。開けないフォルダの中は返さない" do
       TenantContext.switch(tenant: @tenant) { node(:folder, "面談", @hr) }
       login(@member_user)

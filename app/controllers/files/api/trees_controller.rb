@@ -1,7 +1,7 @@
 module Files
   module Api
-    # 左ペインのツリー。show はドライブのルートと直下のフォルダを、children は指定した親の直下の
-    # フォルダを返す。深い階層は、開いたときに children で読む
+    # 左ペインのツリー。show はドライブのルートと直下のフォルダ、テナントの使用量を、children は
+    # 指定した親の直下のフォルダを返す。深い階層は、開いたときに children で読む
     class TreesController < BaseController
       def show
         roots = {
@@ -10,7 +10,11 @@ module Files
         }
         folders = folders_under(roots.values.compact)
 
-        render json: roots.transform_values { |root| root && { id: root.id, folders: folders.fetch(root.id) } }
+        setting = current_tenant.files_setting
+        render json: {
+          **roots.transform_values { |root| root && { id: root.id, folders: folders.fetch(root.id) } },
+          storage: { used_bytes: setting.storage_used_bytes, limit_bytes: setting.storage_limit_bytes },
+        }
       end
 
       # 閲覧できないフォルダの中は返さない。一覧と同じく、開けないフォルダの中身は見せない
