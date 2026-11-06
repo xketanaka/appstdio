@@ -47,6 +47,11 @@ ja:
       heading: "テナントの選択"
 
   management:
+    labels_field:
+      label: "ラベル"
+      add: "「%{name}」を新しいラベルとして追加"
+      remove: "%{name}を外す"
+      hint: "Enter かカンマで確定します。登録済みのラベルは候補から選べます。"
     menu:
       label: "管理メニュー"
       items:
@@ -152,11 +157,6 @@ ja:
         label: "グループ"
         create: "グループを追加"
         suspended: "利用停止中のグループ"
-      labels_field:
-        label: "ラベル"
-        add: "「%{name}」を新しいラベルとして追加"
-        remove: "%{name}を外す"
-        hint: "Enter かカンマで確定します。登録済みのラベルは候補から選べます。"
       parent_field:
         label: "上位グループ"
         no_parent: "最上位"
