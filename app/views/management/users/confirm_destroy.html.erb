@@ -14,8 +14,7 @@
         <li><%= t(".notes.groups") %></li>
       </ul>
       <p class="mb-6 text-slate-500">
-        <%= t(".irreversible") %>
-        <% if @tenant_user.suspendable_by?(current_tenant_user) %><%= t(".suspend_instead") %><% end %>
+        <%= t(".irreversible") %><%= t(".suspend_instead") if @tenant_user.suspendable_by?(current_tenant_user) %>
       </p>
     </div>
 
