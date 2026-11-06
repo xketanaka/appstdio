@@ -1,6 +1,7 @@
 class TenantUser < ApplicationRecord
   belongs_to :tenant
   belongs_to :user
+  belongs_to :suspended_by, class_name: "TenantUser", optional: true
   has_many :group_members
 
   enum :role, { owner: "owner", admin: "admin", member: "member" }, validate: true
@@ -57,12 +58,10 @@ class TenantUser < ApplicationRecord
     target.owner? && !owner? ? [target.role] : assignable_roles
   end
 
-  # 利用者の編集で、この人が target に付けられる状態。自分の状態は変えられない（停止して締め出されないように）。
-  # オーナーの状態は、オーナーでなければ変えられない。招待中には戻せない
+  # 利用者の編集で、この人が target に付けられる状態。停止は「利用停止」の操作で行うので、編集で変えられるのは
+  # 招待中の人を有効にすることだけ。オーナーの状態は、オーナーでなければ変えられない
   def status_choices_for(target)
-    return [target.status] if target.id == id || (target.owner? && !owner?)
-
-    target.invited? ? %w[invited active suspended] : %w[active suspended]
+    target.invited? && (!target.owner? || owner?) ? %w[invited active] : [target.status]
   end
 
   # 表示名・権限・状態を保存し、有効なグループの中で所属を付け直す。残すグループでは、グループ管理者の
@@ -78,9 +77,7 @@ class TenantUser < ApplicationRecord
     leaving_owner &&= !(owner? && active?)
 
     transaction do
-      # 同時に2人のオーナーを外して、どちらも「他にいる」と判定しないよう、オーナーの行を id の順に押さえる
-      # （順をそろえないと、互いの行を待ってデッドロックになる）
-      if leaving_owner && (TenantUser.where(tenant_id:, role: :owner, status: :active).order(:id).lock.ids - [id]).empty?
+      if leaving_owner && !other_active_owner?
         errors.add(:base, :last_owner)
         raise ActiveRecord::Rollback
       end
@@ -94,6 +91,34 @@ class TenantUser < ApplicationRecord
       e.record.errors.full_messages.each { errors.add(:base, it) } unless e.record == self
       raise ActiveRecord::Rollback
     end
+  end
+
+  # 利用停止にできるか。有効な人だけ（招待中の人はまだテナントに入れないので、止める代わりに削除する）。
+  # 自分は止められない（締め出されないように）。オーナーを止められるのはオーナーだけ
+  def suspendable_by?(tenant_user)
+    active? && id != tenant_user.id && (!owner? || tenant_user.owner?)
+  end
+
+  # 再開できるか。オーナーを再開できるのはオーナーだけ
+  def reactivatable_by?(tenant_user)
+    suspended? && (!owner? || tenant_user.owner?)
+  end
+
+  # 利用停止にし、止めた日時と人を残す。所属グループ・ファイルの権限はそのまま残すので、再開すれば戻る。
+  # 有効なオーナーが1人もいなくなるなら止めずに false で、誤りを持たせる
+  def suspend(by:)
+    transaction do
+      if owner? && !other_active_owner?
+        errors.add(:base, :last_owner)
+        raise ActiveRecord::Rollback
+      end
+
+      update!(status: :suspended, suspended_at: Time.current, suspended_by: by)
+    end
+  end
+
+  def reactivate!
+    update!(status: :active, suspended_at: nil, suspended_by: nil)
   end
 
   # 利用者管理から削除できるか。オーナーと自分自身は削除できない
@@ -117,5 +142,14 @@ class TenantUser < ApplicationRecord
   # どれかのグループのグループ管理者か。管理の画面のうちグループ管理だけを開ける
   def group_leader?
     GroupMember.leader.exists?(tenant_user_id: id)
+  end
+
+  private
+
+  # 自分の他に有効なオーナーがいるか。同時に2人のオーナーを外して、どちらも「他にいる」と判定しないよう、
+  # オーナーの行を id の順に押さえる（順をそろえないと、互いの行を待ってデッドロックになる）。
+  # トランザクションの中で呼ぶこと
+  def other_active_owner?
+    (TenantUser.where(tenant_id:, role: :owner, status: :active).order(:id).lock.ids - [id]).any?
   end
 end

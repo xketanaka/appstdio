@@ -644,6 +644,8 @@ CREATE TABLE public.tenant_users (
     status character varying DEFAULT 'invited'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    suspended_at timestamp(6) without time zone,
+    suspended_by_id bigint,
     CONSTRAINT tenant_users_role_check CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'member'::character varying])::text[]))),
     CONSTRAINT tenant_users_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying, 'deleted'::character varying])::text[])))
 );
@@ -1480,6 +1482,14 @@ ALTER TABLE ONLY public.files_activities
 
 
 --
+-- Name: tenant_users fk_rails_8cc56e211a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_users
+    ADD CONSTRAINT fk_rails_8cc56e211a FOREIGN KEY (suspended_by_id) REFERENCES public.tenant_users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: active_storage_variant_records fk_rails_993965df05; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2036,6 +2046,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261106110000'),
 ('20261106100000'),
 ('20261103100000'),
 ('20261030100000'),

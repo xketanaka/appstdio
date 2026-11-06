@@ -2,11 +2,33 @@ module Management
   class UsersController < BaseController
     PER_PAGE = 30
 
-    before_action :set_tenant_user, only: [:show, :edit, :update, :confirm_destroy, :destroy]
+    before_action :set_tenant_user, except: [:index, :suspended, :new, :create, :group_candidates]
+    # 停止中の人は詳細を見て、再開か削除をするだけ。編集はできない
+    before_action :reject_suspended, only: [:edit, :update]
     before_action :deletable_required, only: [:confirm_destroy, :destroy]
+    before_action :suspendable_required, only: [:confirm_suspend, :suspend]
 
+    # 停止中の人は「利用停止中の利用者」に分けて出す
     def index
-      @tenant_users = TenantUser.not_deleted.includes(:user).order(:id)
+      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user).order(:id)
+    end
+
+    # 利用停止中の利用者の一覧。新しく止めた順に30件ずつ出し、下までスクロールすると読み足す。
+    # キーワードは表示名とメールアドレスに当てる
+    def suspended
+      @query = params[:q].to_s.strip
+      page = [params[:page].to_i, 1].max
+
+      users = TenantUser.suspended.joins(:user).includes(:user, :suspended_by)
+      if @query.present?
+        users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern",
+          pattern: "%#{TenantUser.sanitize_sql_like(@query)}%")
+      end
+      users = users.order(suspended_at: :desc, id: :desc).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      @next_page = (page + 1 if users.size > PER_PAGE)
+      @tenant_users = users.first(PER_PAGE)
+
+      render partial: "suspended_rows", layout: false if page > 1
     end
 
     def show
@@ -77,6 +99,24 @@ module Management
       render partial: "group_candidates", layout: false
     end
 
+    def confirm_suspend
+    end
+
+    def suspend
+      if @tenant_user.suspend(by: current_tenant_user)
+        redirect_to management_user_path(@tenant_user), notice: t(".done")
+      else
+        render :confirm_suspend, status: :unprocessable_entity
+      end
+    end
+
+    def reactivate
+      raise ActiveRecord::RecordNotFound unless @tenant_user.reactivatable_by?(current_tenant_user)
+
+      @tenant_user.reactivate!
+      redirect_to management_user_path(@tenant_user), notice: t(".done")
+    end
+
     def confirm_destroy
     end
 
@@ -91,8 +131,16 @@ module Management
       @tenant_user = TenantUser.not_deleted.includes(:user).find(params[:id])
     end
 
+    def reject_suspended
+      raise ActiveRecord::RecordNotFound if @tenant_user.suspended?
+    end
+
     def deletable_required
       raise ActiveRecord::RecordNotFound unless @tenant_user.deletable_by?(current_tenant_user)
+    end
+
+    def suspendable_required
+      raise ActiveRecord::RecordNotFound unless @tenant_user.suspendable_by?(current_tenant_user)
     end
   end
 end
