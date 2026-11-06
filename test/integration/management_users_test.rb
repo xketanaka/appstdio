@@ -156,6 +156,21 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", select_tenant_path, 0
   end
 
+  test "削除した人を同じメールアドレスで加え直すと、新しい所属になり、元の所属は削除済みのまま残る" do
+    login(@admin)
+    delete management_user_path(@sato)
+    post management_users_path, params: { tenant_user: {
+      email: "sato@example.com", display_name: "戻った佐藤さん", role: "member", group_ids: [""],
+    } }
+
+    readded = TenantContext.switch(tenant: @tenant) { TenantUser.not_deleted.find_by!(user: @sato.user) }
+    assert_redirected_to management_user_path(readded)
+    assert_not_equal @sato.id, readded.id
+    assert TenantContext.switch(tenant: @tenant) { @sato.reload.deleted? }
+    get management_users_path
+    assert_select "#user-list tbody tr", text: /佐藤さん/, count: 1
+  end
+
   test "オーナーと自分自身は削除できない" do
     owner = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(tenant: @tenant, user: User.create!(email: "owner@example.com", password: PASSWORD),

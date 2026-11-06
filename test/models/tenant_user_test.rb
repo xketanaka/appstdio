@@ -45,7 +45,7 @@ class TenantUserTest < ActiveSupport::TestCase
     assert_equal 1, TenantUser.count
   end
 
-  test "削除済みの人は、同じ行を招待中に戻す" do
+  test "削除済みの人は、元の行を戻さずに新しい所属として加える" do
     user = User.create!(email: "taro@example.com", password: "password1234")
     deleted = TenantUser.create!(tenant: @tenant, user:, display_name: "太郎さん", role: :admin, status: :deleted)
 
@@ -53,8 +53,9 @@ class TenantUserTest < ActiveSupport::TestCase
       display_name: "戻った太郎さん", role: "member")
 
     assert_empty tenant_user.errors
-    assert_equal deleted.id, tenant_user.id
-    assert_equal ["戻った太郎さん", "member", "invited"], deleted.reload.values_at(:display_name, :role, :status)
+    assert_not_equal deleted.id, tenant_user.id
+    assert_equal ["戻った太郎さん", "member", "invited"], tenant_user.values_at(:display_name, :role, :status)
+    assert_equal ["太郎さん", "deleted"], deleted.reload.values_at(:display_name, :status)
     assert_equal [@sales.id], tenant_user.group_members.pluck(:group_id)
   end
 

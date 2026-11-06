@@ -15,11 +15,12 @@ class TenantUser < ApplicationRecord
   attribute :email, :string
 
   validates :display_name, presence: true, length: { maximum: 255 }
-  validates :user_id, uniqueness: { scope: :tenant_id }
+  # 削除済みの行は残るので、同じ人を加え直せるよう、一意にするのは削除済み以外の中で
+  validates :user_id, uniqueness: { scope: :tenant_id, conditions: -> { not_deleted } }, unless: :deleted?
 
   # 利用者を招待中として加え、選んだグループにメンバーとして入れる。User はテナントをまたいで共通なので、
-  # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みなら、
-  # 同じ行を戻す。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
+  # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みでも、
+  # 元の行は戻さずに新しい所属を作る。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
   # 選べないグループ（停止中・「全員」・他テナント。画面からは起きない）が混ざっていたら見つからない扱いにする
   def self.invite(tenant:, email:, group_ids: [], **attributes)
     groups = Group.department.active.where(tenant:, id: group_ids).to_a
@@ -28,12 +29,11 @@ class TenantUser < ApplicationRecord
     user = User.find_or_initialize_by(email:)
     # 本人がパスワードを決めるまでログインさせないための、誰も知らない値
     user.password = SecureRandom.base58(32) if user.new_record?
-    tenant_user = (find_by(tenant:, user:) if user.persisted?) || new(tenant:, user:)
-    unless tenant_user.new_record? || tenant_user.deleted?
+    if user.persisted? && not_deleted.exists?(tenant:, user:)
       return new(tenant:, email:, **attributes).tap { it.errors.add(:email, :already_member) }
     end
 
-    tenant_user.assign_attributes(status: :invited, email:, **attributes)
+    tenant_user = new(tenant:, user:, status: :invited, email:, **attributes)
     tenant_user.validate
     user.validate if user.new_record?
     user.errors.each { tenant_user.errors.add(:email, it.message) }
@@ -102,7 +102,7 @@ class TenantUser < ApplicationRecord
   end
 
   # 行は消さずに削除済みにし、グループからは外す。削除済みの人を出さないよう、グループの側で
-  # 状態を見て回らずに済ませるため。ファイルの権限の行は残す（追加し直して戻したときに元に戻る）
+  # 状態を見て回らずに済ませるため。ファイルの権限の行は残す
   def mark_deleted!
     transaction do
       GroupMember.where(tenant_user: self).delete_all

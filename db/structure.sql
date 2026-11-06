@@ -1282,7 +1282,7 @@ CREATE UNIQUE INDEX index_tenant_settings_on_tenant_id ON public.tenant_settings
 -- Name: index_tenant_users_on_tenant_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_tenant_users_on_tenant_id_and_user_id ON public.tenant_users USING btree (tenant_id, user_id);
+CREATE UNIQUE INDEX index_tenant_users_on_tenant_id_and_user_id ON public.tenant_users USING btree (tenant_id, user_id) WHERE ((status)::text <> 'deleted'::text);
 
 
 --
@@ -2036,6 +2036,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261106100000'),
 ('20261103100000'),
 ('20261030100000'),
 ('20261026100000'),
