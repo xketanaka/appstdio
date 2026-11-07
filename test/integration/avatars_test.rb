@@ -151,6 +151,21 @@ class AvatarsTest < ActionDispatch::IntegrationTest
     assert avatar_of(@admin).attached?
   end
 
+  test "利用者の一覧・共有の相手の候補にアバターを出す" do
+    TenantContext.switch(tenant: @tenant) { @sato.replace_avatar(image_path) }
+    src = avatar_path(@sato, avatar_of(@sato).blob_id)
+    login(@admin)
+
+    get management_users_path
+    assert_select "#user-list tr", text: /佐藤さん/ do
+      assert_select "img[src=?]", src
+    end
+
+    get files_api_share_candidates_path, params: { q: "さん" }
+    candidates = response.parsed_body["candidates"].to_h { [it["name"], it["avatar_url"]] }
+    assert_equal({ "管理者さん" => nil, "佐藤さん" => src }, candidates.slice("管理者さん", "佐藤さん"))
+  end
+
   private
 
   def login(tenant_user)

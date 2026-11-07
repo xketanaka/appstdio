@@ -19,7 +19,8 @@
         <table class="w-full" <%= "hidden" if @members.empty? %>>
           <tbody data-rows>
             <% @members.each do |member| %>
-              <%= render "member_row", tenant_user_id: member.tenant_user_id, name: member.tenant_user.display_name,
+              <%= render "member_row", tenant_user_id: member.tenant_user_id, tenant_user: member.tenant_user,
+                    name: member.tenant_user.display_name,
                     email: member.tenant_user.user.email, leader: member.leader? %>
             <% end %>
           </tbody>

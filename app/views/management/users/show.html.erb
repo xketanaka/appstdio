@@ -10,8 +10,9 @@
     <% else %>
       <%= link_to t(".back"), management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
     <% end %>
-    <header id="user-header" class="mb-6 flex items-center justify-between gap-4">
-      <div class="min-w-0">
+    <header id="user-header" class="mb-6 flex items-center gap-4">
+      <%= render "partial/avatar", tenant_user: @tenant_user, size: "size-16" %>
+      <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <h2 class="text-lg font-medium break-words"><%= @tenant_user.display_name %></h2>
           <% if @tenant_user.invited? %>

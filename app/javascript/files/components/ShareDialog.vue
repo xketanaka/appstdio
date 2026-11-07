@@ -74,7 +74,7 @@ const remove = (subject: Subject) => {
 const add = (candidate: ShareCandidate) => {
   const subject: Subject = {
     type: candidate.type, id: candidate.id, name: candidate.name, everyone: candidate.everyone, suspended: false,
-    deleted: false, path: candidate.path,
+    deleted: false, path: candidate.path, avatar_url: candidate.avatar_url,
   }
   cancelled.delete(keyOf(subject))
   own.value.push({ subject, role: "viewer" })

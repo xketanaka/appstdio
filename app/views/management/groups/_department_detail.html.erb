@@ -11,13 +11,18 @@
           <% @members.each do |member| %>
             <tr class="border-t border-slate-200">
               <td class="py-2">
-                <span class="flex items-center gap-2">
-                  <span class="truncate"><%= member.tenant_user.display_name %></span>
-                  <% if member.leader? %>
-                    <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
-                  <% end %>
-                </span>
-                <span class="block truncate text-xs text-slate-500"><%= member.tenant_user.user.email %></span>
+                <div class="flex items-center gap-3">
+                  <%= render "partial/avatar", tenant_user: member.tenant_user %>
+                  <div class="min-w-0">
+                    <span class="flex items-center gap-2">
+                      <span class="truncate"><%= member.tenant_user.display_name %></span>
+                      <% if member.leader? %>
+                        <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
+                      <% end %>
+                    </span>
+                    <span class="block truncate text-xs text-slate-500"><%= member.tenant_user.user.email %></span>
+                  </div>
+                </div>
               </td>
             </tr>
           <% end %>

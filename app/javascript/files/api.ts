@@ -67,7 +67,7 @@ export type Role = "viewer" | "editor" | "manager"
 
 // suspended は利用停止中の人・グループ。停止中のグループへの設定は効かないが、行は残る。
 // deleted は利用者管理で削除された人。削除しても、その人に付けた権限の設定は消さずに残す。
-// path はグループの最上位から自分までの名前の並び（人は null）
+// path はグループの最上位から自分までの名前の並び（人は null）。avatar_url は人のアバターの画像（未設定とグループは null）
 export type Subject = {
   type: "group" | "tenant_user"
   id: number
@@ -76,6 +76,7 @@ export type Subject = {
   suspended: boolean
   deleted: boolean
   path: string[] | null
+  avatar_url: string | null
 }
 
 // 継承元（from）は、上位のフォルダが見えない人には null

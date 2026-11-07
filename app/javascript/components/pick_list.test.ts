@@ -102,6 +102,19 @@ describe("<pick-list>", () => {
     expect(added.querySelector("input")!.name).toBe("tenant_user[group_ids][]")
   })
 
+  test("候補にアバターがあれば、足す行のアバターを候補のものに差し替える", async () => {
+    element.querySelector("template")!.innerHTML = `
+      <tr data-row=""><td><span data-avatar><span>既定</span></span><span data-name></span><span data-detail></span></td></tr>`
+    respond(`<li><label><input type="checkbox" value="2" data-name="山田さん" data-detail="">
+      <span data-avatar><img src="/avatars/2/5" alt=""></span>山田さん</label></li>`)
+    click("[data-open-dialog]")
+    await vi.waitFor(() => expect(candidates()).toHaveLength(1))
+    candidates()[0].checked = true
+    click("[data-add]")
+
+    expect(rows()[1].querySelector("[data-avatar] img")!.getAttribute("src")).toBe("/avatars/2/5")
+  })
+
   test("行を外すと、人数を数え直し、いなくなれば空の案内を出す", () => {
     click("[data-remove-row]")
 
