@@ -1,6 +1,7 @@
 class TenantUser < ApplicationRecord
   belongs_to :tenant
   belongs_to :user
+  belongs_to :suspended_by, class_name: "TenantUser", optional: true
   has_many :group_members
 
   enum :role, { owner: "owner", admin: "admin", member: "member" }, validate: true
@@ -15,11 +16,12 @@ class TenantUser < ApplicationRecord
   attribute :email, :string
 
   validates :display_name, presence: true, length: { maximum: 255 }
-  validates :user_id, uniqueness: { scope: :tenant_id }
+  # 削除済みの行は残るので、同じ人を加え直せるよう、一意にするのは削除済み以外の中で
+  validates :user_id, uniqueness: { scope: :tenant_id, conditions: -> { not_deleted } }, unless: :deleted?
 
   # 利用者を招待中として加え、選んだグループにメンバーとして入れる。User はテナントをまたいで共通なので、
-  # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みなら、
-  # 同じ行を戻す。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
+  # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みでも、
+  # 元の行は戻さずに新しい所属を作る。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
   # 選べないグループ（停止中・「全員」・他テナント。画面からは起きない）が混ざっていたら見つからない扱いにする
   def self.invite(tenant:, email:, group_ids: [], **attributes)
     groups = Group.department.active.where(tenant:, id: group_ids).to_a
@@ -28,12 +30,11 @@ class TenantUser < ApplicationRecord
     user = User.find_or_initialize_by(email:)
     # 本人がパスワードを決めるまでログインさせないための、誰も知らない値
     user.password = SecureRandom.base58(32) if user.new_record?
-    tenant_user = (find_by(tenant:, user:) if user.persisted?) || new(tenant:, user:)
-    unless tenant_user.new_record? || tenant_user.deleted?
+    if user.persisted? && not_deleted.exists?(tenant:, user:)
       return new(tenant:, email:, **attributes).tap { it.errors.add(:email, :already_member) }
     end
 
-    tenant_user.assign_attributes(status: :invited, email:, **attributes)
+    tenant_user = new(tenant:, user:, status: :invited, email:, **attributes)
     tenant_user.validate
     user.validate if user.new_record?
     user.errors.each { tenant_user.errors.add(:email, it.message) }
@@ -57,12 +58,10 @@ class TenantUser < ApplicationRecord
     target.owner? && !owner? ? [target.role] : assignable_roles
   end
 
-  # 利用者の編集で、この人が target に付けられる状態。自分の状態は変えられない（停止して締め出されないように）。
-  # オーナーの状態は、オーナーでなければ変えられない。招待中には戻せない
+  # 利用者の編集で、この人が target に付けられる状態。停止は「利用停止」の操作で行うので、編集で変えられるのは
+  # 招待中の人を有効にすることだけ。オーナーの状態は、オーナーでなければ変えられない
   def status_choices_for(target)
-    return [target.status] if target.id == id || (target.owner? && !owner?)
-
-    target.invited? ? %w[invited active suspended] : %w[active suspended]
+    target.invited? && (!target.owner? || owner?) ? %w[invited active] : [target.status]
   end
 
   # 表示名・権限・状態を保存し、有効なグループの中で所属を付け直す。残すグループでは、グループ管理者の
@@ -78,9 +77,7 @@ class TenantUser < ApplicationRecord
     leaving_owner &&= !(owner? && active?)
 
     transaction do
-      # 同時に2人のオーナーを外して、どちらも「他にいる」と判定しないよう、オーナーの行を id の順に押さえる
-      # （順をそろえないと、互いの行を待ってデッドロックになる）
-      if leaving_owner && (TenantUser.where(tenant_id:, role: :owner, status: :active).order(:id).lock.ids - [id]).empty?
+      if leaving_owner && !other_active_owner?
         errors.add(:base, :last_owner)
         raise ActiveRecord::Rollback
       end
@@ -96,13 +93,41 @@ class TenantUser < ApplicationRecord
     end
   end
 
+  # 利用停止にできるか。有効な人だけ（招待中の人はまだテナントに入れないので、止める代わりに削除する）。
+  # 自分は止められない（締め出されないように）。オーナーを止められるのはオーナーだけ
+  def suspendable_by?(tenant_user)
+    active? && id != tenant_user.id && (!owner? || tenant_user.owner?)
+  end
+
+  # 再開できるか。オーナーを再開できるのはオーナーだけ
+  def reactivatable_by?(tenant_user)
+    suspended? && (!owner? || tenant_user.owner?)
+  end
+
+  # 利用停止にし、止めた日時と人を残す。所属グループ・ファイルの権限はそのまま残すので、再開すれば戻る。
+  # 有効なオーナーが1人もいなくなるなら止めずに false で、誤りを持たせる
+  def suspend(by:)
+    transaction do
+      if owner? && !other_active_owner?
+        errors.add(:base, :last_owner)
+        raise ActiveRecord::Rollback
+      end
+
+      update!(status: :suspended, suspended_at: Time.current, suspended_by: by)
+    end
+  end
+
+  def reactivate!
+    update!(status: :active, suspended_at: nil, suspended_by: nil)
+  end
+
   # 利用者管理から削除できるか。オーナーと自分自身は削除できない
   def deletable_by?(tenant_user)
     !owner? && id != tenant_user.id
   end
 
   # 行は消さずに削除済みにし、グループからは外す。削除済みの人を出さないよう、グループの側で
-  # 状態を見て回らずに済ませるため。ファイルの権限の行は残す（追加し直して戻したときに元に戻る）
+  # 状態を見て回らずに済ませるため。ファイルの権限の行は残す
   def mark_deleted!
     transaction do
       GroupMember.where(tenant_user: self).delete_all
@@ -117,5 +142,14 @@ class TenantUser < ApplicationRecord
   # どれかのグループのグループ管理者か。管理の画面のうちグループ管理だけを開ける
   def group_leader?
     GroupMember.leader.exists?(tenant_user_id: id)
+  end
+
+  private
+
+  # 自分の他に有効なオーナーがいるか。同時に2人のオーナーを外して、どちらも「他にいる」と判定しないよう、
+  # オーナーの行を id の順に押さえる（順をそろえないと、互いの行を待ってデッドロックになる）。
+  # トランザクションの中で呼ぶこと
+  def other_active_owner?
+    (TenantUser.where(tenant_id:, role: :owner, status: :active).order(:id).lock.ids - [id]).any?
   end
 end

@@ -58,6 +58,18 @@ ja:
         title: "利用者管理"
         heading: "利用者管理"
         new: "利用者を追加"
+        suspended: "利用停止中の利用者"
+      suspended:
+        title: "利用停止中の利用者 - 利用者管理"
+        heading: "利用停止中の利用者"
+        back: "« 利用者管理へ戻る"
+        query: "表示名・メールアドレスで探す"
+        submit: "絞り込む"
+        empty: "利用停止中の利用者はいません。"
+        not_found: "当てはまる利用者はいません。"
+        columns:
+          suspended_at: "停止日時"
+          suspended_by: "停止した人"
       fields:
         groups:
           heading: "所属グループ（%{count}件）"
@@ -86,6 +98,7 @@ ja:
         title: "%{name} - 利用者管理"
         heading: "利用者管理"
         back: "« 利用者一覧へ戻る"
+        back_to_suspended: "« 利用停止中の利用者へ戻る"
         groups:
           heading: "所属グループ（%{count}件）"
           empty: "所属しているグループはありません。"
@@ -96,6 +109,7 @@ ja:
         heading: "利用者管理"
         detail: "利用者の編集"
         cancel: "キャンセル"
+        suspend: "利用停止"
         destroy: "この利用者を削除"
       confirm_destroy:
         title: "%{name}の削除 - 利用者管理"
@@ -105,9 +119,30 @@ ja:
         notes:
           login: "このテナントに入れなくなり、利用者の一覧にも出なくなります。"
           groups: "所属しているグループからは外れます。"
-          readd: "同じメールアドレスで追加し直すことができます。"
+        irreversible: "削除は元に戻せません。"
+        suspend_instead: "あとで戻す可能性があるときは、削除せずに利用停止にしてください。"
         submit: "削除する"
         cancel: "キャンセル"
+      confirm_suspend:
+        title: "%{name}の利用停止 - 利用者管理"
+        heading: "利用者管理"
+        detail: "利用者の利用停止"
+        message: "「%{name}」（%{email}）を利用停止にします。"
+        notes:
+          login: "このテナントに入れなくなり、利用者の一覧にも出なくなります。「利用停止中の利用者」から見られます。"
+          reactivate: "あとで再開すると、元のとおり使えるようになります。"
+        submit: "利用停止にする"
+        cancel: "キャンセル"
+      suspend:
+        done: "利用停止にしました。"
+      reactivate:
+        done: "再開しました。"
+      suspension:
+        status: "この利用者は利用停止中です。"
+        suspended_at: "%{at} に停止されました。"
+        suspended_at_by: "%{at} に%{name}が停止しました。"
+        reactivate: "再開する"
+        destroy: "この利用者を削除"
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"

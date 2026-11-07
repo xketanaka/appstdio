@@ -82,8 +82,16 @@ Rails.application.routes.draw do
 
     namespace :management do
       resources :users do
-        get :group_candidates, on: :collection
-        get :confirm_destroy, on: :member
+        collection do
+          get :suspended
+          get :group_candidates
+        end
+        member do
+          get :confirm_destroy
+          get :confirm_suspend
+          post :suspend
+          post :reactivate
+        end
       end
       resources :groups do
         get :suspended, on: :collection

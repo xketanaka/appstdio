@@ -43,6 +43,19 @@ class GroupTest < ActiveSupport::TestCase
     assert_equal expected, sorted
   end
 
+  test "メンバーを付け直しても、利用停止中の人の所属は残す" do
+    active, suspended = %w[a b].map do |name|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{name}@example.com", password: "password1234"),
+        display_name: name, status: :active)
+    end
+    [active, suspended].each { GroupMember.create!(tenant: @tenant, group: @sales, tenant_user: it) }
+    suspended.update!(status: :suspended)
+
+    assert @sales.replace_members({})
+
+    assert_equal [suspended.id], @sales.group_members.pluck(:tenant_user_id)
+  end
+
   test "ラベルが保存できなければグループの保存も戻し、ラベルの誤りをグループの誤りとして出す" do
     group = Group.new(tenant: @tenant, name: "新しい部")
 

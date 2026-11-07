@@ -644,6 +644,8 @@ CREATE TABLE public.tenant_users (
     status character varying DEFAULT 'invited'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    suspended_at timestamp(6) without time zone,
+    suspended_by_id bigint,
     CONSTRAINT tenant_users_role_check CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'member'::character varying])::text[]))),
     CONSTRAINT tenant_users_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying, 'deleted'::character varying])::text[])))
 );
@@ -1282,7 +1284,7 @@ CREATE UNIQUE INDEX index_tenant_settings_on_tenant_id ON public.tenant_settings
 -- Name: index_tenant_users_on_tenant_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_tenant_users_on_tenant_id_and_user_id ON public.tenant_users USING btree (tenant_id, user_id);
+CREATE UNIQUE INDEX index_tenant_users_on_tenant_id_and_user_id ON public.tenant_users USING btree (tenant_id, user_id) WHERE ((status)::text <> 'deleted'::text);
 
 
 --
@@ -1477,6 +1479,14 @@ ALTER TABLE ONLY public.files_permissions
 
 ALTER TABLE ONLY public.files_activities
     ADD CONSTRAINT fk_rails_7dd9f8a06b FOREIGN KEY (actor_id) REFERENCES public.tenant_users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: tenant_users fk_rails_8cc56e211a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tenant_users
+    ADD CONSTRAINT fk_rails_8cc56e211a FOREIGN KEY (suspended_by_id) REFERENCES public.tenant_users(id) ON DELETE SET NULL;
 
 
 --
@@ -2036,6 +2046,8 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261106110000'),
+('20261106100000'),
 ('20261103100000'),
 ('20261030100000'),
 ('20261026100000'),

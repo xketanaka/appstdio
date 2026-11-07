@@ -156,6 +156,21 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", select_tenant_path, 0
   end
 
+  test "削除した人を同じメールアドレスで加え直すと、新しい所属になり、元の所属は削除済みのまま残る" do
+    login(@admin)
+    delete management_user_path(@sato)
+    post management_users_path, params: { tenant_user: {
+      email: "sato@example.com", display_name: "戻った佐藤さん", role: "member", group_ids: [""],
+    } }
+
+    readded = TenantContext.switch(tenant: @tenant) { TenantUser.not_deleted.find_by!(user: @sato.user) }
+    assert_redirected_to management_user_path(readded)
+    assert_not_equal @sato.id, readded.id
+    assert TenantContext.switch(tenant: @tenant) { @sato.reload.deleted? }
+    get management_users_path
+    assert_select "#user-list tbody tr", text: /佐藤さん/, count: 1
+  end
+
   test "オーナーと自分自身は削除できない" do
     owner = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(tenant: @tenant, user: User.create!(email: "owner@example.com", password: PASSWORD),
@@ -174,7 +189,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert TenantContext.switch(tenant: @tenant) { owner.reload.active? }
   end
 
-  test "詳細の「編集」から、表示名・権限・状態・所属グループを変える。停止中のグループの所属とグループ管理者の印は残す" do
+  test "詳細の「編集」から、表示名・権限・所属グループを変える。停止中のグループの所属とグループ管理者の印は残す" do
     TenantContext.switch(tenant: @tenant) { GroupMember.create!(tenant: @tenant, group: @company, tenant_user: @sato) }
     login(@admin)
     get management_user_path(@sato)
@@ -186,23 +201,22 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#user-header", text: "sato@example.com"
     assert_select "#user-form input[name=?]", "tenant_user[email]", 0
     assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
-    # 招待中でなければ、招待中には戻せない
-    assert_equal %w[active suspended], css_select("#status-choices input").map { it["value"] }
+    # 停止は「利用停止」の操作で行うので、有効な人の状態は選べない
+    assert_select "#status-choices input", 0
+    assert_select "#status-choices p", text: "有効"
     # 停止中の旧企画部の所属は出さない
     assert_equal ["全社", "営業部 全社"], css_select("#user-groups tbody tr").map { it.text.squish.delete_suffix(" 削除") }
     assert_select "#user-groups tbody tr[data-row=?] input[type=hidden][name=?][value=?]", @sales.id.to_s,
       "tenant_user[group_ids][]", @sales.id.to_s
 
     patch management_user_path(@sato), params: { tenant_user: {
-      display_name: "佐藤花子さん", role: "admin", status: "suspended", group_ids: ["", @sales.id, @dev.id],
+      display_name: "佐藤花子さん", role: "admin", group_ids: ["", @sales.id, @dev.id],
     } }
     assert_redirected_to management_user_path(@sato)
-    follow_redirect!
-    assert_select "#user-header", text: /佐藤花子さん\s*停止中/
 
     TenantContext.switch(tenant: @tenant) do
       @sato.reload
-      assert_equal ["佐藤花子さん", "admin", "suspended"], @sato.values_at(:display_name, :role, :status)
+      assert_equal ["佐藤花子さん", "admin", "active"], @sato.values_at(:display_name, :role, :status)
       roles = GroupMember.where(tenant_user: @sato).to_h { [it.group_id, it.role] }
       assert_equal({ @sales.id => "leader", @dev.id => "member", @planning.id => "member" }, roles)
     end
@@ -215,7 +229,7 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     end
     login(@admin)
     get edit_management_user_path(invited)
-    assert_equal %w[invited active suspended], css_select("#status-choices input").map { it["value"] }
+    assert_equal %w[invited active], css_select("#status-choices input").map { it["value"] }
 
     patch management_user_path(invited), params: { tenant_user: { display_name: "新人さん", role: "member", status: "active", group_ids: [""] } }
     assert TenantContext.switch(tenant: @tenant) { invited.reload.active? }
@@ -279,6 +293,91 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#role-choices input[value=admin][checked]"
     assert_equal [@dev.id.to_s], css_select("#user-groups tbody tr").map { it["data-row"] }
     assert TenantContext.switch(tenant: @tenant) { @sato.reload.member? }
+  end
+
+  test "編集の画面から確認の画面を経て利用停止にすると、一覧から外れて「利用停止中の利用者」に出る。再開すると戻る" do
+    login(@admin)
+    get edit_management_user_path(@sato)
+    assert_select "a#suspend-user[href=?]", confirm_suspend_management_user_path(@sato)
+
+    get confirm_suspend_management_user_path(@sato)
+    assert_select "#suspend-confirmation", text: /「佐藤さん」（sato@example.com）を利用停止にします。/
+    post suspend_management_user_path(@sato)
+    assert_redirected_to management_user_path(@sato)
+    follow_redirect!
+    assert_select "#suspension", text: /利用停止中です。.*管理者さんが停止しました。/m
+    # 停止中は編集できず、詳細から再開か削除をする
+    assert_select "#edit-user", 0
+    assert_select "#suspension form[action=?] button", reactivate_management_user_path(@sato), text: "再開する"
+    assert_select "#suspension a#destroy-user[href=?]", confirm_destroy_management_user_path(@sato)
+    get edit_management_user_path(@sato)
+    assert_response :not_found
+    # 所属グループは残る
+    assert TenantContext.switch(tenant: @tenant) { GroupMember.exists?(tenant_user: @sato, group: @sales) }
+
+    get management_users_path
+    assert_select "#user-list", text: /佐藤さん/, count: 0
+    assert_select "a#suspended-users[href=?]", suspended_management_users_path
+    get suspended_management_users_path
+    assert_select "#suspended-users tbody tr", 1
+    assert_select "#suspended-users tbody tr", text: /佐藤さん.*sato@example.com.*管理者さん/m
+
+    post reactivate_management_user_path(@sato)
+    assert_redirected_to management_user_path(@sato)
+    assert TenantContext.switch(tenant: @tenant) { @sato.reload.active? && @sato.suspended_at.nil? }
+    get management_users_path
+    assert_select "#user-list", text: /佐藤さん/
+  end
+
+  test "利用停止中の利用者は、表示名・メールアドレスで探せ、新しく止めた順に30件ずつ出す" do
+    TenantContext.switch(tenant: @tenant) do
+      35.times do |i|
+        TenantUser.create!(tenant: @tenant, user: User.create!(email: "s#{i}@example.com", password: PASSWORD),
+          display_name: format("停止%02d", i), status: :suspended, suspended_at: i.minutes.ago)
+      end
+    end
+    login(@admin)
+
+    get suspended_management_users_path
+    assert_select "#suspended-users tbody tr:not([data-load-more])", 30
+    assert_select "#suspended-users tbody tr:first-child", text: /停止00/
+    assert_select "tr[data-load-more=?]", suspended_management_users_path(page: 2)
+    get suspended_management_users_path(page: 2)
+    # 表の外の tr は assert_select の解析で落ちるので、文字列で数える
+    assert_not_includes response.body, "<html"
+    assert_equal 5, response.body.scan("<tr").size
+
+    get suspended_management_users_path(q: "s12@")
+    assert_select "#suspended-users tbody tr", 1
+    get suspended_management_users_path(q: "いない人")
+    assert_select "p", text: "当てはまる利用者はいません。"
+  end
+
+  test "停止中の人は、詳細からそのまま削除できる" do
+    TenantContext.switch(tenant: @tenant) { @sato.suspend(by: @admin_member) }
+    login(@admin)
+    get confirm_destroy_management_user_path(@sato)
+    assert_response :success
+    # 停止中の人には「利用停止にしてください」とは書かない
+    assert_select "#destroy-confirmation", text: /利用停止/, count: 0
+    delete management_user_path(@sato)
+    assert TenantContext.switch(tenant: @tenant) { @sato.reload.deleted? }
+  end
+
+  test "自分と招待中の人は利用停止にできず、オーナーを止められるのはオーナーだけ" do
+    owner = create_owner("owner@example.com", "オーナーさん")
+    invited = TenantContext.switch(tenant: @tenant) do
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "new@example.com", password: PASSWORD),
+        display_name: "新人さん", status: :invited)
+    end
+    login(@admin)
+
+    [@admin_member, invited, owner].each do |tenant_user|
+      get edit_management_user_path(tenant_user)
+      assert_select "#suspend-user", 0
+      post suspend_management_user_path(tenant_user)
+      assert_response :not_found
+    end
   end
 
   test "削除済みの人は一覧に出さず、詳細も開けない" do

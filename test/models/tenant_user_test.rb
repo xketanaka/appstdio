@@ -45,7 +45,7 @@ class TenantUserTest < ActiveSupport::TestCase
     assert_equal 1, TenantUser.count
   end
 
-  test "削除済みの人は、同じ行を招待中に戻す" do
+  test "削除済みの人は、元の行を戻さずに新しい所属として加える" do
     user = User.create!(email: "taro@example.com", password: "password1234")
     deleted = TenantUser.create!(tenant: @tenant, user:, display_name: "太郎さん", role: :admin, status: :deleted)
 
@@ -53,8 +53,9 @@ class TenantUserTest < ActiveSupport::TestCase
       display_name: "戻った太郎さん", role: "member")
 
     assert_empty tenant_user.errors
-    assert_equal deleted.id, tenant_user.id
-    assert_equal ["戻った太郎さん", "member", "invited"], deleted.reload.values_at(:display_name, :role, :status)
+    assert_not_equal deleted.id, tenant_user.id
+    assert_equal ["戻った太郎さん", "member", "invited"], tenant_user.values_at(:display_name, :role, :status)
+    assert_equal ["太郎さん", "deleted"], deleted.reload.values_at(:display_name, :status)
     assert_equal [@sales.id], tenant_user.group_members.pluck(:group_id)
   end
 
@@ -116,5 +117,47 @@ class TenantUserTest < ActiveSupport::TestCase
 
     assert suspended_owner.update_with_groups({ status: "active" }, [])
     assert owner.update_with_groups({ role: "admin" }, [])
+  end
+
+  test "利用停止にすると止めた日時と人を残し、再開すると消す。所属グループは残す" do
+    admin, member = [:admin, :member].map do |role|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{role}@example.com", password: "password1234"),
+        display_name: role, role:, status: :active)
+    end
+    GroupMember.create!(tenant: @tenant, group: @sales, tenant_user: member)
+
+    assert member.suspend(by: admin)
+    assert member.reload.suspended?
+    assert_equal admin, member.suspended_by
+    assert member.suspended_at.present?
+    assert GroupMember.exists?(tenant_user: member)
+
+    member.reactivate!
+    assert member.reload.active?
+    assert_equal [nil, nil], member.values_at(:suspended_at, :suspended_by_id)
+  end
+
+  test "有効なオーナーが1人もいなくなる利用停止は受け付けない" do
+    owner, admin = [:owner, :admin].map do |role|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "#{role}@example.com", password: "password1234"),
+        display_name: role, role:, status: :active)
+    end
+
+    assert_not owner.suspend(by: admin)
+    assert_equal [:last_owner], owner.errors.map(&:type)
+    assert owner.reload.active?
+  end
+
+  test "利用停止にできるのは有効な人だけで、自分は止められず、オーナーを止められるのはオーナーだけ" do
+    owner, other_owner, admin, member, invited = [:owner, :owner, :admin, :member, :member].each_with_index.map do |role, i|
+      TenantUser.create!(tenant: @tenant, user: User.create!(email: "u#{i}@example.com", password: "password1234"),
+        display_name: "u#{i}", role:, status: i == 4 ? :invited : :active)
+    end
+
+    assert member.suspendable_by?(admin)
+    assert_not admin.suspendable_by?(admin)
+    assert_not invited.suspendable_by?(admin)
+    assert_not other_owner.suspendable_by?(admin)
+    assert other_owner.suspendable_by?(owner)
   end
 end

@@ -82,14 +82,15 @@ class Group < ApplicationRecord
 
   # メンバーを付け直す。roles は { tenant_user_id => "member" / "leader" }。保存できなければ false で、
   # 誤りはグループの誤りとして出す。新しく加える人は、テナントの所属のうち有効・招待中の人に限り、
-  # それ以外が混ざっていたら（画面からは起きない）見つからない扱いにする
+  # それ以外が混ざっていたら（画面からは起きない）見つからない扱いにする。利用停止中の人はメンバーの編集の
+  # 画面に出さないので、その所属は付け直しの対象にせず残す（再開すれば戻る）
   def replace_members(roles)
     added_ids = roles.keys - group_members.pluck(:tenant_user_id)
     addable = TenantUser.where(tenant_id:, id: added_ids, status: [:active, :invited]).count
     raise ActiveRecord::RecordNotFound, "tenant_user not addable" if addable != added_ids.size
 
     transaction do
-      group_members.where.not(tenant_user_id: roles.keys).delete_all
+      group_members.where.not(tenant_user_id: roles.keys).without_suspended_users.delete_all
       roles.each do |tenant_user_id, role|
         group_members.find_or_initialize_by(tenant_user_id:).update!(tenant:, role:)
       end

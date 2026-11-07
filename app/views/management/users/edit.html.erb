@@ -19,10 +19,16 @@
           <%= f.submit t("actions.save"), class: "btn btn-primary" %>
           <%= link_to t(".cancel"), management_user_path(@tenant_user), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
         </div>
-        <% if @tenant_user.deletable_by?(current_tenant_user) %>
-          <%= link_to t(".destroy"), confirm_destroy_management_user_path(@tenant_user), id: "destroy-user",
-                class: "btn btn-danger" %>
-        <% end %>
+        <div class="flex flex-wrap items-center gap-2">
+          <% if @tenant_user.suspendable_by?(current_tenant_user) %>
+            <%= link_to t(".suspend"), confirm_suspend_management_user_path(@tenant_user), id: "suspend-user",
+                  class: "btn btn-secondary" %>
+          <% end %>
+          <% if @tenant_user.deletable_by?(current_tenant_user) %>
+            <%= link_to t(".destroy"), confirm_destroy_management_user_path(@tenant_user), id: "destroy-user",
+                  class: "btn btn-danger" %>
+          <% end %>
+        </div>
       </div>
     <% end %>
   </div>

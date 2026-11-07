@@ -5,21 +5,29 @@
 
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
-    <%= link_to t(".back"), management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <% if @tenant_user.suspended? %>
+      <%= link_to t(".back_to_suspended"), suspended_management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <% else %>
+      <%= link_to t(".back"), management_users_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <% end %>
     <header id="user-header" class="mb-6 flex items-center justify-between gap-4">
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <h2 class="text-lg font-medium break-words"><%= @tenant_user.display_name %></h2>
           <% if @tenant_user.invited? %>
             <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800"><%= t("enums.tenant_user.status.invited") %></span>
-          <% elsif @tenant_user.suspended? %>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"><%= t("enums.tenant_user.status.suspended") %></span>
           <% end %>
         </div>
         <p class="text-sm break-all text-slate-500"><%= @tenant_user.user.email %></p>
       </div>
-      <%= link_to t(".edit"), edit_management_user_path(@tenant_user), id: "edit-user", class: "btn btn-secondary btn-sm shrink-0" %>
+      <% unless @tenant_user.suspended? %>
+        <%= link_to t(".edit"), edit_management_user_path(@tenant_user), id: "edit-user", class: "btn btn-secondary btn-sm shrink-0" %>
+      <% end %>
     </header>
+
+    <% if @tenant_user.suspended? %>
+      <%= render "suspension" %>
+    <% end %>
 
     <div id="user-detail">
       <dl class="mb-8 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr]">
