@@ -1,6 +1,12 @@
-<span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white">
-  <svg viewBox="0 0 24 24" fill="currentColor" class="size-5" aria-hidden="true">
-    <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
-    <path d="M3.5 21.75a8.5 8.5 0 0 1 17 0 .75.75 0 0 1-.75.75H4.25a.75.75 0 0 1-.75-.75Z" />
-  </svg>
-</span>
+<%# locals: (tenant_user:, size: "size-8") %>
+<%# 名前と並べて出すので、画像は飾りとして扱う（alt を空にする） %>
+<% if (src = avatar_src(tenant_user)) %>
+  <img src="<%= src %>" alt="" loading="lazy" class="<%= class_names(size, "shrink-0 rounded-full bg-slate-100 object-cover") %>">
+<% else %>
+  <span class="<%= class_names(size, "flex shrink-0 items-center justify-center rounded-full bg-primary-600 text-white") %>">
+    <svg viewBox="0 0 24 24" fill="currentColor" class="size-5/8" aria-hidden="true">
+      <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
+      <path d="M3.5 21.75a8.5 8.5 0 0 1 17 0 .75.75 0 0 1-.75.75H4.25a.75.75 0 0 1-.75-.75Z" />
+    </svg>
+  </span>
+<% end %>

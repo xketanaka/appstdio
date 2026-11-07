@@ -5,6 +5,8 @@ class TenantUser < ApplicationRecord
   has_many :group_members
   has_many :labelings, class_name: "TenantUserLabeling"
   has_many :labels, through: :labelings, source: :tenant_user_label
+  # 表示名と同じく所属ごとに持つ（組織ごとに別の画像）。AvatarImage で作った画像だけを付ける
+  has_one_attached :avatar
 
   enum :role, { owner: "owner", admin: "admin", member: "member" }, validate: true
   # deleted は利用者管理で削除した所属。行を残すのは、ファイルの作成者などの参照と、マイドライブを残すため
@@ -99,6 +101,19 @@ class TenantUser < ApplicationRecord
       e.record.errors.full_messages.each { errors.add(:base, it) } unless e.record == self
       raise ActiveRecord::Rollback
     end
+  end
+
+  # アバターを、path の画像から作って差し替える（AvatarImage.process）。古い画像は消す。
+  # 画像を作れなければ差し替えずに false で、誤りを持たせる
+  def replace_avatar(path, crop: nil)
+    image = AvatarImage.process(path, crop:)
+    # 作った画像の形式と大きさは決まっているので、Active Storage の解析（ジョブ）は要らない
+    avatar.attach(io: StringIO.new(image), filename: "avatar.webp", content_type: "image/webp", identify: false,
+      metadata: { analyzed: true })
+    true
+  rescue AvatarImage::Invalid => e
+    errors.add(:avatar, e.key, count: AvatarImage::MAX_BYTES / 1.megabyte)
+    false
   end
 
   # ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える。トランザクションの中で呼ぶこと

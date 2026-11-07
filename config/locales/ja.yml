@@ -28,6 +28,10 @@ ja:
           attributes:
             email:
               already_member: "の利用者はすでに登録されています。"
+            avatar:
+              too_large: "は%{count}MB以下の画像にしてください。"
+              invalid_format: "は PNG・JPEG・GIF・WebP の画像にしてください。"
+              too_many_pixels: "の画像が大きすぎます。縦横を小さくしてください。"
         tenant_setting:
           attributes:
             logo:
@@ -94,6 +98,7 @@ ja:
         user: "ユーザ"
         user_id: "ユーザ"
         display_name: "表示名"
+        avatar: "アバター"
         email: "メールアドレス"
         role: "権限"
         status: "状態"

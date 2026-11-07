@@ -5,6 +5,47 @@
 
     <%= render "partial/errors", object: @tenant_user %>
 
+    <section id="avatar" class="mb-8" aria-labelledby="avatar-heading">
+      <h2 id="avatar-heading" class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(:avatar) %></h2>
+      <div class="flex flex-wrap items-center gap-4">
+        <%= render "partial/avatar", tenant_user: @tenant_user, size: "size-20" %>
+        <avatar-cropper>
+          <%= form_with url: profile_avatar_path, method: :patch, multipart: true do %>
+            <input type="file" name="avatar" id="avatar-file" accept="<%= AvatarImage::CONTENT_TYPES.join(",") %>"
+                   class="peer sr-only" data-file>
+            <label for="avatar-file" class="btn btn-secondary btn-sm cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary-600"><%= t(".avatar.choose") %></label>
+            <%= hidden_field_tag "crop[x]", nil, id: nil, data: { crop: "x" } %>
+            <%= hidden_field_tag "crop[y]", nil, id: nil, data: { crop: "y" } %>
+            <%= hidden_field_tag "crop[size]", nil, id: nil, data: { crop: "size" } %>
+
+            <dialog aria-labelledby="avatar-dialog-title"
+                    class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40">
+              <h2 id="avatar-dialog-title" class="text-lg font-medium"><%= t(".avatar.dialog.title") %></h2>
+              <p class="mt-1 text-xs text-slate-500"><%= t(".avatar.dialog.hint") %></p>
+              <div class="relative mx-auto mt-4 aspect-square w-full max-w-64 cursor-move touch-none overflow-hidden rounded-xl bg-slate-900 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+                   tabindex="0" role="application" aria-label="<%= t(".avatar.dialog.area") %>" data-viewport>
+                <img alt="" draggable="false" class="absolute top-0 left-0 max-w-none origin-top-left" data-image>
+                <div class="pointer-events-none absolute inset-0 rounded-full border-2 border-white/80 shadow-[0_0_0_100vmax_rgb(15_23_42/0.6)]"></div>
+              </div>
+              <label class="mt-4 flex items-center gap-3 text-sm text-slate-600">
+                <%= t(".avatar.dialog.zoom") %>
+                <input type="range" min="1" max="4" step="0.01" value="1" class="flex-1 accent-primary-600" data-zoom>
+              </label>
+              <div class="mt-6 flex justify-end gap-2">
+                <%= button_tag t(".avatar.dialog.cancel"), type: "button", data: { cancel: true }, class: "btn btn-secondary" %>
+                <%= button_tag t(".avatar.dialog.submit"), type: "submit", class: "btn btn-primary" %>
+              </div>
+            </dialog>
+          <% end %>
+        </avatar-cropper>
+        <% if @tenant_user.avatar.attached? %>
+          <%= button_to t(".avatar.remove"), profile_avatar_path, method: :delete, id: "remove-avatar",
+                class: "cursor-pointer rounded-full px-3 py-1 text-sm text-slate-600 hover:bg-slate-900/5" %>
+        <% end %>
+      </div>
+      <p class="mt-2 text-xs text-slate-500"><%= t(".avatar.hint", size: AvatarImage::MAX_BYTES / 1.megabyte) %></p>
+    </section>
+
     <%= form_with model: @tenant_user, url: profile_path, method: :patch do |f| %>
       <div class="mb-5">
         <%= f.label :display_name, TenantUser.human_attribute_name(:display_name),

@@ -6,7 +6,14 @@
 <div class="min-h-0 flex-1 overflow-y-auto">
   <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
     <h2 class="mb-1 text-sm text-slate-500"><%= t(".detail") %></h2>
-    <p id="user-header" class="mb-6 text-lg break-all"><%= @tenant_user.user.email %></p>
+    <div id="user-header" class="mb-6 flex items-center gap-3">
+      <%= render "partial/avatar", tenant_user: @tenant_user, size: "size-10" %>
+      <p class="min-w-0 flex-1 text-lg break-all"><%= @tenant_user.user.email %></p>
+      <% if @tenant_user.avatar.attached? %>
+        <%= button_to t(".remove_avatar"), management_user_avatar_path(@tenant_user), method: :delete,
+              id: "remove-avatar", form_class: "shrink-0", class: "btn btn-secondary btn-sm" %>
+      <% end %>
+    </div>
 
     <%= render "partial/errors", object: @tenant_user %>
 

@@ -32,7 +32,11 @@ Rails.application.routes.draw do
     get  "select_tenant" => "tenant_selections#new", as: :select_tenant
     post "select_tenant" => "tenant_selections#create"
 
-    resource :profile, only: [:show, :update]
+    resource :profile, only: [:show, :update] do
+      resource :avatar, only: [:update, :destroy], module: :profiles
+    end
+    # version は画像の blob の id。差し替えると URL が変わるので、ブラウザに長くキャッシュさせられる
+    get "avatars/:id/:version" => "avatars#show", as: :avatar
 
     namespace :files do
       # 画面はすべて同じ入れ物のページ。URL は app/javascript/files/router.ts と揃えること
@@ -92,6 +96,7 @@ Rails.application.routes.draw do
           post :suspend
           post :reactivate
         end
+        resource :avatar, only: :destroy, module: :users
       end
       resources :groups do
         get :suspended, on: :collection
