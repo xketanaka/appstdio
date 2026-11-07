@@ -7,7 +7,12 @@ export type TreeFolder = { id: number, name: string, readable: boolean, has_chil
 // ドライブのルートの id と直下のフォルダ。マイドライブは初めて開くまで無い
 export type TreeRoot = { id: number, folders: TreeFolder[] }
 
-export type Tree = { shared_drive: TreeRoot | null, my_drive: TreeRoot | null }
+export type Tree = {
+  shared_drive: TreeRoot | null
+  my_drive: TreeRoot | null
+  // テナント全体の使用量。ゴミ箱の中身と古い版も含む
+  storage: { used_bytes: number, limit_bytes: number }
+}
 
 export type Entry = {
   id: number

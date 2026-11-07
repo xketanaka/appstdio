@@ -21,6 +21,7 @@ beforeEach(() => {
   state.tree = {
     shared_drive: { id: 1, folders: [folder(2, "営業", { has_children: true }), folder(3, "人事", { readable: false })] },
     my_drive: { id: 9, folders: [folder(10, "下書き")] },
+    storage: { used_bytes: 0, limit_bytes: 1 },
   }
   state.children.set(1, state.tree.shared_drive!.folders)
   state.children.set(9, state.tree.my_drive!.folders)
