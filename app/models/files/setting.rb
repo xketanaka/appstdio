@@ -6,7 +6,7 @@ module Files
     validates :tenant_id, uniqueness: true
     validates :storage_limit_bytes, numericality: { greater_than: 0 }
     validates :version_retention_days,
-      numericality: { greater_than: 0 }, allow_nil: true
+      numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
     def remaining_bytes
       storage_limit_bytes - storage_used_bytes

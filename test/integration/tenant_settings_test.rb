@@ -83,6 +83,27 @@ class TenantSettingsTest < ActionDispatch::IntegrationTest
     assert_select "#tenant-features", text: /利用しない/
   end
 
+  test "古い版の保持日数を保存し、空にすると無制限に戻す" do
+    get management_tenant_setting_path
+    assert_select "#tenant-features", text: /無制限/
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, files_enabled: "1", version_retention_days: "30" }
+    assert_equal 30, files_setting.version_retention_days
+    follow_redirect!
+    assert_select "#tenant-features", text: /最新でなくなってから 30 日/
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, files_enabled: "1", version_retention_days: "" }
+    assert_nil files_setting.version_retention_days
+  end
+
+  test "保持日数が1以上の整数でなければ保存しない" do
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, files_enabled: "1", version_retention_days: "0" }
+
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /古い版の保持日数/
+    assert_nil files_setting.version_retention_days
+  end
+
   private
 
   # RLS があるので、読むのも書くのもテナントのコンテキストの中で行う
