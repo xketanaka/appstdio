@@ -257,12 +257,16 @@ ja:
         files_enabled:
           "true": "利用する"
           "false": "利用しない"
+        version_retention_days: "最新でなくなってから %{count} 日"
+        unlimited: "無制限"
       edit:
         title: "組織設定の編集"
         heading: "組織設定の編集"
         use_default_color: "既定の色を使う"
         remove_logo: "ロゴを削除する"
         files_enabled: "ファイル管理を利用する"
+        unlimited: "無制限"
+        days: "日"
         cancel: "キャンセル"
         sections:
           appearance: "表示"
@@ -272,6 +276,7 @@ ja:
           title_color: "画面上部の背景色です。文字の色は背景の明るさに合わせて白か黒になります。"
           logo: "PNG・JPEG・GIF・WebP、%{size}MB まで。タイトルラベルの左に表示します。"
           files_enabled: "利用しないにすると、メニューから「ファイル」が消え、ファイルの画面を開けなくなります。保存されているファイルは削除されません。"
+          version_retention_days: "ファイルの古い版の中身を残す日数です。新しい版ができて最新でなくなった日から数えます。最新の版は日数に関わらず残ります。空にすると無制限です。短くすると、すでに日数を過ぎた古い版は翌朝までに削除され、元に戻せません。"
 
   ops:
     sessions:

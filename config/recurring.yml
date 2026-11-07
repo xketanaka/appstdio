@@ -19,3 +19,6 @@ production:
   purge_expired_trash:
     class: Files::PurgeExpiredTrashJob
     schedule: every day at 3am
+  purge_expired_versions:
+    class: Files::PurgeExpiredVersionsJob
+    schedule: every day at 3:30am

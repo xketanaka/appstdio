@@ -14,6 +14,7 @@ module Management
       attributes[:logo] = nil if params[:remove_logo] == "1"
       @setting.assign_attributes(attributes)
       @files_setting.enabled = params[:files_enabled] == "1"
+      @files_setting.version_retention_days = params[:version_retention_days].presence
 
       if @setting.save_with(@files_setting)
         redirect_to management_tenant_setting_path, notice: t("messages.saved")

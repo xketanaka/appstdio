@@ -79,6 +79,7 @@ ja:
         logo: "ロゴ画像"
       files/setting:
         enabled: "ファイル管理"
+        version_retention_days: "古い版の保持日数"
       files/node:
         name: "名前"
       group:
