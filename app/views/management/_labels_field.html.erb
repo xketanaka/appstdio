@@ -1,9 +1,10 @@
-<%# locals: (form:) %>
+<%# locals: (form:, suggestions:) %>
+<%# グループと利用者のラベルの欄。suggestions はテナントに登録済みのラベルの名前 %>
 <%# 文字を打つ欄とチップは label-input（app/javascript/components/label_input.ts）が作る。
     中の input は JavaScript が無いときのカンマ区切りの入力欄を兼ねる %>
 <div class="mb-5">
   <%= form.label :label_names, t(".label"), class: "mb-1.5 block text-sm font-semibold" %>
-  <%= tag.label_input data: { suggestions: GroupLabel.order(:name).pluck(:name).to_json,
+  <%= tag.label_input data: { suggestions: suggestions.to_json,
                               add_text: t(".add", name: "%{name}"),
                               remove_text: t(".remove", name: "%{name}") } do %>
     <%= form.text_field :label_names, value: @label_names.join(", "), class: "input" %>

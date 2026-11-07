@@ -97,6 +97,33 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "li", 1
   end
 
+  test "利用者にラベルを付けると、一覧と詳細に出し、編集で付け直せる。候補は利用者のラベルだけ" do
+    TenantContext.switch(tenant: @tenant) { GroupLabel.create!(tenant: @tenant, name: "本部") }
+    login(@admin)
+    get new_management_user_path
+    assert_select "#user-form label-input input[name=?]", "tenant_user[label_names]"
+    assert_select "#user-form label-input[data-suggestions=?]", "[]"
+
+    post management_users_path, params: { tenant_user: {
+      email: "guest@example.com", display_name: "ゲストさん", role: "member", label_names: "ゲスト、A社", group_ids: [""],
+    } }
+    guest = TenantContext.switch(tenant: @tenant) { TenantUser.find_by!(display_name: "ゲストさん") }
+    follow_redirect!
+    assert_select "#user-header #user-labels li", text: /\A(A社|ゲスト)\z/, count: 2
+    get management_users_path
+    assert_select "#user-list tr", text: /ゲストさん\s*A社\s*ゲスト/
+
+    get edit_management_user_path(guest)
+    assert_select "#user-form input[name=?][value=?]", "tenant_user[label_names]", "A社, ゲスト"
+    assert_select "#user-form label-input[data-suggestions=?]", %w[A社 ゲスト].to_json
+    patch management_user_path(guest), params: { tenant_user: { display_name: "ゲストさん", role: "member", label_names: "B社", group_ids: [""] } }
+    assert_equal ["B社"], TenantContext.switch(tenant: @tenant) { guest.labels.pluck(:name) }
+
+    # ラベルが無ければ欄ごと出さない
+    get management_user_path(@sato)
+    assert_select "#user-labels", 0
+  end
+
   test "追加できなければ、入力したとおりに出し直す" do
     login(@admin)
     post management_users_path, params: { tenant_user: {

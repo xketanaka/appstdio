@@ -111,12 +111,12 @@ class TenantUserTest < ActiveSupport::TestCase
     end
     suspended_owner.update!(status: :suspended)
 
-    assert_not owner.update_with_groups({ status: "suspended" }, [])
+    assert_not owner.update_with({ status: "suspended" }, group_ids: [], label_names: [])
     assert_equal [:last_owner], owner.errors.map(&:type)
     assert owner.reload.active?
 
-    assert suspended_owner.update_with_groups({ status: "active" }, [])
-    assert owner.update_with_groups({ role: "admin" }, [])
+    assert suspended_owner.update_with({ status: "active" }, group_ids: [], label_names: [])
+    assert owner.update_with({ role: "admin" }, group_ids: [], label_names: [])
   end
 
   test "利用停止にすると止めた日時と人を残し、再開すると消す。所属グループは残す" do
@@ -159,5 +159,26 @@ class TenantUserTest < ActiveSupport::TestCase
     assert_not invited.suspendable_by?(admin)
     assert_not other_owner.suspendable_by?(admin)
     assert other_owner.suspendable_by?(owner)
+  end
+
+  test "追加・編集で付けたラベルを名前で付け直し、外したラベルもテナントの一覧には残す" do
+    tenant_user = TenantUser.invite(tenant: @tenant, email: "guest@example.com", label_names: %w[ゲスト A社],
+      display_name: "ゲストさん", role: "member")
+    assert_equal %w[A社 ゲスト], tenant_user.labels.pluck(:name).sort
+
+    assert tenant_user.update_with({}, group_ids: [], label_names: %w[ゲスト B社])
+    assert_equal %w[B社 ゲスト], tenant_user.labels.reload.pluck(:name).sort
+    assert_equal %w[A社 B社 ゲスト], TenantUserLabel.pluck(:name).sort
+    # グループのラベルとは別の一覧
+    assert_empty GroupLabel.all
+  end
+
+  test "ラベルが保存できなければ、追加そのものを戻してラベルの誤りを所属の誤りとして出す" do
+    tenant_user = TenantUser.invite(tenant: @tenant, email: "guest@example.com", label_names: ["あ" * 101],
+      display_name: "ゲストさん", role: "member")
+
+    assert_not_empty tenant_user.errors[:base]
+    assert_not TenantUser.exists?(display_name: "ゲストさん")
+    assert_not User.exists?(email: "guest@example.com")
   end
 end

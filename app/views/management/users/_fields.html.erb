@@ -5,6 +5,8 @@
   <%= form.text_field :display_name, autocomplete: "off", class: "input" %>
 </div>
 
+<%= render "management/labels_field", form:, suggestions: TenantUserLabel.order(:name).pluck(:name) %>
+
 <% { role: roles, status: statuses }.compact.each do |attribute, choices| %>
   <fieldset id="<%= attribute %>-choices" class="mb-5">
     <legend class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(attribute) %></legend>

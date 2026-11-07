@@ -3,6 +3,8 @@ class TenantUser < ApplicationRecord
   belongs_to :user
   belongs_to :suspended_by, class_name: "TenantUser", optional: true
   has_many :group_members
+  has_many :labelings, class_name: "TenantUserLabeling"
+  has_many :labels, through: :labelings, source: :tenant_user_label
 
   enum :role, { owner: "owner", admin: "admin", member: "member" }, validate: true
   # deleted は利用者管理で削除した所属。行を残すのは、ファイルの作成者などの参照と、マイドライブを残すため
@@ -19,11 +21,11 @@ class TenantUser < ApplicationRecord
   # 削除済みの行は残るので、同じ人を加え直せるよう、一意にするのは削除済み以外の中で
   validates :user_id, uniqueness: { scope: :tenant_id, conditions: -> { not_deleted } }, unless: :deleted?
 
-  # 利用者を招待中として加え、選んだグループにメンバーとして入れる。User はテナントをまたいで共通なので、
+  # 利用者を招待中として加え、選んだグループにメンバーとして入れ、ラベルを付ける。User はテナントをまたいで共通なので、
   # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みでも、
   # 元の行は戻さずに新しい所属を作る。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
   # 選べないグループ（停止中・「全員」・他テナント。画面からは起きない）が混ざっていたら見つからない扱いにする
-  def self.invite(tenant:, email:, group_ids: [], **attributes)
+  def self.invite(tenant:, email:, group_ids: [], label_names: [], **attributes)
     groups = Group.department.active.where(tenant:, id: group_ids).to_a
     raise ActiveRecord::RecordNotFound, "group not selectable" if groups.size != group_ids.uniq.size
 
@@ -44,6 +46,11 @@ class TenantUser < ApplicationRecord
       user.save!
       tenant_user.save!
       groups.each { tenant_user.group_members.create!(tenant:, group: it) }
+      tenant_user.replace_labels!(label_names)
+    rescue ActiveRecord::RecordInvalid => e
+      # ラベルの検証（長さ）で落ちたら、ラベルの誤りを所属の誤りとして出す
+      e.record.errors.full_messages.each { tenant_user.errors.add(:base, it) } unless e.record == tenant_user
+      raise ActiveRecord::Rollback
     end
     tenant_user
   end
@@ -64,11 +71,11 @@ class TenantUser < ApplicationRecord
     target.invited? && (!target.owner? || owner?) ? %w[invited active] : [target.status]
   end
 
-  # 表示名・権限・状態を保存し、有効なグループの中で所属を付け直す。残すグループでは、グループ管理者の
+  # 表示名・権限・状態を保存し、ラベルを名前で付け直し、有効なグループの中で所属を付け直す。残すグループでは、グループ管理者の
   # 印をそのままにする。停止中のグループの所属は、画面に出さないので触らない。
   # 有効なオーナーが1人もいなくなる変更は受け付けない。保存できなければ false で、誤りを持たせる。
   # 選べないグループが混ざっていたら（画面からは起きない）見つからない扱いにする
-  def update_with_groups(attributes, group_ids)
+  def update_with(attributes, group_ids:, label_names:)
     groups = Group.department.active.where(tenant_id:, id: group_ids).to_a
     raise ActiveRecord::RecordNotFound, "group not selectable" if groups.size != group_ids.uniq.size
 
@@ -86,10 +93,20 @@ class TenantUser < ApplicationRecord
       current = GroupMember.where(tenant_user: self).joins(:group).merge(Group.active)
       current.where.not(group_id: group_ids).delete_all
       (group_ids - current.pluck(:group_id)).each { group_members.create!(tenant:, group_id: it) }
+      replace_labels!(label_names)
       true
     rescue ActiveRecord::RecordInvalid => e
       e.record.errors.full_messages.each { errors.add(:base, it) } unless e.record == self
       raise ActiveRecord::Rollback
+    end
+  end
+
+  # ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える。トランザクションの中で呼ぶこと
+  def replace_labels!(names)
+    label_ids = names.map { |name| TenantUserLabel.find_or_create_by!(tenant_id:, name:).id }
+    labelings.where.not(tenant_user_label_id: label_ids).delete_all
+    (label_ids - labelings.pluck(:tenant_user_label_id)).each do |label_id|
+      labelings.create!(tenant_id:, tenant_user_label_id: label_id)
     end
   end
 

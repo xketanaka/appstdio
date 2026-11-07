@@ -10,7 +10,7 @@ module Management
 
     # 停止中の人は「利用停止中の利用者」に分けて出す
     def index
-      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user).order(:id)
+      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user, :labels).order(:id)
     end
 
     # 利用停止中の利用者の一覧。新しく止めた順に30件ずつ出し、下までスクロールすると読み足す。
@@ -32,6 +32,7 @@ module Management
     end
 
     def show
+      @labels = @tenant_user.labels.order(:name).pluck(:name)
       memberships = @tenant_user.group_members.joins(:group).merge(Group.active).includes(:group).index_by(&:group_id)
       # 同じ名前のグループを見分けられるよう、最上位からの並びを添えて、その順に出す
       @memberships = Group.sort_by_name_path(memberships.values.map(&:group)).map { |group, path| [memberships[group.id], path] }
@@ -40,15 +41,17 @@ module Management
     def new
       @tenant_user = TenantUser.new(role: :member)
       @groups = []
+      @label_names = []
     end
 
     def create
-      attributes = params.expect(tenant_user: [:email, :display_name, :role, group_ids: []])
+      attributes = params.expect(tenant_user: [:email, :display_name, :role, :label_names, group_ids: []])
       raise ActiveRecord::RecordNotFound unless current_tenant_user.assignable_roles.include?(attributes[:role])
 
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
+      @label_names = label_names_from(attributes[:label_names])
       @tenant_user = TenantUser.invite(tenant: current_tenant, email: attributes[:email].to_s, group_ids: @group_ids,
-        display_name: attributes[:display_name], role: attributes[:role])
+        label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
 
       if @tenant_user.errors.empty?
         redirect_to management_user_path(@tenant_user), notice: t("messages.created")
@@ -59,11 +62,12 @@ module Management
     end
 
     def edit
+      @label_names = @tenant_user.labels.order(:name).pluck(:name)
       @groups = Group.sort_by_name_path(Group.department.active.where(id: @tenant_user.group_members.select(:group_id)).to_a)
     end
 
     def update
-      attributes = params.expect(tenant_user: [:display_name, :role, :status, group_ids: []])
+      attributes = params.expect(tenant_user: [:display_name, :role, :status, :label_names, group_ids: []])
       # 変えられない権限・状態は画面に欄が無く、送られてこない
       role = attributes[:role] || @tenant_user.role
       status = attributes[:status] || @tenant_user.status
@@ -73,7 +77,9 @@ module Management
       end
 
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
-      if @tenant_user.update_with_groups({ display_name: attributes[:display_name], role:, status: }, @group_ids)
+      @label_names = label_names_from(attributes[:label_names])
+      attributes = { display_name: attributes[:display_name], role:, status: }
+      if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names)
         # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
         if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?
           redirect_to top_page_path, notice: t("messages.saved")
@@ -129,6 +135,11 @@ module Management
 
     def set_tenant_user
       @tenant_user = TenantUser.not_deleted.includes(:user).find(params[:id])
+    end
+
+    # ラベルの欄の入力（カンマか読点で区切る）を名前の並びにする
+    def label_names_from(text)
+      text.to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
     end
 
     def reject_suspended
