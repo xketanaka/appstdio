@@ -90,8 +90,7 @@ class Group < ApplicationRecord
     raise ActiveRecord::RecordNotFound, "tenant_user not addable" if addable != added_ids.size
 
     transaction do
-      group_members.where.not(tenant_user_id: roles.keys).where.not(tenant_user_id: TenantUser.suspended.select(:id))
-        .delete_all
+      group_members.where.not(tenant_user_id: roles.keys).without_suspended_users.delete_all
       roles.each do |tenant_user_id, role|
         group_members.find_or_initialize_by(tenant_user_id:).update!(tenant:, role:)
       end
