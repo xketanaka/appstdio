@@ -65,7 +65,8 @@
             <%= render layout: "partial/account_menu",
                   locals: { label: t(".account_menu"),
                             name: current_tenant_user&.display_name || current_user&.email,
-                            email: current_user&.email } do %>
+                            email: current_user&.email,
+                            tenant_user: current_tenant_user } do %>
               <%= link_to t("actions.profile"), profile_path,
                     class: "block px-4 py-2 hover:bg-slate-100" %>
               <% if current_tenant %>

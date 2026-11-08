@@ -1,8 +1,13 @@
 <% @tenant_users.each do |tenant_user| %>
   <tr class="border-t border-slate-100 first:border-t-0 hover:bg-canvas">
     <td class="px-3 py-2.5">
-      <%= link_to tenant_user.display_name, management_user_path(tenant_user), class: "text-primary-700 hover:underline" %>
-      <span class="block truncate text-xs text-slate-500 md:hidden"><%= tenant_user.user.email %></span>
+      <div class="flex items-center gap-3">
+        <%= render "partial/avatar", tenant_user: %>
+        <div class="min-w-0">
+          <%= link_to tenant_user.display_name, management_user_path(tenant_user), class: "text-primary-700 hover:underline" %>
+          <span class="block truncate text-xs text-slate-500 md:hidden"><%= tenant_user.user.email %></span>
+        </div>
+      </div>
     </td>
     <td class="hidden px-3 py-2.5 md:table-cell"><%= tenant_user.user.email %></td>
     <td class="px-3 py-2.5 whitespace-nowrap"><%= time_to_s(tenant_user.suspended_at) %></td>

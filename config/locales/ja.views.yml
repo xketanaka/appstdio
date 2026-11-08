@@ -40,6 +40,22 @@ ja:
     show:
       title: "個人設定"
       heading: "個人設定"
+      avatar:
+        choose: "画像を選ぶ"
+        remove: "画像をクリア"
+        hint: "PNG・JPEG・GIF・WebP、%{size}MB まで。選んだあと、丸の中に入れる範囲を調整できます。"
+        dialog:
+          title: "アバターの範囲を調整"
+          hint: "ドラッグで位置を、スライダーで大きさを変えます。"
+          area: "アバターにする範囲。ドラッグか矢印キーで位置を変えます"
+          zoom: "拡大"
+          cancel: "キャンセル"
+          submit: "設定する"
+    avatars:
+      update:
+        done: "アバターを設定しました。"
+      destroy:
+        done: "アバターの画像をクリアしました。"
 
   tenant_selections:
     new:
@@ -117,6 +133,10 @@ ja:
         cancel: "キャンセル"
         suspend: "利用停止"
         destroy: "この利用者を削除"
+        remove_avatar: "アバターを削除"
+      avatars:
+        destroy:
+          done: "アバターを削除しました。"
       confirm_destroy:
         title: "%{name}の削除 - 利用者管理"
         heading: "利用者管理"

@@ -67,7 +67,7 @@ module Management
     # 下位グループのメンバーの一覧を1ページ分だけ返す。詳細の画面がスクロールに合わせて読み足す
     def sub_members
       page = [params[:page].to_i, 1].max
-      users = sub_members_of(@group).includes(:user).order(:display_name, :id)
+      users = sub_members_of(@group).includes(:user, :avatar_attachment).order(:display_name, :id)
         .offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
       @next_page = (page + 1 if users.size > PER_PAGE)
       users = users.first(PER_PAGE)
@@ -82,7 +82,7 @@ module Management
     # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す
     def member_candidates
       page = [params[:page].to_i, 1].max
-      users = TenantUser.where(status: [:active, :invited]).joins(:user).includes(:user)
+      users = TenantUser.where(status: [:active, :invited]).joins(:user).includes(:user, :avatar_attachment)
       if params[:q].present?
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].strip)}%"
         users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
@@ -148,7 +148,7 @@ module Management
         redirect_to destination, notice: t("messages.saved")
       else
         # 送られてきたとおりに出し直す
-        users = TenantUser.includes(:user).where(id: roles.keys).index_by(&:id)
+        users = TenantUser.includes(:user, :avatar_attachment).where(id: roles.keys).index_by(&:id)
         @members = roles.filter_map { |id, role| users[id] && GroupMember.new(tenant_user: users[id], role:) }
         render :edit_members, status: :unprocessable_entity
       end
@@ -237,7 +237,7 @@ module Management
 
     # グループ管理者を先に、それぞれ表示名の順に並べる。利用停止中の人は出さない（所属は残っていて、再開すれば出る）
     def members_of(group)
-      group.group_members.without_suspended_users.includes(tenant_user: :user).to_a
+      group.group_members.without_suspended_users.includes(tenant_user: [:user, :avatar_attachment]).to_a
         .sort_by { |member| [member.leader? ? 0 : 1, member.tenant_user.display_name, member.id] }
     end
 

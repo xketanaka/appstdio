@@ -1,3 +1,4 @@
+import "~/components/avatar_cropper"
 import "~/components/label_input"
 import "~/components/pick_list"
 import { observeLoadMore } from "~/components/load_more"

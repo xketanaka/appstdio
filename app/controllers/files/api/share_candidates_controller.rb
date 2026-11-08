@@ -11,11 +11,11 @@ module Files
         paths = Group.name_paths_of(groups.to_a)
         users = TenantUser.where(status: [:active, :invited]).joins(:user)
           .where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
-          .includes(:user).order(:display_name).limit(LIMIT)
+          .includes(:user, :avatar_attachment).order(:display_name).limit(LIMIT)
 
         render json: {
-          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, deleted: false, path: paths.fetch(it.id), detail: nil } } +
-            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, deleted: false, path: nil, detail: it.user.email } },
+          candidates: groups.map { { type: "group", id: it.id, name: it.name, everyone: it.everyone?, suspended: false, deleted: false, path: paths.fetch(it.id), avatar_url: nil, detail: nil } } +
+            users.map { { type: "tenant_user", id: it.id, name: it.display_name, everyone: false, suspended: false, deleted: false, path: nil, avatar_url: helpers.avatar_src(it), detail: it.user.email } },
         }
       end
     end

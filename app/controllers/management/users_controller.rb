@@ -10,7 +10,7 @@ module Management
 
     # 停止中の人は「利用停止中の利用者」に分けて出す
     def index
-      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user, :labels).order(:id)
+      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user, :labels, :avatar_attachment).order(:id)
     end
 
     # 利用停止中の利用者の一覧。新しく止めた順に30件ずつ出し、下までスクロールすると読み足す。
@@ -19,7 +19,7 @@ module Management
       @query = params[:q].to_s.strip
       page = [params[:page].to_i, 1].max
 
-      users = TenantUser.suspended.joins(:user).includes(:user, :suspended_by)
+      users = TenantUser.suspended.joins(:user).includes(:user, :suspended_by, :avatar_attachment)
       if @query.present?
         users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern",
           pattern: "%#{TenantUser.sanitize_sql_like(@query)}%")

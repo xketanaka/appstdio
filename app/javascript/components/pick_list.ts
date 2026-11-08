@@ -7,11 +7,12 @@
 //   <h3 data-count>…</h3> <button data-open-dialog>
 //   <p data-empty> <table><tbody data-rows> 行（tr[data-row="id"]。中に button[data-remove-row]）
 //   <template data-row-template> 足すときに複製する行。[data-name] [data-detail] に候補の名前と補足を入れ、
-//                                 input の name と value の __ID__ を候補の id に置き換える
+//                                 input の name と value の __ID__ を候補の id に置き換える。[data-avatar] は
+//                                 候補の [data-avatar] の複製に差し替える（どちらかに無ければそのまま）
 //   <dialog> <input data-search> <ul data-candidates> <button data-add> <button data-close-dialog>
 // </pick-list>
 //
-// 候補の一覧はサーバが返す HTML（li の中に input[type=checkbox][value=id][data-name][data-detail]）
+// 候補の一覧はサーバが返す HTML（li の中の label に input[type=checkbox][value=id][data-name][data-detail]）
 import { observeLoadMore } from "~/components/load_more"
 
 const SEARCH_DELAY = 300
@@ -99,6 +100,8 @@ export class PickList extends HTMLElement {
       row.dataset.row = input.value
       row.querySelector("[data-name]")!.textContent = input.dataset.name ?? ""
       row.querySelector("[data-detail]")!.textContent = input.dataset.detail ?? ""
+      const avatar = input.closest("label")?.querySelector("[data-avatar]")
+      if (avatar) row.querySelector("[data-avatar]")?.replaceWith(avatar.cloneNode(true))
       row.querySelectorAll("input").forEach((field) => {
         field.name = field.name.replace("__ID__", input.value)
         field.value = field.value.replace("__ID__", input.value)

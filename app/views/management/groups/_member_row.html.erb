@@ -1,9 +1,14 @@
-<%# locals: (tenant_user_id: nil, name: nil, email: nil, leader: false) %>
-<%# tenant_user_id に "__ID__" を渡して描くと、ダイアログで足す行の元（pick_list.ts が名前と送信名を入れる） %>
+<%# locals: (tenant_user_id: nil, tenant_user: nil, name: nil, email: nil, leader: false) %>
+<%# tenant_user_id に "__ID__" を渡して描くと、ダイアログで足す行の元（pick_list.ts が名前・アバター・送信名を入れる） %>
 <tr class="border-t border-slate-200" data-row="<%= tenant_user_id %>">
   <td class="py-2 pr-3">
-    <span class="block truncate" data-name><%= name %></span>
-    <span class="block truncate text-xs text-slate-500" data-detail><%= email %></span>
+    <div class="flex items-center gap-3">
+      <span class="shrink-0" data-avatar><%= render "partial/avatar", tenant_user: %></span>
+      <div class="min-w-0">
+        <span class="block truncate" data-name><%= name %></span>
+        <span class="block truncate text-xs text-slate-500" data-detail><%= email %></span>
+      </div>
+    </div>
   </td>
   <td class="w-px py-2 pr-2 whitespace-nowrap">
     <label class="flex items-center gap-1.5 text-sm text-slate-600">

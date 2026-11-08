@@ -107,6 +107,9 @@ jobs:
 
       - run: npm ci
 
+      - name: アバターの画像の処理に使う libvips を入れる
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42t64
+
       - name: DB のロールを作る
         run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/files/db/initdb/01_roles.sql
         env:

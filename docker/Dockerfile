@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y \
 
 ## デフォルトで入っていないパッケージ
 RUN apt-get update && apt-get install -y sudo poppler-utils build-essential git vim curl
+## アバターの画像の切り抜き・縮小（ruby-vips gem）が使う
+RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64
 ## psql、pg_dump コマンドを使用するため、PGDG から postgresql-client をインストール
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/keyrings/pgdg.gpg

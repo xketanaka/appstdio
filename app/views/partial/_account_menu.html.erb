@@ -1,8 +1,9 @@
+<%# locals: (label:, name:, email:, tenant_user: nil) %>
 <%# data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.js が拾っている） %>
 <details class="relative" data-dropdown>
   <summary class="flex cursor-pointer list-none items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 [&::-webkit-details-marker]:hidden"
            aria-label="<%= label %>">
-    <%= render "partial/avatar" %>
+    <%= render "partial/avatar", tenant_user: %>
   </summary>
 
   <div class="absolute right-0 z-10 mt-2 w-64 rounded-2xl bg-white py-2 ring-1 ring-slate-900/10 text-slate-800 shadow-lg">
