@@ -40,18 +40,21 @@ test("個人設定で画像を選び、丸に入れる範囲を動かしてア�
   const avatar = page.locator("#avatar img[src^='/avatars/']")
   await expect(avatar).toBeVisible()
   await expect(page.locator("details[data-dropdown] summary img")).toHaveAttribute("src", (await avatar.getAttribute("src"))!)
-  const brightness = await avatar.evaluate(async (image: HTMLImageElement) => {
-    await image.decode()
+  // img は遅延読み込み（loading="lazy"）で、読み込み前に decode() すると失敗することがあるので、URL から取り直して読む
+  const response = await page.request.get((await avatar.getAttribute("src"))!)
+  expect(response.headers()["content-type"]).toBe("image/webp")
+  const brightness = await page.evaluate(async (bytes) => {
+    const image = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/webp" }))
     const canvas = document.createElement("canvas")
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
+    canvas.width = image.width
+    canvas.height = image.height
     const context = canvas.getContext("2d")!
     context.drawImage(image, 0, 0)
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
     let sum = 0
     for (let i = 0; i < pixels.length; i += 4) sum += pixels[i]
     return sum / (pixels.length / 4)
-  })
+  }, [...await response.body()])
   expect(brightness).toBeGreaterThan(245)
 
   await page.getByRole("button", { name: "画像をクリア" }).click()
