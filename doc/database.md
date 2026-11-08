@@ -68,6 +68,12 @@ Web リクエストでは `TenantContextFilter`（`ApplicationController` に in
 リクエストでは `TenantContextFilter` が、セッションのテナントを先に `app.tenant_id` に設定してから
 自分の所属行を探し、見つからなければ（所属していない・有効でない）テナントの設定を外す。
 
+設定は DB 接続に書くので、`TenantContextFilter` はリクエストの間ずっと1つの接続を握る
+（`ApplicationRecord.with_connection` で包む）。Rails 7.2 以降は、接続を握っていないと
+クエリごとにプールから接続を借りて返すので、設定の無い接続や、並行する他のリクエストの
+テナントを設定した接続でクエリが走りうる。`TenantContext.apply` を使う処理を足すときも、
+接続を握った中で呼ぶこと（`TenantContext.switch` は自分で握る）。
+
 `users` は認証情報しか持たず、通常の画面で必要になることはほとんどないため、
 リクエストごとには読み込まない。所属情報はセッションの `current_user_id` と
 `current_tenant_id` から `tenant_users` を直接引いて解決している。
