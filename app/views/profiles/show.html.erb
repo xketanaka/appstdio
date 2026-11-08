@@ -5,8 +5,7 @@
 
     <%= render "partial/errors", object: @tenant_user %>
 
-    <section id="avatar" class="mb-8" aria-labelledby="avatar-heading">
-      <h2 id="avatar-heading" class="mb-1.5 text-sm font-semibold"><%= TenantUser.human_attribute_name(:avatar) %></h2>
+    <section id="avatar" class="mb-8" aria-label="<%= TenantUser.human_attribute_name(:avatar) %>">
       <div class="flex flex-wrap items-center gap-4">
         <%= render "partial/avatar", tenant_user: @tenant_user, size: "size-20" %>
         <avatar-cropper>

@@ -54,7 +54,7 @@ test("個人設定で画像を選び、丸に入れる範囲を動かしてア�
   })
   expect(brightness).toBeGreaterThan(245)
 
-  await page.getByRole("button", { name: "削除" }).click()
-  await expect(page.getByText("アバターを削除しました。")).toBeVisible()
+  await page.getByRole("button", { name: "画像をクリア" }).click()
+  await expect(page.getByText("アバターの画像をクリアしました。")).toBeVisible()
   await expect(page.locator("#avatar img[src]")).toHaveCount(0)
 })

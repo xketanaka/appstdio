@@ -42,7 +42,7 @@ ja:
       heading: "個人設定"
       avatar:
         choose: "画像を選ぶ"
-        remove: "削除"
+        remove: "画像をクリア"
         hint: "PNG・JPEG・GIF・WebP、%{size}MB まで。選んだあと、丸の中に入れる範囲を調整できます。"
         dialog:
           title: "アバターの範囲を調整"
@@ -55,7 +55,7 @@ ja:
       update:
         done: "アバターを設定しました。"
       destroy:
-        done: "アバターを削除しました。"
+        done: "アバターの画像をクリアしました。"
 
   tenant_selections:
     new:
