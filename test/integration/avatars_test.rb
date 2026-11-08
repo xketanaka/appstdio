@@ -67,6 +67,19 @@ class AvatarsTest < ActionDispatch::IntegrationTest
     assert_operator image.crop(AvatarImage::SIZE - 10, 0, 10, 10).avg, :>, 245
   end
 
+  test "範囲が空・形の違うもので届いたら、中央を切り抜く" do
+    login(@sato)
+
+    [{ x: "", y: "", size: "" }, "foo", { x: ["1"], y: "0", size: "100" }].each do |crop|
+      patch profile_avatar_path, params: { avatar: upload, crop: }
+      assert_redirected_to profile_path
+
+      image = Vips::Image.new_from_buffer(avatar_of(@sato).blob.download, "")
+      assert_operator image.crop(0, 0, 10, 10).avg, :<, 10
+      assert_operator image.crop(AvatarImage::SIZE - 10, 0, 10, 10).avg, :>, 245
+    end
+  end
+
   test "画像でないものは受け付けず、前のアバターを残す" do
     TenantContext.switch(tenant: @tenant) { @sato.replace_avatar(image_path) }
     blob_id = avatar_of(@sato).blob_id

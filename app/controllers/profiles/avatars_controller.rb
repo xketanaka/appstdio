@@ -6,7 +6,8 @@ module Profiles
       file = params.expect(:avatar)
       raise ActionController::BadRequest unless file.respond_to?(:path)
 
-      crop = params.fetch(:crop, {}).permit(:x, :y, :size).to_h.symbolize_keys.transform_values(&:to_i)
+      # 画面で範囲を調整できなかったとき（ブラウザで表示できない画像）は空で届くので、中央を切り抜く
+      crop = params[:crop].try(:permit, :x, :y, :size).to_h.compact_blank.symbolize_keys.transform_values(&:to_i)
       if @tenant_user.replace_avatar(file.path, crop: (crop if crop.size == 3))
         redirect_to profile_path, notice: t(".done")
       else

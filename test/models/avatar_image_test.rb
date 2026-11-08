@@ -43,6 +43,15 @@ class AvatarImageTest < ActiveSupport::TestCase
     assert_operator image.avg, :>, 245
   end
 
+  test "大きさが0以下・画像より大きい範囲でも、画像の中に収まる正方形で切り抜く" do
+    path = write_image("a.png")
+
+    [{ x: 0, y: 0, size: 0 }, { x: -10, y: -10, size: -5 }, { x: 10**30, y: 10**30, size: 10**30 }].each do |crop|
+      image = result(AvatarImage.process(path, crop:))
+      assert_equal [AvatarImage::SIZE, AvatarImage::SIZE], [image.width, image.height]
+    end
+  end
+
   test "EXIF の向きを直してから切り抜く（画面で調整した範囲は、向きを直した画像の上の座標）" do
     # 右に90度回して表示する画像。表示では縦長で、上半分が黒、下半分が白になる
     path = write_image("a.jpg", orientation: 6)
