@@ -136,3 +136,19 @@ test("ゴミ箱では、行のメニューから元に戻すことも、完全�
   await buttons[1].trigger("click")
   expect(wrapper.emitted<[Row]>("purge")?.[0][0].id).toBe(1)
 })
+
+test("検索の結果では、人の代わりに根元からの場所を出し、途中から始まるときは共有されたアイテムから並べる", async () => {
+  const router = testRouter()
+  await router.push("/search")
+  const rows = [
+    row({ location: { crumbs: [{ id: 1, label: "組織共有ドライブ" }, { id: 2, label: "営業" }], viaShared: false } }),
+    row({ id: 2, location: { crumbs: [{ id: 5, label: "面談" }], viaShared: true } }),
+  ]
+  const wrapper = mount(FileList, { props: { rows, empty: "", located: true }, global: { plugins: [router] } })
+  const cells = wrapper.findAll("tbody tr").map((tr) => tr.findAll("td")[1])
+
+  expect(wrapper.find("thead").text()).toContain("場所")
+  expect(wrapper.find("thead").text()).not.toContain("オーナー")
+  expect(cells.map((td) => td.text())).toEqual(["組織共有ドライブ / 営業", "共有されたアイテム / 面談"])
+  expect(cells[0].findAll("a").map((a) => a.attributes("href"))).toEqual(["/folders/1", "/folders/2"])
+})

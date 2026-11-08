@@ -63,6 +63,17 @@ export type FolderPayload = {
   entries: Entry[]
 }
 
+// 検索の結果。location は根元からの場所で、閲覧できる祖先だけを並べる。途中から始まるときは via_shared。
+// trash のときは、ゴミ箱の中から探した結果で、行はゴミ箱の画面と同じ形
+type Located = { location: FolderLink[], via_shared: boolean }
+
+export type SearchResult = {
+  // 検索を始めた場所。in は検索の URL の in にそのまま渡す。すべての場所から始めたときは null
+  origin: { in: string | null, label: string | null }
+  everywhere: boolean
+  truncated: boolean
+} & ({ trash: false, entries: (Entry & Located)[] } | { trash: true, entries: (TrashEntry & Located)[] })
+
 export type Role = "viewer" | "editor" | "manager"
 
 // suspended は利用停止中の人・グループ。停止中のグループへの設定は効かないが、行は残る。
@@ -162,6 +173,8 @@ export const api = {
     request<{ candidates: ShareCandidate[] }>("GET", `/files/api/share_candidates?q=${encodeURIComponent(query)}`),
   sharedItems: () => request<{ entries: Entry[] }>("GET", "/files/api/shared"),
   trash: () => request<{ entries: TrashEntry[] }>("GET", "/files/api/trash"),
+  search: (query: { q: string, in?: string, all?: string }) =>
+    request<SearchResult>("GET", `/files/api/search?${new URLSearchParams(query)}`),
   enterPrivilegedMode: () => request<void>("POST", "/files/api/privileged_mode"),
   leavePrivilegedMode: () => request<void>("DELETE", "/files/api/privileged_mode"),
 }

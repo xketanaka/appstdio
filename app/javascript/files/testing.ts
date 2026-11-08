@@ -12,7 +12,7 @@ export function testRouter() {
   const Blank = { template: "<div />" }
   return createRouter({
     history: createMemoryHistory(),
-    routes: ["shared_drive", "my_drive", "shared_with_me", "trash"].map((name) => ({ path: `/${name}`, name, component: Blank }))
+    routes: ["shared_drive", "my_drive", "shared_with_me", "trash", "search"].map((name) => ({ path: `/${name}`, name, component: Blank }))
       .concat({ path: "/folders/:id", name: "folder", component: Blank }),
   })
 }

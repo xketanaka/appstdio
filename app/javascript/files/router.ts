@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router"
 import FolderPage from "./pages/FolderPage.vue"
+import SearchPage from "./pages/SearchPage.vue"
 import SharedItemsPage from "./pages/SharedItemsPage.vue"
 import TrashPage from "./pages/TrashPage.vue"
 
@@ -12,5 +13,6 @@ export const router = createRouter({
     { path: "/files/folders/:id", name: "folder", component: FolderPage, props: (route) => ({ source: { id: route.params.id } }) },
     { path: "/files/shared", name: "shared_with_me", component: SharedItemsPage },
     { path: "/files/trash", name: "trash", component: TrashPage },
+    { path: "/files/search", name: "search", component: SearchPage },
   ],
 })
