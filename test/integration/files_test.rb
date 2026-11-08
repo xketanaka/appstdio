@@ -793,6 +793,88 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "検索" do
+    setup do
+      TenantContext.switch(tenant: @tenant) do
+        @estimate = node(:file, "見積書.xlsx", @estimates)
+        node(:file, "見積の手順.md", @root)
+        node(:file, "見積評価.xlsx", @hr)
+      end
+    end
+
+    test "名前の一部で、閲覧できるものだけを、根元からの場所と一緒に返す" do
+      login(@member_user)
+      get files_api_search_path, params: { q: "見積", all: "1" }
+
+      assert_response :success
+      assert_equal ["見積", "見積の手順.md", "見積書.xlsx"], json["entries"].pluck("name").sort, "閲覧できない人事の中は返さない"
+      found = json["entries"].find { it["name"] == "見積書.xlsx" }
+      assert_equal ["組織共有ドライブ", "営業", "見積"], found["location"].pluck("label")
+      assert_equal [@root.id, @sales.id, @estimates.id], found["location"].pluck("id")
+      assert_not found["via_shared"]
+    end
+
+    test "検索を始めたフォルダの中から探し、all を付けるとすべての場所から探す" do
+      login(@member_user)
+      get files_api_search_path, params: { q: "見積", in: @sales.id }
+
+      assert_equal({ "in" => @sales.id.to_s, "label" => "営業" }, json["origin"])
+      assert_equal ["見積", "見積書.xlsx"], json["entries"].pluck("name").sort
+      assert_not json["everywhere"]
+
+      get files_api_search_path, params: { q: "見積", in: @sales.id, all: "1" }
+      assert_equal 3, json["entries"].size
+      assert json["everywhere"]
+    end
+
+    test "共有されたアイテムの中から探すと、場所は閲覧できる祖先からになる" do
+      TenantContext.switch(tenant: @tenant) do
+        interview = node(:folder, "面談", @hr)
+        grant(interview, @member, :viewer)
+        node(:file, "面談の見積.txt", interview)
+      end
+      login(@member_user)
+      get files_api_search_path, params: { q: "見積", in: "shared_with_me" }
+
+      assert_equal ["面談の見積.txt"], json["entries"].pluck("name")
+      assert_equal ["面談"], json["entries"].first["location"].pluck("label")
+      assert json["entries"].first["via_shared"]
+    end
+
+    test "ゴミ箱から探すとゴミ箱に出ているものだけを返し、すべての場所にはゴミ箱を含めない" do
+      TenantContext.switch(tenant: @tenant) do
+        grant(@sales, @member, :editor)
+        Files::Node.trash!([@estimate], actor: @owner)
+      end
+      login(@member_user)
+
+      get files_api_search_path, params: { q: "見積書", in: "trash" }
+      assert json["trash"]
+      assert_equal [["見積書.xlsx", "管理者さん"]], json["entries"].pluck("name", "deleted_by")
+      assert_equal ["組織共有ドライブ", "営業", "見積"], json["entries"].first["location"].pluck("label")
+
+      get files_api_search_path, params: { q: "見積書", in: "trash", all: "1" }
+      assert_empty json["entries"]
+    end
+
+    test "% や _ は、そのままの文字として探す" do
+      TenantContext.switch(tenant: @tenant) { node(:file, "100%_達成.txt", @root) }
+      login(@member_user)
+
+      get files_api_search_path, params: { q: "0%_", all: "1" }
+      assert_equal ["100%_達成.txt"], json["entries"].pluck("name")
+      get files_api_search_path, params: { q: "_", all: "1" }
+      assert_equal ["100%_達成.txt"], json["entries"].pluck("name")
+    end
+
+    test "閲覧できないフォルダの中は探せない" do
+      login(@member_user)
+      get files_api_search_path, params: { q: "見積", in: @hr.id }
+
+      assert_response :not_found
+    end
+  end
+
   describe "ゴミ箱" do
     test "親フォルダの編集者には削除したものが、削除した人と一緒に出る" do
       TenantContext.switch(tenant: @tenant) do

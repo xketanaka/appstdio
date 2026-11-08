@@ -266,3 +266,34 @@ test("フォルダの共有設定で人を探して加え、まとめて保存�
   await page.getByRole("button", { name: "共有", exact: true }).click()
   await expect(dialog.getByLabel("一般さん の権限")).toHaveValue("editor")
 })
+
+test("開いている場所の中から探し、範囲をすべての場所に広げ、元の場所に戻す", async ({ page }) => {
+  await login(page, data.owner)
+  await page.goto("/files/my_drive")
+  const search = page.getByRole("search")
+  const scope = search.locator("summary")
+
+  await expect(scope).toHaveText("マイドライブ 内")
+  await search.getByRole("searchbox", { name: "ファイルとフォルダを検索" }).fill("見積")
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("heading", { name: "「見積」の検索結果" })).toBeVisible()
+  await expect(page.getByText("見つかりませんでした")).toBeVisible()
+
+  await scope.click()
+  await search.getByRole("menuitemradio", { name: "すべての場所" }).click()
+  const list = page.locator("#file-list")
+  const found = list.getByRole("row", { name: /見積/ })
+  await expect(found).toContainText("組織共有ドライブ / 営業")
+  await expect(scope).toHaveText("すべての場所")
+
+  await scope.click()
+  await search.getByRole("menuitemradio", { name: "マイドライブ 内" }).click()
+  await expect(page.getByText("見つかりませんでした")).toBeVisible()
+
+  await scope.click()
+  await search.getByRole("menuitemradio", { name: "すべての場所" }).click()
+  await found.getByRole("link", { name: "営業" }).click()
+  await expect(page.getByRole("heading", { name: "営業" })).toBeVisible()
+  await expect(scope).toHaveText("営業 内")
+  await expect(search.getByRole("searchbox")).toHaveValue("")
+})

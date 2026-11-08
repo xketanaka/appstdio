@@ -1,4 +1,4 @@
-import type { Entry, TrashEntry } from "./api"
+import type { Entry, FolderLink, TrashEntry } from "./api"
 
 // 一覧の1行。フォルダ・共有されたアイテム・ゴミ箱で列の中身が違うのを、ここで揃える
 export type Row = {
@@ -12,6 +12,8 @@ export type Row = {
   time: string | null
   byteSize: number | null
   folderId: number | null
+  // 検索の結果だけが持つ、根元からの場所
+  location?: { crumbs: FolderLink[], viaShared: boolean }
 }
 
 export function entryRow(entry: Entry): Row {

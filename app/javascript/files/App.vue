@@ -5,6 +5,7 @@ import { api } from "./api"
 import FileTree from "./components/FileTree.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
+import SearchBar from "./components/SearchBar.vue"
 import ShareDialog from "./components/ShareDialog.vue"
 import StorageMeter from "./components/StorageMeter.vue"
 import UploadPanel from "./components/UploadPanel.vue"
@@ -91,6 +92,7 @@ const leavePrivilegedMode = async () => {
       </aside>
 
       <section class="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white md:mr-4 md:mb-4 md:ml-0">
+        <SearchBar />
         <RouterView />
       </section>
     </div>

@@ -6,6 +6,7 @@ import { t } from "../i18n"
 import type { Row } from "../rows"
 import type { SelectModifiers } from "../useSelection"
 import FileIcon from "./FileIcon.vue"
+import LocationPath from "./LocationPath.vue"
 
 // selectable のときは Google ドライブと同じく、行のクリックで選び、ダブルクリック（Enter）で開く。
 // 指で操作する端末ではダブルクリックしにくいので、タップで開く
@@ -19,6 +20,8 @@ const props = defineProps<{
   canEdit?: boolean
   // 行をドラッグして、フォルダの行へ落として移せるか
   draggable?: boolean
+  // 人の列の代わりに、行の場所（検索の結果）を出す
+  located?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -42,7 +45,7 @@ const { over, handlers } = useDropTargets()
 const dropTarget = (row: Row) =>
   props.draggable && row.folderId !== null ? handlers({ id: row.id, label: row.name }) : {}
 
-const personColumn = props.trash ? "deleted_by" : "owner"
+const personColumn = props.located ? "location" : props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
 const rowActions = props.trash ? ["restore", "purge"] : ["download", "upload_version", "versions", "share", "rename", "move", "destroy"]
 // 行のメニューで押せる操作
@@ -117,7 +120,10 @@ const closeMenu = (event: Event) => {
             <th class="px-3 text-left font-medium">
               {{ t("list.columns.name") }}
             </th>
-            <th class="hidden px-3 text-left font-medium lg:table-cell">
+            <th
+              class="hidden px-3 text-left font-medium lg:table-cell"
+              :class="{ 'w-2/5': located }"
+            >
               {{ t(`list.columns.${personColumn}`) }}
             </th>
             <th class="hidden px-3 text-left font-medium md:table-cell">
@@ -174,12 +180,24 @@ const closeMenu = (event: Event) => {
               class="mt-0.5 block pl-7 text-xs text-slate-500 lg:hidden"
             >
               <span class="sm:hidden"><span class="inline-block min-w-[4ch]">{{ size(row) }}</span>・</span>
-              <span class="md:hidden">{{ time(row) }}・</span>
-              {{ person(row) }}
+              <span class="md:hidden">{{ time(row) }}<template v-if="!row.location">・</template></span>
+              <template v-if="!row.location">{{ person(row) }}</template>
             </span>
+            <LocationPath
+              v-if="row.location"
+              v-bind="row.location"
+              class="mt-0.5 pl-7 text-xs text-slate-500 lg:hidden"
+            />
           </td>
-          <td class="hidden px-3 py-2.5 text-sm lg:table-cell">
-            <template v-if="row.readable">
+          <td
+            class="hidden px-3 py-2.5 text-sm lg:table-cell"
+            :class="{ 'max-w-0': located }"
+          >
+            <LocationPath
+              v-if="row.location"
+              v-bind="row.location"
+            />
+            <template v-else-if="row.readable">
               {{ person(row) }}
             </template>
           </td>

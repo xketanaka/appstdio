@@ -17,6 +17,15 @@ ja:
       description: "すべてのファイル・フォルダに管理者としてアクセスできます"
       active: "特権モードです。すべてのファイル・フォルダに管理者としてアクセスしています"
       leave: "特権モードを終える"
+    search:
+      label: "ファイルとフォルダを検索"
+      placeholder: "検索"
+      scope: "検索する範囲"
+      within: "%{label} 内"
+      everywhere: "すべての場所"
+      title: "「%{query}」の検索結果"
+      empty: "見つかりませんでした"
+      truncated: "%{count}件を超えたため、新しいものから%{count}件を表示しています。言葉を足して絞り込んでください"
     storage:
       label: "容量"
       usage: "%{limit} 中 %{used} を使用"
@@ -29,6 +38,7 @@ ja:
         name: "名前"
         owner: "オーナー"
         deleted_by: "削除した人"
+        location: "場所"
         updated_at: "更新日時"
         deleted_at: "削除日時"
         size: "サイズ"

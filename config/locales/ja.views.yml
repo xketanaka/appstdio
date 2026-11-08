@@ -23,6 +23,10 @@ ja:
       shared: "組織共有ドライブ"
       mine: "マイドライブ"
       others: "%{name} のマイドライブ"
+    # API が検索を始めた場所の名前として返す（Files::Api::SearchesController）
+    sections:
+      shared_with_me: "共有されたアイテム"
+      trash: "ゴミ箱"
     app:
       show:
         title: "ファイル"

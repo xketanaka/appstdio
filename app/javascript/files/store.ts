@@ -19,6 +19,8 @@ export const state = reactive({
   section: null as SectionKey | null,
   // 開いているフォルダ。ドライブのルートやゴミ箱などを開いているときは null
   currentFolderId: null as number | null,
+  // 検索を始める場所。key は検索の URL の in（区分の名前かフォルダの id）。結果の画面でも元の場所を保つ
+  searchOrigin: null as { key: string, label: string } | null,
   tree: null as Tree | null,
   // ツリーに読み込んだ、親フォルダの id ごとの直下のフォルダ。ドライブのルートの分も入る
   children: new Map<number, TreeFolder[]>(),
@@ -176,7 +178,12 @@ export async function toggleFolder(id: number) {
 export function showSection(section: SectionKey, title: string) {
   state.section = section
   state.currentFolderId = null
+  state.searchOrigin = { key: section, label: title }
   state.openSections.add(section)
+  setTitle(title)
+}
+
+export function setTitle(title: string) {
   document.title = [config.title_prefix, title].filter(Boolean).join(" - ")
 }
 
@@ -185,6 +192,7 @@ export function showSection(section: SectionKey, title: string) {
 export async function showFolder(payload: FolderPayload) {
   const root = payload.breadcrumbs.length === 0 && !payload.via_shared
   showSection(payload.via_shared ? "shared_with_me" : payload.section, payload.folder.label)
+  if (!root) state.searchOrigin = { key: String(payload.folder.id), label: payload.folder.label }
   if (root || payload.via_shared) return
 
   state.currentFolderId = payload.folder.id

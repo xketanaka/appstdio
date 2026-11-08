@@ -45,6 +45,7 @@ Rails.application.routes.draw do
       get "folders/:id" => "app#show", as: :folder
       get "shared" => "app#show", as: :shared_items
       get "trash" => "app#show", as: :trash
+      get "search" => "app#show", as: :search
 
       namespace :api, defaults: { format: :json } do
         get "tree" => "trees#show"
@@ -80,6 +81,7 @@ Rails.application.routes.draw do
         end
         get "shared" => "shared_items#index"
         get "trash" => "trash#index"
+        get "search" => "searches#show"
         resource :privileged_mode, only: [:create, :destroy]
       end
     end
