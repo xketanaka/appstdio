@@ -6,18 +6,7 @@ module Files
         entries = access.trash.sort_by(&:deleted_at).reverse
         ActiveRecord::Associations::Preloader.new(records: entries, associations: :deleted_by).call
 
-        render json: {
-          entries: entries.map do |node|
-            {
-              id: node.id,
-              kind: node.kind,
-              name: node.name,
-              deleted_by: node.deleted_by&.display_name,
-              deleted_at: node.deleted_at,
-              byte_size: (node.byte_size if node.file?),
-            }
-          end,
-        }
+        render json: { entries: entries.map { trash_entry_json(it) } }
       end
     end
   end

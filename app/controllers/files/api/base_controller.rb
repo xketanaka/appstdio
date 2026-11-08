@@ -96,6 +96,17 @@ module Files
           byte_size: (node.byte_size if readable && node.file?),
         }
       end
+
+      def trash_entry_json(node)
+        {
+          id: node.id,
+          kind: node.kind,
+          name: node.name,
+          deleted_by: node.deleted_by&.display_name,
+          deleted_at: node.deleted_at,
+          byte_size: (node.byte_size if node.file?),
+        }
+      end
     end
   end
 end
