@@ -39,6 +39,21 @@ export type Version = {
   purged: boolean
 }
 
+// 操作履歴の1件。location は履歴を開いたフォルダより下の祖先の名前で、閲覧できないものは null。
+// detail は操作によって違い、共有設定の変更の中身は届かない
+export type Activity = {
+  id: number
+  actor: string | null
+  created_at: string
+  node: { id: number, kind: "folder" | "file", name: string }
+  location: (string | null)[]
+} & (
+  | { action: "updated", detail: { version: number, restored_from?: number } }
+  | { action: "renamed", detail: { from: string, to: string } }
+  | { action: "moved", detail: { from: string | null, to: string | null } }
+  | { action: "created" | "deleted" | "restored" | "purged" | "shared", detail: Record<string, never> }
+)
+
 // アップロードを登録した結果。同じ名前のファイルの新しい版になったときは、その版の番号が入る
 export type Uploaded = { id: number, name: string, version: number | null }
 
@@ -153,6 +168,10 @@ export const api = {
     request<{ id: number, name: string }>("POST", "/files/api/folders", { parent_id: parentId, name }),
   completeUpload: (parentId: number, signedBlobId: string) =>
     request<Uploaded>("POST", "/files/api/nodes/upload", { parent_id: parentId, signed_blob_id: signedBlobId }),
+  activities: (nodeId: number, before?: number) =>
+    request<{ activities: Activity[], next_before: number | null }>(
+      "GET", `/files/api/nodes/${nodeId}/activities${before === undefined ? "" : `?before=${before}`}`,
+    ),
   versions: (nodeId: number) => request<{ can_edit: boolean, versions: Version[] }>("GET", `/files/api/nodes/${nodeId}/versions`),
   addVersion: (nodeId: number, signedBlobId: string) =>
     request<Uploaded>("POST", `/files/api/nodes/${nodeId}/versions`, { signed_blob_id: signedBlobId }),

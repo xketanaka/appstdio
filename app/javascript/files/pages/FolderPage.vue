@@ -12,7 +12,7 @@ import SelectionToolbar from "../components/SelectionToolbar.vue"
 import { t } from "../i18n"
 import { entryRow, type Row } from "../rows"
 import { endDrag, startDrag, useDropTargets } from "../dnd"
-import { chooseNewVersion, download, showSharing, showVersions } from "../fileActions"
+import { chooseNewVersion, download, showHistory, showSharing } from "../fileActions"
 import { changed, notifyOperationError, showFolder, trashItems } from "../store"
 import { useLoad } from "../useLoad"
 import { uploadFiles } from "../uploads"
@@ -144,6 +144,13 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       </div>
       <div class="flex shrink-0 items-center gap-2">
       <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        @click="showHistory({ id: data.folder.id, name: data.folder.label, kind: 'folder' })"
+      >
+        {{ t("folder.history") }}
+      </button>
+      <button
         v-if="data.can_manage"
         type="button"
         class="btn btn-secondary btn-sm"
@@ -226,7 +233,7 @@ const { over: overFolder, handlers: folderTarget } = useDropTargets()
       @dragend="endDrag"
       @download="download"
       @upload-version="chooseNewVersion"
-      @versions="showVersions"
+      @history="showHistory"
       @share="showSharing"
     >
       <template

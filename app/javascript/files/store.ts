@@ -28,8 +28,8 @@ export const state = reactive({
   openFolders: new Set<number>(),
   // 作成・移動などで中身が変わるたびに増える。開いている画面はこれを見て読み直す
   revision: 0,
-  // 版の履歴を開いているファイル
-  versionsOf: null as { id: number, name: string } | null,
+  // 履歴（操作履歴と版）を開いているもの
+  historyOf: null as { id: number, name: string, kind: "folder" | "file" } | null,
   // 共有設定を開いているもの
   sharingOf: null as { id: number, name: string, kind: "folder" | "file" } | null,
   // 画面の下に一時的に出す知らせ（移動した、移せなかった、など）
@@ -50,7 +50,7 @@ export function notify(message: string, { error = false, action }: Omit<Partial<
 // 移せなかった理由の文。「時間をおいて」と促すのは、それで直りうる失敗（サーバの誤りや通信）だけにする
 // 操作（移動・名前の変更・ゴミ箱・復元など）ができなかった理由の文。文言は files_app の
 // <operation>.forbidden / not_found / failed。元に戻すときの 404 は <operation>.undo_not_found
-type Operation = "move" | "rename" | "trash" | "restore" | "purge" | "versions" | "share"
+type Operation = "move" | "rename" | "trash" | "restore" | "purge" | "versions" | "history" | "share"
 
 export function operationErrorMessages(operation: Operation, error: unknown, { undo = false } = {}) {
   if (error instanceof ValidationError) return error.messages

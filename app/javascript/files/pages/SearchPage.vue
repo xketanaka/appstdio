@@ -5,7 +5,7 @@ import { api } from "../api"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
 import PurgeDialog from "../components/PurgeDialog.vue"
-import { chooseNewVersion, download, showSharing, showVersions } from "../fileActions"
+import { chooseNewVersion, download, showHistory, showSharing } from "../fileActions"
 import { t } from "../i18n"
 import { entryRow, trashRow, type Row } from "../rows"
 import { notifyOperationError, restoreItems, setTitle, state } from "../store"
@@ -78,7 +78,7 @@ const purgeDialog = ref<InstanceType<typeof PurgeDialog> | null>(null)
     located
     @download="download"
     @upload-version="chooseNewVersion"
-    @versions="showVersions"
+    @history="showHistory"
     @share="showSharing"
   />
   <LoadMessage

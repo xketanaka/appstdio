@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { api } from "../api"
 import FileList from "../components/FileList.vue"
 import LoadMessage from "../components/LoadMessage.vue"
-import { chooseNewVersion, download, showSharing, showVersions } from "../fileActions"
+import { chooseNewVersion, download, showHistory, showSharing } from "../fileActions"
 import { t } from "../i18n"
 import { entryRow } from "../rows"
 import { showSection } from "../store"
@@ -29,7 +29,7 @@ const rows = computed(() => data.value?.entries.map(entryRow) ?? [])
     :empty="t('shared_items.empty')"
     @download="download"
     @upload-version="chooseNewVersion"
-    @versions="showVersions"
+    @history="showHistory"
     @share="showSharing"
   />
   <LoadMessage

@@ -35,7 +35,7 @@ const emit = defineEmits<{
   purge: [row: Row]
   download: [row: Row]
   uploadVersion: [row: Row]
-  versions: [row: Row]
+  history: [row: Row]
   share: [row: Row]
   dragstart: [row: Row, event: DragEvent]
   dragend: []
@@ -47,10 +47,11 @@ const dropTarget = (row: Row) =>
 
 const personColumn = props.located ? "location" : props.trash ? "deleted_by" : "owner"
 const timeColumn = props.trash ? "deleted_at" : "updated_at"
-const rowActions = props.trash ? ["restore", "purge"] : ["download", "upload_version", "versions", "share", "rename", "move", "destroy"]
+const rowActions = props.trash ? ["restore", "purge"] : ["download", "upload_version", "history", "share", "rename", "move", "destroy"]
 // 行のメニューで押せる操作
 const available = (action: string, row: Row) => {
-  if (action === "download" || action === "versions") return !props.trash && row.kind === "file" && row.readable
+  if (action === "download") return !props.trash && row.kind === "file" && row.readable
+  if (action === "history") return !props.trash && row.readable
   if (action === "upload_version") return !props.trash && row.kind === "file" && row.editable
   if (action === "share") return row.manageable
   return !!props.canEdit
@@ -63,7 +64,7 @@ const runAction = (action: string, row: Row) => {
   else if (action === "restore") emit("restore", row)
   else if (action === "purge") emit("purge", row)
   else if (action === "upload_version") emit("uploadVersion", row)
-  else if (action === "versions") emit("versions", row)
+  else if (action === "history") emit("history", row)
   else if (action === "share") emit("share", row)
   else emit("download", row)
 }

@@ -108,11 +108,14 @@ describe("選べる一覧", () => {
   })
 })
 
-test("閲覧できるファイルは、行のメニューからダウンロードと版の履歴を開け、編集できれば新しい版を上げられる", async () => {
-  const wrapper = await render([row({}), row({ id: 2, name: "人事.xlsx", readable: false }), row({ id: 3, editable: true })])
+test("閲覧できるものは行のメニューから履歴を開け、ファイルはダウンロードでき、編集できれば新しい版を上げられる", async () => {
+  const wrapper = await render([
+    row({}), row({ id: 2, name: "人事.xlsx", readable: false }), row({ id: 3, editable: true }),
+    row({ id: 4, kind: "folder", name: "営業", byteSize: null, folderId: 4 }),
+  ])
   const menus = wrapper.findAll("tbody tr").map((tr) => tr.findAll("details button").map((button) => button.text()))
 
-  expect(menus).toEqual([["ダウンロード", "版の履歴"], [], ["ダウンロード", "新しい版をアップロード", "版の履歴"]])
+  expect(menus).toEqual([["ダウンロード", "履歴"], [], ["ダウンロード", "新しい版をアップロード", "履歴"], ["履歴"]])
   await wrapper.find("details button").trigger("click")
   expect(wrapper.emitted<[Row]>("download")?.[0][0].id).toBe(1)
 })
