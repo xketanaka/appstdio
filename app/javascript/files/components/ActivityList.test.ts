@@ -14,7 +14,7 @@ beforeEach(() => {
 })
 
 const activity = (overrides: object) => ({
-  id: 1, action: "created", actor: "佐藤さん", created_at: "2026-11-09T14:20:00+09:00",
+  id: 1, action: "created", actor: "佐藤さん", created_at: new Date(2026, 10, 9, 14, 20).toISOString(),
   node: { id: 3, kind: "file", name: "見積書.xlsx" }, location: [], detail: {}, ...overrides,
 }) as Activity
 
