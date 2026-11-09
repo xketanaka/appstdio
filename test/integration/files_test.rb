@@ -793,6 +793,70 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "操作履歴" do
+    test "フォルダの履歴には配下すべての分を新しい順に出し、フォルダより下の場所を添える" do
+      TenantContext.switch(tenant: @tenant) do
+        Files::Node.create_folder!(parent: @estimates, name: "2026年度", creator: @owner)
+        @estimates.rename!("見積書", actor: @owner)
+      end
+      login(@member_user)
+
+      get files_api_node_activities_path(@sales)
+
+      assert_response :success
+      entries = json["activities"]
+      assert_equal ["renamed", "created"], entries.pluck("action")
+      assert_equal({ "from" => "見積", "to" => "見積書" }, entries.first["detail"])
+      assert_equal "管理者さん", entries.first["actor"]
+      assert_equal "2026年度", entries.last.dig("node", "name")
+      assert_equal ["見積書"], entries.last["location"]
+      assert_nil json["next_before"]
+    end
+
+    test "閲覧できないものの分は出さず、移動元・移動先も閲覧できなければ伏せる" do
+      TenantContext.switch(tenant: @tenant) do
+        @review.rename!("評価2026.xlsx", actor: @owner)
+        report = node(:file, "報告.txt", @hr)
+        Files::Node.move!([report], to: @sales, actor: @owner)
+      end
+      login(@member_user)
+
+      get files_api_node_activities_path(@root)
+
+      assert_equal ["moved"], json["activities"].pluck("action"), "人事の中の名前の変更は出さない"
+      assert_equal({ "from" => nil, "to" => "営業" }, json["activities"].first["detail"])
+      get files_api_node_activities_path(@hr)
+      assert_response :not_found
+    end
+
+    test "共有設定の変更は、中身を出さない" do
+      TenantContext.switch(tenant: @tenant) do
+        Files::Activity.create!(tenant: @tenant, node: @sales, actor: @owner, action: :shared,
+          detail: { changes: [{ tenant_user_id: @member.id, role: "editor" }] })
+      end
+      login(@member_user)
+
+      get files_api_node_activities_path(@sales)
+
+      assert_equal [["shared", {}]], json["activities"].pluck("action", "detail")
+    end
+
+    test "50件ずつ返し、続きは before で読む" do
+      TenantContext.switch(tenant: @tenant) do
+        51.times { Files::Activity.create!(tenant: @tenant, node: @minutes, actor: @owner, action: :updated, detail: { version: it + 1 }) }
+      end
+      login(@member_user)
+
+      get files_api_node_activities_path(@minutes)
+      assert_equal 50, json["activities"].size
+      assert_equal 51, json["activities"].first.dig("detail", "version")
+
+      get files_api_node_activities_path(@minutes), params: { before: json["next_before"] }
+      assert_equal [1], json["activities"].map { it.dig("detail", "version") }
+      assert_nil json["next_before"]
+    end
+  end
+
   describe "検索" do
     setup do
       TenantContext.switch(tenant: @tenant) do
