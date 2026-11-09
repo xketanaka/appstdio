@@ -59,11 +59,11 @@ const message = (activity: Activity) => {
       </p>
       <p
         v-if="activity.location.length > 0"
-        class="mt-0.5 truncate text-xs text-slate-500"
+        class="mt-0.5 truncate pl-2.5 text-xs text-slate-500"
       >
         {{ t("history.location", { path: activity.location.map(folderName).join(" / ") }) }}
       </p>
-      <p class="mt-0.5 text-xs text-slate-500">
+      <p class="mt-0.5 pl-2.5 text-xs text-slate-500">
         {{ activity.actor ?? t("history.system") }}・{{ formatTime(activity.created_at) }}
       </p>
     </li>

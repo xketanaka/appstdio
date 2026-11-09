@@ -17,6 +17,9 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.open = true
   }
+  HTMLDialogElement.prototype.close = function () {
+    this.open = false
+  }
   state.historyOf = null
 })
 
@@ -37,6 +40,15 @@ test("ファイルは操作履歴のタブで開き、版のタブに切り替�
   await wrapper.findAll("[role=tab]")[1].trigger("click")
   await flushPromises()
   expect(api.versions).toHaveBeenCalledWith(3)
+})
+
+test("パネルの外（背景）を押すと閉じ、パネルの中を押しても閉じない", async () => {
+  const wrapper = await open("file")
+
+  await wrapper.find("h2").trigger("click")
+  expect(state.historyOf).not.toBeNull()
+  await wrapper.find("dialog").trigger("click")
+  expect(state.historyOf).toBeNull()
 })
 
 test("フォルダには版が無いので、タブを出さない", async () => {

@@ -27,6 +27,7 @@ const close = () => {
     aria-labelledby="history-title"
     class="m-0 ml-auto h-dvh max-h-dvh w-full max-w-md bg-white text-slate-800 shadow-xl backdrop:bg-slate-900/40"
     @close="state.historyOf = null"
+    @click="$event.target === dialog && close()"
   >
     <div
       v-if="state.historyOf"
