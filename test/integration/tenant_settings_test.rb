@@ -104,6 +104,35 @@ class TenantSettingsTest < ActionDispatch::IntegrationTest
     assert_nil files_setting.version_retention_days
   end
 
+  test "プロジェクト機能は既定では使わず、利用するにするとメニューのファイルの上と、管理メニューのグループ管理と組織設定の間に出す" do
+    get management_tenant_setting_path
+    assert_select "#tenant-features dt", text: "プロジェクト機能" do |dt|
+      assert_equal "利用しない", dt.first.next_element.text.strip
+    end
+    assert_select "dialog[data-drawer] nav", text: /プロジェクト/, count: 0
+    assert_select "#side-pane nav", text: /プロジェクト管理/, count: 0
+
+    get edit_management_tenant_setting_path
+    checkboxes = css_select("#tenant-setting-form input[type=checkbox]").map { it["name"] }
+    assert_equal checkboxes.index("files_enabled") - 1, checkboxes.index("projects_enabled")
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, projects_enabled: "1", files_enabled: "1" }
+    assert_predicate setting, :projects_enabled?
+    follow_redirect!
+
+    assert_select "#tenant-features dt", text: "プロジェクト機能" do |dt|
+      assert_equal "利用する", dt.first.next_element.text.strip
+    end
+    drawer = css_select("dialog[data-drawer] nav").first.text.split.first(3)
+    assert_equal %w[プロジェクト 準備中 ファイル], drawer
+    menu = css_select("#side-pane nav").first.text.split
+    assert_equal %w[利用者管理 グループ管理 プロジェクト管理 準備中 組織設定], menu
+    assert_select "#side-pane nav a", text: "プロジェクト管理", count: 0
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, files_enabled: "1" }
+    assert_not_predicate setting, :projects_enabled?
+  end
+
   private
 
   # RLS があるので、読むのも書くのもテナントのコンテキストの中で行う
