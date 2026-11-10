@@ -23,6 +23,10 @@ ja:
               taken: "が同じ上位グループの中のものと重複しています。"
             parent:
               invalid: "には、自分自身とその下位・「全員」・利用停止中のグループを選べません。"
+        project:
+          attributes:
+            name:
+              taken: "が他のプロジェクトと重複しています。"
         tenant_user:
           last_owner: "有効なオーナーが1人もいなくなるため、この変更はできません。"
           attributes:
@@ -34,11 +38,14 @@ ja:
               too_many_pixels: "の画像が大きすぎます。縦横を小さくしてください。"
         tenant_setting:
           attributes:
+            projects_enabled:
+              root_name_taken: "を利用するには、最上位の「%{name}」グループを作ります。同じ名前の最上位のグループの名前を変えてから、もう一度お試しください。"
             logo:
               invalid_content_type: "は PNG・JPEG・GIF・WebP のいずれかにしてください。"
               too_large: "は%{count}MB以下にしてください。"
     models:
       group: "グループ"
+      project: "プロジェクト"
       group_label: "ラベル"
       tenant: "テナント"
       operator: "運営者"
@@ -90,6 +97,8 @@ ja:
       group:
         name: "グループ名"
         parent: "上位グループ"
+      project:
+        name: "プロジェクト名"
       group_label:
         name: "ラベル"
       tenant_user:
@@ -108,6 +117,7 @@ ja:
 
   groups:
     everyone: "全員"
+    project_root: "プロジェクト"
 
   enums:
     operator:

@@ -1,7 +1,9 @@
 class Group < ApplicationRecord
   # 「全員」グループはメンバーの行を持たない。定義上テナントの所属ユーザ全員なので、
-  # 複製するとずれる。所属の解決時に足す
-  enum :kind, { department: "department", everyone: "everyone" }, validate: true
+  # 複製するとずれる。所属の解決時に足す。
+  # project_root は最上位の「プロジェクト」、project は各プロジェクトのグループ（その直下に置く。doc/projects.md）
+  enum :kind, { department: "department", everyone: "everyone", project_root: "project_root", project: "project" },
+    validate: true
 
   belongs_to :tenant
   belongs_to :parent, class_name: "Group", optional: true
@@ -12,6 +14,7 @@ class Group < ApplicationRecord
   has_many :tenant_users, through: :group_members
   has_many :labelings, class_name: "GroupLabeling", dependent: :destroy
   has_many :labels, through: :labelings, source: :group_label
+  has_one :project
 
   scope :active, -> { where(suspended_at: nil) }
   scope :suspended, -> { where.not(suspended_at: nil) }
@@ -24,6 +27,13 @@ class Group < ApplicationRecord
 
   def self.everyone_of(tenant)
     everyone.find_by!(tenant: tenant)
+  end
+
+  # 最上位の「プロジェクト」。無ければ作る。同じ名前の最上位のグループがあると作れず、RecordInvalid になる
+  def self.project_root_of!(tenant)
+    project_root.find_or_create_by!(tenant:) { it.name = I18n.t("groups.project_root") }
+  rescue ActiveRecord::RecordNotUnique
+    project_root.find_by!(tenant:)
   end
 
   # 下位のグループの id（自分は含まない）。停止中も含む。ids は1つでも複数でもよい
@@ -66,7 +76,8 @@ class Group < ApplicationRecord
   # 名前・上位などを保存し、ラベルを名前で付け直す。テナントのラベルの一覧に無い名前は、一覧に加える。
   # ラベルの検証（長さ）で落ちたらグループの保存も戻し、ラベルの誤りをグループの誤りとして出す。保存できなければ false
   def save_with_labels(names)
-    transaction do
+    # プロジェクトの保存（Project#save_with）の中からも呼ぶ。外にトランザクションがあっても、ここで戻せるようにする
+    transaction(requires_new: true) do
       save!
       label_ids = names.map { |name| GroupLabel.find_or_create_by!(tenant:, name:).id }
       labelings.where.not(group_label_id: label_ids).delete_all
@@ -103,6 +114,11 @@ class Group < ApplicationRecord
 
   def suspended?
     suspended_at.present?
+  end
+
+  # システムが作るグループ（「全員」と「プロジェクト」）。名前もメンバーも変えられず、消せない
+  def fixed?
+    everyone? || project_root?
   end
 
   # 利用停止にする。自分（起点）と、まだ有効な下位のすべての行に、停止日時・停止した人・
@@ -163,13 +179,16 @@ class Group < ApplicationRecord
     errors.add(:name, :taken) if Group.active.where(tenant_id:, parent_id:, name:).where.not(id:).exists?
   end
 
-  # 「全員」と停止中は上位にできない。自分と自分の下位を上位にすると循環する
+  # 部署の上位にできるのは、有効な部署だけ（「全員」「プロジェクト」とその下、停止中はできない）。
+  # 自分と自分の下位を上位にすると循環する。プロジェクトのグループは「プロジェクト」の直下にだけ置く
   def parent_must_be_selectable
     # 他のテナントのグループは RLS で見えず、parent が nil になる
     return errors.add(:parent, :invalid) if parent_id && parent.nil?
-    return if parent.nil?
+    return errors.add(:parent, :invalid) if project? && !parent&.project_root?
+    return errors.add(:parent, :invalid) if fixed? && parent
+    return if parent.nil? || project?
 
     cyclic = persisted? && parent.self_and_ancestors.include?(self)
-    errors.add(:parent, :invalid) if parent.everyone? || parent.suspended? || cyclic
+    errors.add(:parent, :invalid) if !parent.department? || parent.suspended? || cyclic
   end
 end
