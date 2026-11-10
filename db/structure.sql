@@ -608,6 +608,7 @@ CREATE TABLE public.tenant_settings (
     title_color character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    projects_enabled boolean DEFAULT false NOT NULL,
     CONSTRAINT tenant_settings_title_color_check CHECK (((title_color)::text ~ '^#[0-9a-f]{6}$'::text))
 );
 
@@ -2269,6 +2270,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261110100000'),
 ('20261106120000'),
 ('20261106110000'),
 ('20261106100000'),

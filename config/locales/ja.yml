@@ -81,6 +81,7 @@ ja:
         title_label: "タイトルラベル"
         title_color: "タイトルカラー"
         logo: "ロゴ画像"
+        projects_enabled: "プロジェクト機能"
       files/setting:
         enabled: "ファイル管理"
         version_retention_days: "古い版の保持日数"

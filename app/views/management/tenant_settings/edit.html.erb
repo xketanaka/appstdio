@@ -49,6 +49,14 @@
 
       <div class="mb-8">
         <label class="flex items-center gap-2">
+          <%= check_box_tag :projects_enabled, "1", @setting.projects_enabled?, class: "accent-primary-600" %>
+          <%= t(".projects_enabled") %>
+        </label>
+        <p class="mt-1 text-xs text-slate-500"><%= t(".hints.projects_enabled") %></p>
+      </div>
+
+      <div class="mb-8">
+        <label class="flex items-center gap-2">
           <%= check_box_tag :files_enabled, "1", @files_setting.enabled?, class: "accent-primary-600" %>
           <%= t(".files_enabled") %>
         </label>

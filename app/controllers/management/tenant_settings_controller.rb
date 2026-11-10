@@ -13,6 +13,7 @@ module Management
       attributes[:title_color] = nil if params[:use_default_color] == "1"
       attributes[:logo] = nil if params[:remove_logo] == "1"
       @setting.assign_attributes(attributes)
+      @setting.projects_enabled = params[:projects_enabled] == "1"
       @files_setting.enabled = params[:files_enabled] == "1"
       @files_setting.version_retention_days = params[:version_retention_days].presence
 
