@@ -210,7 +210,7 @@ test("名前を変え、削除して知らせから戻し、ゴミ箱から元�
   await expect(list.getByRole("row", { name: /不要\.txt/ })).toHaveCount(0)
 })
 
-test("同じ名前で上げると新しい版になり、版の履歴でラベルを付けて古い版を最新に戻せる", async ({ page }) => {
+test("同じ名前で上げると新しい版になり、履歴の版のタブでラベルを付けて古い版を最新に戻せる。操作履歴にも残る", async ({ page }) => {
   await login(page, data.owner)
   await page.goto("/files/my_drive")
   const list = page.locator("#file-list")
@@ -226,8 +226,10 @@ test("同じ名前で上げると新しい版になり、版の履歴でラベ�
   await expect(spec).toHaveCount(1)
 
   await spec.getByRole("group").click()
-  await spec.getByRole("button", { name: "版の履歴" }).click()
-  const panel = page.getByRole("dialog", { name: "「仕様書.txt」の版の履歴" })
+  await spec.getByRole("button", { name: "履歴" }).click()
+  const panel = page.getByRole("dialog", { name: "「仕様書.txt」の履歴" })
+  await expect(panel.getByRole("listitem").first()).toContainText("「仕様書.txt」の版2をアップロードしました")
+  await panel.getByRole("tab", { name: "版" }).click()
   const first = panel.getByRole("listitem").filter({ hasText: "版1" })
   await expect(panel.getByRole("listitem").first()).toContainText("版2最新")
 
@@ -239,7 +241,9 @@ test("同じ名前で上げると新しい版になり、版の履歴でラベ�
   await first.getByRole("button", { name: "この版を最新に戻す" }).click()
   await expect(page.getByRole("status").filter({ hasText: "版1の中身で、版3を作りました" })).toBeVisible()
   await expect(panel.getByRole("listitem").first()).toContainText("版3最新")
-  await panel.getByRole("button", { name: "版の履歴を閉じる" }).click()
+  await panel.getByRole("tab", { name: "操作履歴" }).click()
+  await expect(panel.getByRole("listitem").first()).toContainText("「仕様書.txt」を版1の中身に戻し、版3を作りました")
+  await panel.getByRole("button", { name: "履歴を閉じる" }).click()
 
   const [download] = await Promise.all([page.waitForEvent("download"), spec.dblclick()])
   const chunks: Buffer[] = []

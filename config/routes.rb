@@ -69,6 +69,7 @@ Rails.application.routes.draw do
             patch :rename
           end
           resource :permissions, only: [:show, :update]
+          resources :activities, only: [:index]
           resources :versions, only: [:index, :create, :update] do
             collection do
               post :prepare_upload

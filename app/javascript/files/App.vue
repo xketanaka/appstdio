@@ -3,13 +3,13 @@ import { onMounted, ref, watch } from "vue"
 import { RouterView, useRoute, useRouter } from "vue-router"
 import { api } from "./api"
 import FileTree from "./components/FileTree.vue"
+import HistoryPanel from "./components/HistoryPanel.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
 import SearchBar from "./components/SearchBar.vue"
 import ShareDialog from "./components/ShareDialog.vue"
 import StorageMeter from "./components/StorageMeter.vue"
 import UploadPanel from "./components/UploadPanel.vue"
-import VersionsPanel from "./components/VersionsPanel.vue"
 import { t } from "./i18n"
 import { reloadTree, state } from "./store"
 
@@ -98,7 +98,7 @@ const leavePrivilegedMode = async () => {
     </div>
     <NoticeBar />
     <UploadPanel />
-    <VersionsPanel />
+    <HistoryPanel />
     <ShareDialog />
   </div>
 </template>

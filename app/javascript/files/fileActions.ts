@@ -10,9 +10,9 @@ export function download(row: Row) {
   window.location.href = downloadUrl(row.id)
 }
 
-// 版の履歴を開く（App の VersionsPanel が state.versionsOf を見て出す）
-export function showVersions(row: Row) {
-  state.versionsOf = { id: row.id, name: row.name }
+// 履歴を開く（App の HistoryPanel が state.historyOf を見て出す）
+export function showHistory(target: { id: number, name: string, kind: "folder" | "file" }) {
+  state.historyOf = { id: target.id, name: target.name, kind: target.kind }
 }
 
 // 共有設定を開く（App の ShareDialog が state.sharingOf を見て出す）
