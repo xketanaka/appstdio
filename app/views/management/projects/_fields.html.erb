@@ -1,0 +1,8 @@
+<%# locals: (form:) %>
+<div class="mb-5">
+  <%= form.label :name, class: "mb-1.5 block text-sm font-semibold" %>
+  <%= form.text_field :name, value: @project.group.name, autocomplete: "off", class: "input" %>
+</div>
+
+<%# ラベルはグループのラベル（プロジェクトの中身はグループ） %>
+<%= render "management/labels_field", form:, suggestions: GroupLabel.order(:name).pluck(:name) %>

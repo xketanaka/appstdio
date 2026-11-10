@@ -1,0 +1,70 @@
+<% content_for :title do %><%= t(".title", name: @project.name) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <% if @project.suspended? %>
+      <%= link_to t(".back_to_suspended"), suspended_management_projects_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <% else %>
+      <%= link_to t(".back"), management_projects_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <% end %>
+    <header id="project-header" class="mb-6 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <h2 class="text-lg font-medium break-words"><%= @project.name %></h2>
+        <% if @labels.present? %>
+          <ul id="project-labels" aria-label="<%= t(".labels") %>" class="mt-2 flex flex-wrap gap-1.5">
+            <% @labels.each do |label| %>
+              <li class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700"><%= label %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+      <% unless @project.suspended? %>
+        <%= link_to t(".edit"), edit_management_project_path(@project), id: "edit-project", class: "btn btn-secondary btn-sm shrink-0" %>
+      <% end %>
+    </header>
+
+    <% if @project.suspended? %>
+      <%= render "suspension" %>
+    <% end %>
+
+    <section id="project-members" class="mb-8">
+      <div class="mb-1 flex min-h-8 items-center justify-between gap-4">
+        <h3 class="text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h3>
+        <% unless @project.suspended? %>
+          <%= link_to t(".members.edit"), edit_members_management_project_path(@project), id: "edit-members",
+                class: "btn btn-secondary btn-sm shrink-0" %>
+        <% end %>
+      </div>
+      <% if @members.empty? %>
+        <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".members.empty") %></p>
+      <% else %>
+        <table class="w-full">
+          <tbody>
+            <% @members.each do |member| %>
+              <tr class="border-t border-slate-200">
+                <td class="py-2">
+                  <div class="flex items-center gap-3">
+                    <%= render "partial/avatar", tenant_user: member.tenant_user %>
+                    <div class="min-w-0">
+                      <span class="flex items-center gap-2">
+                        <%= link_to member.tenant_user.display_name, management_user_path(member.tenant_user),
+                              class: "truncate text-primary-700 hover:underline" %>
+                        <% if member.leader? %>
+                          <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
+                        <% end %>
+                      </span>
+                      <span class="block truncate text-xs text-slate-500"><%= member.tenant_user.user.email %></span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </section>
+  </div>
+</div>

@@ -33,14 +33,19 @@ module Management
 
     def show
       @labels = @tenant_user.labels.order(:name).pluck(:name)
-      memberships = @tenant_user.group_members.joins(:group).merge(Group.active).includes(:group).index_by(&:group_id)
+      memberships = @tenant_user.group_members.joins(:group).merge(Group.department.active).includes(:group).index_by(&:group_id)
       # 同じ名前のグループを見分けられるよう、最上位からの並びを添えて、その順に出す
       @memberships = Group.sort_by_name_path(memberships.values.map(&:group)).map { |group, path| [memberships[group.id], path] }
+      if current_tenant.setting.projects_enabled?
+        @project_memberships = @tenant_user.group_members.joins(:group).merge(Group.project.active)
+          .includes(group: :project).order("groups.name", "groups.id")
+      end
     end
 
     def new
       @tenant_user = TenantUser.new(role: :member)
       @groups = []
+      @projects = []
       @label_names = []
     end
 
@@ -51,19 +56,19 @@ module Management
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @label_names = label_names_from(attributes[:label_names])
       @tenant_user = TenantUser.invite(tenant: current_tenant, email: attributes[:email].to_s, group_ids: @group_ids,
-        label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
+        group_kinds:, label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
 
       if @tenant_user.errors.empty?
         redirect_to management_user_path(@tenant_user), notice: t("messages.created")
       else
-        @groups = Group.sort_by_name_path(Group.department.active.where(id: @group_ids).to_a)
+        load_groups(@group_ids)
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
       @label_names = @tenant_user.labels.order(:name).pluck(:name)
-      @groups = Group.sort_by_name_path(Group.department.active.where(id: @tenant_user.group_members.select(:group_id)).to_a)
+      load_groups(@tenant_user.group_members.select(:group_id))
     end
 
     def update
@@ -79,7 +84,7 @@ module Management
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @label_names = label_names_from(attributes[:label_names])
       attributes = { display_name: attributes[:display_name], role:, status: }
-      if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names)
+      if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names, group_kinds:)
         # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
         if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?
           redirect_to top_page_path, notice: t("messages.saved")
@@ -87,17 +92,20 @@ module Management
           redirect_to management_user_path(@tenant_user), notice: t("messages.saved")
         end
       else
-        @groups = Group.sort_by_name_path(Group.department.active.where(id: @group_ids).to_a)
+        load_groups(@group_ids)
         render :edit, status: :unprocessable_entity
       end
     end
 
-    # 所属グループの追加のダイアログの候補。有効なグループをグループ名で探し、最上位からの並びの順に
-    # 30件ずつ返す。ダイアログがスクロールに合わせて読み足す。並べるために当てはまるものを全件読むが、
-    # グループ管理のツリーも全件を読んで描いているので、同じ前提に立つ
+    # 所属グループ（kind=project なら参加プロジェクト）の追加のダイアログの候補。有効なグループをグループ名で探し、
+    # 最上位からの並びの順に30件ずつ返す。ダイアログがスクロールに合わせて読み足す。並べるために当てはまるものを
+    # 全件読むが、グループ管理のツリーも全件を読んで描いているので、同じ前提に立つ
     def group_candidates
       page = [params[:page].to_i, 1].max
-      groups = Group.department.active
+      kind = params[:kind] == "project" ? :project : :department
+      raise ActiveRecord::RecordNotFound unless group_kinds.include?(kind)
+
+      groups = Group.where(kind:).active
       groups = groups.where("groups.name ILIKE ?", "%#{Group.sanitize_sql_like(params[:q].strip)}%") if params[:q].present?
       candidates = Group.sort_by_name_path(groups.to_a).drop((page - 1) * PER_PAGE)
       @next_page = (page + 1 if candidates.size > PER_PAGE)
@@ -132,6 +140,17 @@ module Management
     end
 
     private
+
+    # 利用者の追加・編集で所属を選べるグループの種類
+    def group_kinds
+      current_tenant.setting.projects_enabled? ? [:department, :project] : [:department]
+    end
+
+    # 欄に出す所属グループ（部署）と参加プロジェクト
+    def load_groups(group_ids)
+      @groups = Group.sort_by_name_path(Group.department.active.where(id: group_ids).to_a)
+      @projects = Group.sort_by_name_path(Group.project.active.where(id: group_ids).to_a)
+    end
 
     def set_tenant_user
       @tenant_user = TenantUser.not_deleted.includes(:user).find(params[:id])
