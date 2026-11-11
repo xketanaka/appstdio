@@ -25,9 +25,10 @@ class GroupScope
     @led_ids ||= GroupMember.leader.where(tenant_user: @tenant_user).pluck(:group_id)
   end
 
-  # 自分が管理者であるグループそのものは、テナントの管理者にしか消せない（戻せないので）
+  # 自分が管理者であるグループそのものは、テナントの管理者にしか消せない（戻せないので）。
+  # 消せるのは部署だけ（プロジェクトのグループはプロジェクト管理で消す）
   def can_destroy?(group)
-    include?(group) && (all? || led_ids.exclude?(group.id))
+    group.department? && include?(group) && (all? || led_ids.exclude?(group.id))
   end
 
   # 上位に置けるか。最上位（parent が nil）に置けるのはテナントの管理者だけ

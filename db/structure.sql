@@ -528,7 +528,7 @@ CREATE TABLE public.groups (
     suspended_by_id bigint,
     suspended_path character varying[],
     suspension_root_id bigint,
-    CONSTRAINT groups_kind_check CHECK (((kind)::text = ANY ((ARRAY['department'::character varying, 'everyone'::character varying])::text[]))),
+    CONSTRAINT groups_kind_check CHECK (((kind)::text = ANY ((ARRAY['department'::character varying, 'everyone'::character varying, 'project_root'::character varying, 'project'::character varying])::text[]))),
     CONSTRAINT groups_suspension_check CHECK ((((suspended_at IS NULL) = (suspension_root_id IS NULL)) AND ((suspended_at IS NULL) = (suspended_path IS NULL))))
 );
 
@@ -586,6 +586,38 @@ CREATE SEQUENCE public.operators_id_seq
 --
 
 ALTER SEQUENCE public.operators_id_seq OWNED BY public.operators.id;
+
+
+--
+-- Name: projects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.projects (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    group_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.projects_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.projects_id_seq OWNED BY public.projects.id;
 
 
 --
@@ -900,6 +932,13 @@ ALTER TABLE ONLY public.operators ALTER COLUMN id SET DEFAULT nextval('public.op
 
 
 --
+-- Name: projects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects ALTER COLUMN id SET DEFAULT nextval('public.projects_id_seq'::regclass);
+
+
+--
 -- Name: tenant_settings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1052,6 +1091,14 @@ ALTER TABLE ONLY public.groups
 
 ALTER TABLE ONLY public.operators
     ADD CONSTRAINT operators_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT projects_pkey PRIMARY KEY (id);
 
 
 --
@@ -1349,6 +1396,13 @@ CREATE UNIQUE INDEX index_groups_on_everyone_per_tenant ON public.groups USING b
 
 
 --
+-- Name: index_groups_on_project_root_per_tenant; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_groups_on_project_root_per_tenant ON public.groups USING btree (tenant_id) WHERE ((kind)::text = 'project_root'::text);
+
+
+--
 -- Name: index_groups_on_suspension_root_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1374,6 +1428,20 @@ CREATE INDEX index_groups_on_tenant_id_and_suspended_at ON public.groups USING b
 --
 
 CREATE UNIQUE INDEX index_operators_on_email ON public.operators USING btree (email);
+
+
+--
+-- Name: index_projects_on_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_projects_on_group_id ON public.projects USING btree (group_id);
+
+
+--
+-- Name: index_projects_on_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_projects_on_tenant_id ON public.projects USING btree (tenant_id);
 
 
 --
@@ -1646,6 +1714,14 @@ ALTER TABLE ONLY public.group_labelings
 
 
 --
+-- Name: projects fk_rails_a3d5742497; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT fk_rails_a3d5742497 FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: files_versions fk_rails_b7337e7741; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1675,6 +1751,14 @@ ALTER TABLE ONLY public.groups
 
 ALTER TABLE ONLY public.active_storage_attachments
     ADD CONSTRAINT fk_rails_c3b3935057 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: projects fk_rails_c6b5275ea1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT fk_rails_c6b5275ea1 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -2128,6 +2212,40 @@ CREATE POLICY groups_update ON public.groups FOR UPDATE TO appstdio_app USING ((
 ALTER TABLE public.operators ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: projects; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: projects projects_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY projects_delete ON public.projects FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: projects projects_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY projects_insert ON public.projects FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: projects projects_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY projects_select ON public.projects FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: projects projects_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY projects_update ON public.projects FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
 -- Name: tenant_settings; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -2270,6 +2388,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261111100000'),
 ('20261110100000'),
 ('20261106120000'),
 ('20261106110000'),

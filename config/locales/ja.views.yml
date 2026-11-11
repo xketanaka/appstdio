@@ -74,7 +74,6 @@ ja:
       hint: "Enter かカンマで確定します。登録済みのラベルは候補から選べます。"
     menu:
       label: "管理メニュー"
-      coming_soon: "準備中"
       items:
         users: "利用者管理"
         groups: "グループ管理"
@@ -97,18 +96,21 @@ ja:
         columns:
           suspended_at: "停止日時"
           suspended_by: "停止した人"
-      fields:
+      group_picker:
         groups:
           heading: "所属グループ（%{count}件）"
           add: "所属グループを追加"
           empty: "所属しているグループはありません。"
-          dialog:
-            title: "所属グループを追加"
-            search: "グループ名で探す"
-            candidates: "候補"
-            cancel: "キャンセル"
-            submit: "追加する"
-            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+          search: "グループ名で探す"
+        projects:
+          heading: "参加プロジェクト（%{count}件）"
+          add: "参加プロジェクトを追加"
+          empty: "参加しているプロジェクトはありません。"
+          search: "プロジェクト名で探す"
+        candidates: "候補"
+        cancel: "キャンセル"
+        submit: "追加する"
+        load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
       group_row:
         remove: "削除"
       group_candidates:
@@ -131,6 +133,10 @@ ja:
           heading: "所属グループ（%{count}件）"
           empty: "所属しているグループはありません。"
           leader: "グループ管理者"
+        projects:
+          heading: "参加プロジェクト（%{count}件）"
+          empty: "参加しているプロジェクトはありません。"
+          leader: "プロジェクト管理者"
         edit: "編集"
       edit:
         title: "%{name}の編集 - 利用者管理"
@@ -175,6 +181,90 @@ ja:
         suspended_at_by: "%{at} に%{name}が停止しました。"
         reactivate: "再開する"
         destroy: "この利用者を削除"
+    projects:
+      root_name_taken: "最上位に「%{name}」という名前のグループがあるため、プロジェクトを置く「%{name}」グループを作れません。グループ管理でそのグループの名前を変えてから、もう一度お試しください。"
+      index:
+        title: "プロジェクト管理"
+        heading: "プロジェクト管理"
+        new: "プロジェクトを追加"
+        empty: "プロジェクトはありません。"
+        suspended: "利用停止中のプロジェクト"
+        member_count: "%{count}人"
+        columns:
+          leaders: "プロジェクト管理者"
+          members: "メンバー"
+      suspended:
+        title: "利用停止中のプロジェクト - プロジェクト管理"
+        heading: "利用停止中のプロジェクト"
+        back: "« プロジェクト管理へ戻る"
+        query: "プロジェクト名で探す"
+        submit: "絞り込む"
+        empty: "利用停止中のプロジェクトはありません。"
+        not_found: "当てはまるプロジェクトはありません。"
+        columns:
+          suspended_at: "停止日時"
+          suspended_by: "停止した人"
+      show:
+        title: "%{name} - プロジェクト管理"
+        heading: "プロジェクト管理"
+        back: "« プロジェクト一覧へ戻る"
+        back_to_suspended: "« 利用停止中のプロジェクトへ戻る"
+        labels: "ラベル"
+        edit: "編集"
+        members:
+          heading: "メンバー（%{count}人）"
+          edit: "メンバーを編集"
+          empty: "メンバーはいません。"
+          leader: "プロジェクト管理者"
+      new:
+        title: "プロジェクトを追加 - プロジェクト管理"
+        heading: "プロジェクト管理"
+        back: "« プロジェクト一覧へ戻る"
+        detail: "プロジェクトを追加"
+        submit: "作成する"
+        cancel: "キャンセル"
+      edit:
+        title: "%{name}の編集 - プロジェクト管理"
+        heading: "プロジェクト管理"
+        detail: "プロジェクトの編集"
+        cancel: "キャンセル"
+        suspend: "利用停止"
+        destroy: "このプロジェクトを削除"
+      edit_members:
+        title: "%{name}のメンバーの編集 - プロジェクト管理"
+        heading: "プロジェクト管理"
+        detail: "メンバーの編集"
+        leader_note: "「管理者」を付けた人はプロジェクト管理者になり、グループ管理からこのプロジェクトのメンバーとラベルを編集できます。"
+        cancel: "キャンセル"
+      confirm_suspend:
+        title: "%{name}の利用停止 - プロジェクト管理"
+        heading: "プロジェクト管理"
+        detail: "プロジェクトの利用停止"
+        message: "「%{name}」を利用停止にします。"
+        notes:
+          hidden: "停止中のプロジェクトは編集できず、一覧にも出なくなります。「利用停止中のプロジェクト」から見られます。"
+          reactivate: "あとで再開すると、元のとおりに戻ります。"
+        submit: "利用停止にする"
+        cancel: "キャンセル"
+      confirm_destroy:
+        title: "%{name}の削除 - プロジェクト管理"
+        heading: "プロジェクト管理"
+        detail: "プロジェクトの削除"
+        message: "「%{name}」を削除します。"
+        irreversible: "削除は元に戻せません。残しておきたいときは、削除せずに利用停止にしてください。"
+        submit: "削除する"
+        cancel: "キャンセル"
+      suspend:
+        done: "利用停止にしました。"
+      reactivate:
+        done: "再開しました。"
+      suspension:
+        status: "このプロジェクトは利用停止中です。"
+        suspended_at: "%{at} に停止されました。"
+        suspended_at_by: "%{at} に%{name}が停止しました。"
+        reactivate: "再開する"
+        blockers:
+          name_taken: "同じ名前のプロジェクトがあるため再開できません。"
     groups:
       tree:
         add_child: "「%{name}」の下にグループを追加"
@@ -198,8 +288,10 @@ ja:
         labels: "ラベル"
         actions: "グループの操作"
         edit: "グループを編集"
+        edit_labels: "ラベルを編集"
         edit_members: "メンバーを編集"
         add_child: "下位グループを追加"
+        project_note: "プロジェクトのグループです。名前の変更・利用停止・削除は、プロジェクト管理で行います。"
         back: "« グループ一覧へ戻る"
         back_to_suspended: "« 利用停止中のグループへ戻る"
       new:
@@ -209,6 +301,8 @@ ja:
         name: "グループ名"
         submit: "作成する"
         cancel: "キャンセル"
+      project_root_detail:
+        description: "プロジェクト機能のためにシステムが作るグループです。この下に、各プロジェクトのグループが並びます。名前の変更・削除・メンバーの編集はできません。プロジェクトの追加はプロジェクト管理で行います。"
       everyone_detail:
         description: "このテナントに所属しているユーザ全員（%{count}人）が自動でメンバーになります。名前の変更・削除・メンバーの編集はできません。"
       department_detail:
@@ -227,6 +321,7 @@ ja:
       edit:
         title: "%{name}の編集 - グループ管理"
         detail: "グループの編集"
+        detail_labels: "ラベルの編集"
         name: "グループ名"
         cancel: "キャンセル"
         destroy: "このグループを削除"
@@ -235,17 +330,17 @@ ja:
         title: "%{name}のメンバーの編集 - グループ管理"
         detail: "メンバーの編集"
         cancel: "キャンセル"
-        members:
-          heading: "所属メンバー（%{count}人）"
-          add: "メンバーを追加"
-          empty: "直接所属しているメンバーはいません。"
-          dialog:
-            title: "メンバーを追加"
-            search: "名前かメールアドレスで探す"
-            candidates: "候補"
-            cancel: "キャンセル"
-            submit: "追加する"
-            load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
+      members_field:
+        heading: "所属メンバー（%{count}人）"
+        add: "メンバーを追加"
+        empty: "直接所属しているメンバーはいません。"
+        dialog:
+          title: "メンバーを追加"
+          search: "名前かメールアドレスで探す"
+          candidates: "候補"
+          cancel: "キャンセル"
+          submit: "追加する"
+          load_error: "読み込めませんでした。時間をおいてもう一度お試しください。"
       confirm_destroy:
         title: "%{name}の削除 - グループ管理"
         detail: "グループの削除"
@@ -269,6 +364,7 @@ ja:
       reactivate:
         done: "再開しました。"
       suspension:
+        project: "プロジェクトのグループです。再開はプロジェクト管理で行ってください。"
         status: "このグループは利用停止中です。"
         suspended_at: "%{at} に停止されました。"
         suspended_at_by: "%{at} に%{name}が停止しました。"

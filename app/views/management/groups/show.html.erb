@@ -16,7 +16,7 @@
     <% end %>
     <div class="flex items-center justify-between gap-4">
       <h2 class="min-w-0 text-lg font-medium break-words"><%= @group.name %></h2>
-      <% unless @group.everyone? || @group.suspended? %>
+      <% unless @group.fixed? || @group.suspended? %>
         <%# data-dropdown で、外側のクリックと Esc で閉じる（application.ts） %>
         <details id="group-actions" class="relative" data-dropdown>
           <summary aria-label="<%= t(".actions") %>" title="<%= t(".actions") %>"
@@ -26,11 +26,15 @@
             </svg>
           </summary>
           <div class="absolute right-0 z-10 mt-1 w-48 rounded-xl bg-white py-1.5 text-sm text-slate-800 shadow-lg ring-1 ring-slate-900/10">
-            <%= link_to t(".edit"), edit_management_group_path(@group), id: "edit-group", class: "block px-4 py-2 hover:bg-canvas" %>
+            <%# プロジェクトのグループで変えられるのはラベルとメンバーだけ。下位グループも作れない %>
+            <%= link_to t(@group.project? ? ".edit_labels" : ".edit"), edit_management_group_path(@group), id: "edit-group",
+                  class: "block px-4 py-2 hover:bg-canvas" %>
             <%= link_to t(".edit_members"), edit_members_management_group_path(@group), id: "edit-members",
                   class: "block px-4 py-2 hover:bg-canvas" %>
-            <%= link_to t(".add_child"), new_management_group_path(parent_id: @group.id), id: "add-child-group",
-                  class: "block px-4 py-2 hover:bg-canvas" %>
+            <% if @group.department? %>
+              <%= link_to t(".add_child"), new_management_group_path(parent_id: @group.id), id: "add-child-group",
+                    class: "block px-4 py-2 hover:bg-canvas" %>
+            <% end %>
           </div>
         </details>
       <% end %>
@@ -46,6 +50,9 @@
   <% if @group.suspended? %>
     <%= render "suspension" %>
   <% end %>
-  <%= render(@group.everyone? ? "everyone_detail" : "department_detail") %>
+  <% if @group.project? %>
+    <p id="project-note" class="mb-6 rounded-xl bg-canvas px-4 py-3 text-sm text-slate-600"><%= t(".project_note") %></p>
+  <% end %>
+  <%= render(if @group.everyone? then "everyone_detail" elsif @group.project_root? then "project_root_detail" else "department_detail" end) %>
 <% end %>
 <%= render "frame" %>

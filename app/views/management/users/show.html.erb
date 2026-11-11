@@ -72,6 +72,35 @@
           </table>
         <% end %>
       </section>
+
+      <% if @project_memberships %>
+        <section id="user-projects" class="mb-8">
+          <div class="mb-1 flex min-h-8 items-center">
+            <h3 class="text-sm font-semibold"><%= t(".projects.heading", count: @project_memberships.size) %></h3>
+          </div>
+          <% if @project_memberships.empty? %>
+            <p class="border-t border-slate-200 py-4 text-sm text-slate-500"><%= t(".projects.empty") %></p>
+          <% else %>
+            <table class="w-full">
+              <tbody>
+                <% @project_memberships.each do |member| %>
+                  <tr class="border-t border-slate-200">
+                    <td class="py-2">
+                      <span class="flex items-center gap-2">
+                        <%= link_to member.group.name, management_project_path(member.group.project),
+                              class: "truncate text-primary-700 hover:underline" %>
+                        <% if member.leader? %>
+                          <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".projects.leader") %></span>
+                        <% end %>
+                      </span>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </section>
+      <% end %>
     </div>
   </div>
 </div>

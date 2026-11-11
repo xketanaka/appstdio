@@ -1,13 +1,14 @@
 module Files
   module Api
-    # 共有設定で加える相手の候補。テナントの所属の人（有効・招待中）と、有効なグループ（「全員」を含む）。
-    # 利用停止中のグループは新しく選べない（doc/groups.md の「利用停止」）
+    # 共有設定で加える相手の候補。テナントの所属の人（有効・招待中）と、有効なグループ（「全員」・プロジェクトを含む）。
+    # 利用停止中のグループは新しく選べない（doc/groups.md の「利用停止」）。最上位の「プロジェクト」は、
+    # 共有の相手として意味が無い（どれかのプロジェクトの人全員になる）ので出さない
     class ShareCandidatesController < BaseController
       LIMIT = 10
 
       def index
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].to_s.strip)}%"
-        groups = Group.active.where("name ILIKE ?", pattern).order(:kind, :name).limit(LIMIT)
+        groups = Group.active.where.not(kind: :project_root).where("name ILIKE ?", pattern).order(:kind, :name).limit(LIMIT)
         paths = Group.name_paths_of(groups.to_a)
         users = TenantUser.where(status: [:active, :invited]).joins(:user)
           .where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)

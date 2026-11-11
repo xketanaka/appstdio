@@ -1,0 +1,37 @@
+<%# locals: (group:, members:) %>
+<%# メンバーの編集の欄。グループ管理とプロジェクト管理のメンバーの編集で使う %>
+<%= tag.pick_list data: { candidates_url: member_candidates_management_group_path(group),
+                              count_text: t(".heading", count: "%{count}"),
+                              load_error: t(".dialog.load_error") } do %>
+  <section id="direct-members" class="mb-6">
+    <div class="mb-2 flex items-center justify-between gap-4">
+      <h3 class="text-sm font-semibold" data-count><%= t(".heading", count: members.size) %></h3>
+      <%= button_tag t(".add"), type: "button", id: "add-members", data: { open_dialog: true },
+            class: "btn btn-secondary btn-sm" %>
+    </div>
+    <p class="border-t border-slate-200 py-4 text-sm text-slate-500" data-empty <%= "hidden" if members.any? %>><%= t(".empty") %></p>
+    <table class="w-full" <%= "hidden" if members.empty? %>>
+      <tbody data-rows>
+        <% members.each do |member| %>
+          <%= render "management/groups/member_row", tenant_user_id: member.tenant_user_id, tenant_user: member.tenant_user,
+                name: member.tenant_user.display_name,
+                email: member.tenant_user.user.email, leader: member.leader? %>
+        <% end %>
+      </tbody>
+    </table>
+    <template data-row-template><%= render "management/groups/member_row", tenant_user_id: "__ID__" %></template>
+  </section>
+
+  <dialog id="member-dialog" aria-labelledby="member-dialog-title"
+          class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40">
+    <h2 id="member-dialog-title" class="text-lg font-medium"><%= t(".dialog.title") %></h2>
+    <label for="member-search" class="sr-only"><%= t(".dialog.search") %></label>
+    <input type="search" id="member-search" autocomplete="off" data-search
+           placeholder="<%= t(".dialog.search") %>" class="input mt-4">
+    <ul class="mt-3 h-80 overflow-y-auto" data-candidates aria-label="<%= t(".dialog.candidates") %>"></ul>
+    <div class="mt-6 flex justify-end gap-2">
+      <%= button_tag t(".dialog.cancel"), type: "button", data: { close_dialog: true }, class: "btn btn-secondary" %>
+      <%= button_tag t(".dialog.submit"), type: "button", data: { add: true }, class: "btn btn-primary" %>
+    </div>
+  </dialog>
+<% end %>

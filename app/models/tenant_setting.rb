@@ -16,9 +16,18 @@ class TenantSetting < ApplicationRecord
   validates :title_color, format: { with: /\A#[0-9a-f]{6}\z/ }, allow_nil: true
   validate :logo_must_be_small_image
 
-  # 組織設定の画面は、表示の設定とファイル管理の設定を一緒に保存する。どちらかが保存できなければ両方戻して false
+  # 組織設定の画面は、表示の設定とファイル管理の設定を一緒に保存する。どちらかが保存できなければ両方戻して false。
+  # プロジェクト機能を利用するなら、最上位の「プロジェクト」グループを作る（利用しないに戻しても消さない）
   def save_with(files_setting)
-    transaction { (save && files_setting.save) || raise(ActiveRecord::Rollback) }
+    transaction do
+      raise ActiveRecord::Rollback unless save && files_setting.save
+
+      Group.project_root_of!(tenant) if projects_enabled?
+      true
+    rescue ActiveRecord::RecordInvalid
+      errors.add(:projects_enabled, :root_name_taken, name: I18n.t("groups.project_root"))
+      raise ActiveRecord::Rollback
+    end
   end
 
   # 背景が明るく、白い文字では読めないか。WCAG のコントラスト比で白と黒を比べる

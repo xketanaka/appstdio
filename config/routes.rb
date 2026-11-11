@@ -114,6 +114,17 @@ Rails.application.routes.draw do
           post :reactivate
         end
       end
+      resources :projects do
+        get :suspended, on: :collection
+        member do
+          get :confirm_destroy
+          get :edit_members
+          patch :update_members
+          get :confirm_suspend
+          post :suspend
+          post :reactivate
+        end
+      end
       resource :tenant_setting, only: [:show, :edit, :update]
       root to: redirect("/management/users")
     end

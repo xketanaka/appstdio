@@ -11,6 +11,34 @@
       </div>
     <% end %>
     <%= render "tree", parent_id: nil %>
+    <%# プロジェクトのグループは部署の後ろに「プロジェクト」の下にまとめて出す。グループ管理者には「プロジェクト」
+        そのものは範囲の外なので、名前だけを出す。プロジェクトの追加はプロジェクト管理で行うので「＋」は無い %>
+    <% if @project_root || @projects.any? %>
+      <details id="project-groups" class="group" open>
+        <% current = @project_root && @group&.id == @project_root.id %>
+        <summary class="<%= class_names("nav-item cursor-pointer list-none pr-1.5 pl-2.5 [&::-webkit-details-marker]:hidden", "nav-item-current": current) %>">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+               class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90">
+            <path d="M8 4l10 8-10 8V4Z" />
+          </svg>
+          <% if @project_root %>
+            <%= link_to @project_root.name, management_group_path(@project_root),
+                  "aria-current": (current ? "page" : nil), class: "min-w-0 truncate" %>
+          <% else %>
+            <span class="min-w-0 truncate"><%= t("groups.project_root") %></span>
+          <% end %>
+        </summary>
+        <div class="pl-4">
+          <% @projects.each do |project| %>
+            <% current = @group&.id == project.id %>
+            <div class="<%= class_names("nav-item pr-1.5 pl-7", "nav-item-current": current) %>">
+              <%= link_to project.name, management_group_path(project),
+                    "aria-current": (current ? "page" : nil), class: "min-w-0 truncate" %>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
   </nav>
 
   <% if @scope.can_place_under?(nil) %>
