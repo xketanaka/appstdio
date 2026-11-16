@@ -111,7 +111,7 @@ module Management
 
       if save_group
         # 作ったら続けて人を入れる
-        redirect_to edit_members_management_group_path(@group), notice: t("messages.created")
+        redirect_to edit_members_management_group_path(@group), notice: t(".done")
       else
         render :new, status: :unprocessable_entity
       end
