@@ -58,6 +58,7 @@ class ManagementProjectsTest < ActionDispatch::IntegrationTest
     end
 
     follow_redirect!
+    assert_select "[role=status]", text: /メンバーを追加してください/
     assert_select "#members-form button#add-members"
   end
 

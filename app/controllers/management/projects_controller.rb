@@ -49,7 +49,7 @@ module Management
 
       if @project.save_with(name: params.dig(:project, :name).to_s, label_names: @label_names)
         # 作ったら続けて人を入れる（グループと同じ）
-        redirect_to edit_members_management_project_path(@project), notice: t("messages.created")
+        redirect_to edit_members_management_project_path(@project), notice: t(".done")
       else
         render :new, status: :unprocessable_entity
       end
