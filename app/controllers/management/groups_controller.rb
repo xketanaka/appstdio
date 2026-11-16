@@ -4,6 +4,7 @@ module Management
 
     # テナントの管理者に加えて、グループ管理者も開ける（自分の範囲の中だけ）
     skip_before_action :tenant_admin_required
+    helper_method :group_scope
     before_action :group_manager_required
     before_action :load_tree
     before_action :set_group, except: [:index, :new, :create, :suspended]
@@ -41,7 +42,7 @@ module Management
       page = [params[:page].to_i, 1].max
 
       groups = Group.suspended
-      groups = groups.where(id: @scope.ids) unless @scope.all?
+      groups = groups.where(id: group_scope.ids) unless group_scope.all?
       if @query.present?
         groups = groups.where("groups.name ILIKE :pattern OR array_to_string(groups.suspended_path, ' ') ILIKE :pattern",
           pattern: "%#{Group.sanitize_sql_like(@query)}%")
@@ -99,7 +100,7 @@ module Management
 
     def new
       @group = Group.new(parent: Group.department.active.find_by(id: params[:parent_id]))
-      raise ActiveRecord::RecordNotFound unless @scope.can_place_under?(@group.parent)
+      raise ActiveRecord::RecordNotFound unless group_scope.can_place_under?(@group.parent)
 
       @label_names = []
     end
@@ -193,8 +194,11 @@ module Management
     private
 
     def group_manager_required
-      @scope = GroupScope.new(current_tenant_user)
-      render_not_found unless @scope.any?
+      render_not_found unless group_scope.any?
+    end
+
+    def group_scope
+      @group_scope ||= GroupScope.new(current_tenant_user)
     end
 
     # グループ管理者には範囲の中だけを出し、範囲のいちばん上のグループを根として描く。「全員」も出さない。
@@ -202,20 +206,20 @@ module Management
     def load_tree
       groups = Group.department.active.order(:name).to_a
       @projects = Group.project.active.order(:name).to_a
-      if @scope.all?
+      if group_scope.all?
         @everyone = Group.everyone_of(current_tenant)
         @project_root = Group.project_root.find_by(tenant: current_tenant)
         @children = groups.group_by(&:parent_id)
       else
-        @children = groups.select { @scope.include?(it) }
-          .group_by { @scope.ids.include?(it.parent_id) ? it.parent_id : nil }
-        @projects = @projects.select { @scope.include?(it) }
+        @children = groups.select { group_scope.include?(it) }
+          .group_by { group_scope.ids.include?(it.parent_id) ? it.parent_id : nil }
+        @projects = @projects.select { group_scope.include?(it) }
       end
     end
 
     def set_group
       @group = Group.find(params[:id])
-      raise ActiveRecord::RecordNotFound unless @scope.include?(@group)
+      raise ActiveRecord::RecordNotFound unless group_scope.include?(@group)
     end
 
     def reject_fixed
@@ -231,7 +235,7 @@ module Management
     end
 
     def destroyable_required
-      raise ActiveRecord::RecordNotFound unless @scope.can_destroy?(@group)
+      raise ActiveRecord::RecordNotFound unless group_scope.can_destroy?(@group)
     end
 
     def label_names_param
@@ -240,7 +244,7 @@ module Management
 
     def save_group
       # グループ管理者は、範囲の外へ移したり最上位に置いたりできない
-      if (@group.new_record? || @group.parent_id_changed?) && !@scope.can_place_under?(@group.parent)
+      if (@group.new_record? || @group.parent_id_changed?) && !group_scope.can_place_under?(@group.parent)
         raise ActiveRecord::RecordNotFound
       end
 

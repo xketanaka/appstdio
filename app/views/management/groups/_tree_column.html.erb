@@ -41,7 +41,7 @@
     <% end %>
   </nav>
 
-  <% if @scope.can_place_under?(nil) %>
+  <% if group_scope.can_place_under?(nil) %>
     <%= link_to new_management_group_path, id: "new-group", class: "nav-item mt-1 pl-2 text-slate-500 hover:text-slate-800" do %>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0" aria-hidden="true">
         <path stroke-linecap="round" d="M12 5v14M5 12h14" />
