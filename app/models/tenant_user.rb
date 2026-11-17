@@ -12,6 +12,9 @@ class TenantUser < ApplicationRecord
   # deleted は利用者管理で削除した所属。行を残すのは、ファイルの作成者などの参照と、マイドライブを残すため
   enum :status, { invited: "invited", active: "active", suspended: "suspended", deleted: "deleted" }, validate: true
 
+  # 停止・削除されていない人（招待中と有効）。一覧・メンバーや共有の相手の候補に出す
+  scope :enrolled, -> { where(status: [:invited, :active]) }
+
   # ログインしている人（app.user_id）の、すべてのテナントでの所属。テナントの選択にだけ使う。
   # tenant_users の RLS は今のテナントの行しか見せないので、所有者の権限で動く関数から引く
   scope :own_memberships, -> { from("own_memberships() AS tenant_users").readonly }

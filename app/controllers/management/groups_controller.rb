@@ -86,7 +86,7 @@ module Management
     # メールアドレスで探す。ダイアログがスクロールに合わせて読み足す
     def member_candidates
       page = [params[:page].to_i, 1].max
-      users = TenantUser.where(status: [:active, :invited]).joins(:user).includes(:user, :avatar_attachment)
+      users = TenantUser.enrolled.joins(:user).includes(:user, :avatar_attachment)
       if params[:q].present?
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].strip)}%"
         users = users.where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
