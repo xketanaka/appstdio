@@ -10,7 +10,7 @@ module Files
         pattern = "%#{TenantUser.sanitize_sql_like(params[:q].to_s.strip)}%"
         groups = Group.active.where.not(kind: :project_root).where("name ILIKE ?", pattern).order(:kind, :name).limit(LIMIT)
         paths = Group.name_paths_of(groups.to_a)
-        users = TenantUser.where(status: [:active, :invited]).joins(:user)
+        users = TenantUser.enrolled.joins(:user)
           .where("tenant_users.display_name ILIKE :pattern OR users.email ILIKE :pattern", pattern:)
           .includes(:user, :avatar_attachment).order(:display_name).limit(LIMIT)
 
