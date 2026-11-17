@@ -25,9 +25,9 @@ class AvatarsTest < ActionDispatch::IntegrationTest
     FileUtils.remove_entry(@dir)
   end
 
-  # 左半分が黒、右半分が白の横長の画像
+  # 左半分が黒、右半分が白の横長の画像（float のまま PNG に書くと libvips 8.18 で白にならないので uchar に戻す）
   def image_path
-    image = Vips::Image.black(200, 200).join(Vips::Image.black(200, 200) + 255, :horizontal)
+    image = Vips::Image.black(200, 200).join((Vips::Image.black(200, 200) + 255).cast(:uchar), :horizontal)
     File.join(@dir, "photo.png").tap { image.write_to_file(it) }
   end
 
