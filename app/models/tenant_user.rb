@@ -26,10 +26,10 @@ class TenantUser < ApplicationRecord
   # 利用者を招待中として加え、選んだグループにメンバーとして入れ、ラベルを付ける。User はテナントをまたいで共通なので、
   # 同じメールアドレスの User があればそれに所属を足す（パスワードは変えない）。このテナントで削除済みでも、
   # 元の行は戻さずに新しい所属を作る。返すのは所属で、加えられなければ誤りを持たせて返す（保存はしない）。
-  # group_kinds は選べるグループの種類（部署と、プロジェクト機能を利用するならプロジェクト）。
-  # 選べないグループ（停止中・「全員」・他テナント。画面からは起きない）が混ざっていたら見つからない扱いにする
-  def self.invite(tenant:, email:, group_ids: [], group_kinds: [:department], label_names: [], **attributes)
-    groups = Group.where(kind: group_kinds).active.where(tenant:, id: group_ids).to_a
+  # 選べないグループ（Group.assignable_kinds に無い種類・停止中・他テナント。画面からは起きない）が混ざっていたら
+  # 見つからない扱いにする
+  def self.invite(tenant:, email:, group_ids: [], label_names: [], **attributes)
+    groups = Group.where(kind: Group.assignable_kinds(tenant)).active.where(tenant:, id: group_ids).to_a
     raise ActiveRecord::RecordNotFound, "group not selectable" if groups.size != group_ids.uniq.size
 
     user = User.find_or_initialize_by(email:)
@@ -74,12 +74,13 @@ class TenantUser < ApplicationRecord
     target.invited? && (!target.owner? || owner?) ? %w[invited active] : [target.status]
   end
 
-  # 表示名・権限・状態を保存し、ラベルを名前で付け直し、group_kinds の種類の有効なグループの中で所属を付け直す。
-  # 残すグループでは、グループ管理者の印をそのままにする。停止中のグループと、group_kinds に無い種類のグループ
+  # 表示名・権限・状態を保存し、ラベルを名前で付け直し、Group.assignable_kinds の種類の有効なグループの中で所属を
+  # 付け直す。残すグループでは、グループ管理者の印をそのままにする。停止中のグループと、選べない種類のグループ
   # （プロジェクト機能を利用しないときのプロジェクト）の所属は、画面に出さないので触らない。
   # 有効なオーナーが1人もいなくなる変更は受け付けない。保存できなければ false で、誤りを持たせる。
   # 選べないグループが混ざっていたら（画面からは起きない）見つからない扱いにする
-  def update_with(attributes, group_ids:, label_names:, group_kinds: [:department])
+  def update_with(attributes, group_ids:, label_names:)
+    group_kinds = Group.assignable_kinds(tenant)
     groups = Group.where(kind: group_kinds).active.where(tenant_id:, id: group_ids).to_a
     raise ActiveRecord::RecordNotFound, "group not selectable" if groups.size != group_ids.uniq.size
 

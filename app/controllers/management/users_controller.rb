@@ -56,7 +56,7 @@ module Management
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @label_names = label_names_from(attributes[:label_names])
       @tenant_user = TenantUser.invite(tenant: current_tenant, email: attributes[:email].to_s, group_ids: @group_ids,
-        group_kinds:, label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
+        label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
 
       if @tenant_user.errors.empty?
         redirect_to management_user_path(@tenant_user), notice: t("messages.created")
@@ -84,7 +84,7 @@ module Management
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @label_names = label_names_from(attributes[:label_names])
       attributes = { display_name: attributes[:display_name], role:, status: }
-      if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names, group_kinds:)
+      if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names)
         # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
         if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?
           redirect_to top_page_path, notice: t("messages.saved")
@@ -103,7 +103,7 @@ module Management
     def group_candidates
       page = [params[:page].to_i, 1].max
       kind = params[:kind] == "project" ? :project : :department
-      raise ActiveRecord::RecordNotFound unless group_kinds.include?(kind)
+      raise ActiveRecord::RecordNotFound unless Group.assignable_kinds(current_tenant).include?(kind)
 
       groups = Group.where(kind:).active
       groups = groups.where("groups.name ILIKE ?", "%#{Group.sanitize_sql_like(params[:q].strip)}%") if params[:q].present?
@@ -140,11 +140,6 @@ module Management
     end
 
     private
-
-    # 利用者の追加・編集で所属を選べるグループの種類
-    def group_kinds
-      current_tenant.setting.projects_enabled? ? [:department, :project] : [:department]
-    end
 
     # 欄に出す所属グループ（部署）と参加プロジェクト
     def load_groups(group_ids)

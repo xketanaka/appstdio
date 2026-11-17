@@ -36,6 +36,11 @@ class Group < ApplicationRecord
     project_root.find_by!(tenant:)
   end
 
+  # 利用者の所属に選べるグループの種類。プロジェクト機能を利用するならプロジェクトも選べる
+  def self.assignable_kinds(tenant)
+    tenant.setting.projects_enabled? ? [:department, :project] : [:department]
+  end
+
   # 下位のグループの id（自分は含まない）。停止中も含む。ids は1つでも複数でもよい
   def self.descendant_ids_of(ids)
     connection.select_values(sanitize_sql([<<~SQL.squish, Array(ids)]))
