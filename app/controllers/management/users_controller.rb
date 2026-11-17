@@ -10,7 +10,7 @@ module Management
 
     # 停止中の人は「利用停止中の利用者」に分けて出す
     def index
-      @tenant_users = TenantUser.where(status: [:invited, :active]).includes(:user, :labels, :avatar_attachment).order(:id)
+      @tenant_users = TenantUser.enrolled.includes(:user, :labels, :avatar_attachment).order(:id)
     end
 
     # 利用停止中の利用者の一覧。新しく止めた順に30件ずつ出し、下までスクロールすると読み足す。

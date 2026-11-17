@@ -42,13 +42,13 @@ module Files
       path = Node.where(id: node.id).pick(:ancestor_ids) + [node.id]
       managers = nearest_on_path(path).values.select(&:role_manager?)
       return true if managers.any? { it.group&.everyone? }
-      return true if TenantUser.where(id: managers.filter_map(&:tenant_user_id), status: [:active, :invited]).exists?
+      return true if TenantUser.enrolled.where(id: managers.filter_map(&:tenant_user_id)).exists?
 
       groups = Group.active.where(id: managers.filter_map(&:group_id)).ids
       return false if groups.empty?
 
       GroupMember.where(group_id: Group.active.where(id: groups + Group.descendant_ids_of(groups)).select(:id))
-        .joins(:tenant_user).merge(TenantUser.where(status: [:active, :invited])).exists?
+        .joins(:tenant_user).merge(TenantUser.enrolled).exists?
     end
 
     # 共有設定の画面で編集した差分を、1つのトランザクションで反映する。changes は

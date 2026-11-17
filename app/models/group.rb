@@ -102,7 +102,7 @@ class Group < ApplicationRecord
   # 画面に出さないので、その所属は付け直しの対象にせず残す（再開すれば戻る）
   def replace_members(roles)
     added_ids = roles.keys - group_members.pluck(:tenant_user_id)
-    addable = TenantUser.where(tenant_id:, id: added_ids, status: [:active, :invited]).count
+    addable = TenantUser.enrolled.where(tenant_id:, id: added_ids).count
     raise ActiveRecord::RecordNotFound, "tenant_user not addable" if addable != added_ids.size
 
     transaction do
