@@ -183,10 +183,8 @@ module Management
       end
     end
 
-    # 下位（停止中も）は children の dependent: :destroy でたどって消す。ファイルの共有設定は外部キーの
-    # ON DELETE CASCADE で消える
     def destroy
-      @group.destroy!
+      @group.destroy_with_files!
       redirect_to (@group.parent ? management_group_path(@group.parent) : management_groups_path),
         notice: t("messages.deleted")
     end

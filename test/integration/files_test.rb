@@ -813,6 +813,65 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  describe "グループドライブの設定" do
+    setup do
+      TenantContext.switch(tenant: @tenant) do
+        @company = Group.create!(tenant: @tenant, name: "全社")
+        @sales_group = Group.create!(tenant: @tenant, parent: @company, name: "営業部")
+        @sales1_group = Group.create!(tenant: @tenant, parent: @sales_group, name: "営業1課")
+        @general_group = Group.create!(tenant: @tenant, parent: @company, name: "総務部")
+        GroupMember.create!(tenant: @tenant, group: @sales_group, tenant_user: @member, role: :leader)
+        Files::Drive.group_root(@sales1_group)
+      end
+    end
+
+    test "グループ管理者には、管理する部署（下位を含む）を、使っているかと一緒に返す" do
+      login(@member_user)
+
+      get files_api_group_drives_path
+
+      assert_equal [
+        { "id" => @sales_group.id, "name" => "営業部", "path" => %w[全社 営業部], "enabled" => false },
+        { "id" => @sales1_group.id, "name" => "営業1課", "path" => %w[全社 営業部 営業1課], "enabled" => true },
+      ], json["groups"]
+      get files_api_tree_path
+      assert json["can_manage_group_drives"]
+    end
+
+    test "使うようにすると左ペインに出て、使わないにするときは中身をゴミ箱へ移すかを選べる" do
+      login(@member_user)
+
+      post enable_files_api_group_drive_path(@sales_group)
+      assert_response :no_content
+      # 営業1課のドライブは使っているが、営業部の人は下位の営業1課には属さないので並ばない
+      get files_api_tree_path
+      assert_equal %w[営業部], json["group_drives"].pluck("name")
+
+      root = TenantContext.switch(tenant: @tenant) do
+        Files::Drive.find_by!(group: @sales_group).root.tap { node(:folder, "見積", it) }
+      end
+      post disable_files_api_group_drive_path(@sales_group), params: { trash: true }, as: :json
+      assert_response :no_content
+
+      get files_api_tree_path
+      assert_empty json["group_drives"]
+      TenantContext.switch(tenant: @tenant) { assert root.children.first.deleted_at }
+    end
+
+    test "管理していない部署は設定できず、設定できるものが無ければ「⋮」も出さない" do
+      login(@member_user)
+
+      post enable_files_api_group_drive_path(@general_group)
+      assert_response :not_found
+
+      TenantContext.switch(tenant: @tenant) { GroupMember.where(tenant_user: @member).update_all(role: "member") }
+      get files_api_tree_path
+      assert_not json["can_manage_group_drives"]
+      get files_api_group_drives_path
+      assert_equal [], json["groups"]
+    end
+  end
+
   describe "共有されたアイテム" do
     test "親が見えず自分に共有されたものを並べる" do
       TenantContext.switch(tenant: @tenant) { grant(@review, @member, :viewer) }

@@ -431,6 +431,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
       @planning.update_columns(parent_id: @sales1.id)
       folder = Files::Node.create_folder!(parent: Files::Drive.shared_root(@tenant), name: "営業資料", creator: @people["佐藤"])
       @permission = Files::Permission.create!(tenant: @tenant, node: folder, group: @sales1, role: :none)
+      @drive_folder = Files::Node.create_folder!(parent: Files::Drive.group_root(@sales1), name: "見積", creator: @people["田中"])
     end
     login(@admin)
 
@@ -443,6 +444,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
       assert_equal %w[全員 全社 開発本部 開発部], Group.order(:id).pluck(:name)
       assert_empty GroupMember.where(tenant_user: @people["田中"])
       assert_not Files::Permission.exists?(@permission.id)
+      assert @drive_folder.reload.purged_at, "下位のグループドライブの中身も完全削除する"
       # ラベルはテナントの一覧に残る
       assert GroupLabel.exists?(name: "営業")
     end

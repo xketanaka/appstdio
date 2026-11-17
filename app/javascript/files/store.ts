@@ -32,6 +32,8 @@ export const state = reactive({
   historyOf: null as { id: number, name: string, kind: "folder" | "file" } | null,
   // 共有設定を開いているもの
   sharingOf: null as { id: number, name: string, kind: "folder" | "file" } | null,
+  // グループドライブを使うかの設定のダイアログを開いているか
+  groupDriveSettingsOpen: false,
   // 画面の下に一時的に出す知らせ（移動した、移せなかった、など）
   notice: null as Notice | null,
 })

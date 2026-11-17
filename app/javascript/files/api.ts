@@ -13,6 +13,8 @@ export type Tree = {
   // 所属するグループ（部署・プロジェクト）のドライブ。行はドライブのルートで、名前はグループの名前
   group_drives: TreeFolder[]
   project_drives: TreeFolder[]
+  // 部署のグループドライブを使うか設定できるか（テナントの管理者とグループ管理者）
+  can_manage_group_drives: boolean
   // テナント全体の使用量。ゴミ箱の中身と古い版も含む
   storage: { used_bytes: number, limit_bytes: number }
 }
@@ -121,6 +123,9 @@ export type SharingChange = { subject_type: Subject["type"], subject_id: number,
 
 export type FolderSource = { drive: "shared" | "mine" } | { id: string }
 
+// グループドライブを使うかの設定の1行。path はグループの最上位から自分までの名前の並び
+export type GroupDriveSetting = { id: number, name: string, path: string[], enabled: boolean }
+
 export class NotFoundError extends Error {}
 
 export class ForbiddenError extends Error {}
@@ -197,6 +202,10 @@ export const api = {
   trash: () => request<{ entries: TrashEntry[] }>("GET", "/files/api/trash"),
   search: (query: { q: string, in?: string, all?: string }) =>
     request<SearchResult>("GET", `/files/api/search?${new URLSearchParams(query)}`),
+  groupDrives: () => request<{ groups: GroupDriveSetting[] }>("GET", "/files/api/group_drives"),
+  enableGroupDrive: (groupId: number) => request<void>("POST", `/files/api/group_drives/${groupId}/enable`),
+  disableGroupDrive: (groupId: number, trash: boolean) =>
+    request<void>("POST", `/files/api/group_drives/${groupId}/disable`, { trash }),
   enterPrivilegedMode: () => request<void>("POST", "/files/api/privileged_mode"),
   leavePrivilegedMode: () => request<void>("DELETE", "/files/api/privileged_mode"),
 }

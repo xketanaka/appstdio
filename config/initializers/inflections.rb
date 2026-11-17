@@ -14,3 +14,8 @@
 # ActiveSupport::Inflector.inflections(:en) do |inflect|
 #   inflect.acronym "RESTful"
 # end
+
+# 既定では drives の単数形が drife になる（knives → knife の規則に当たる）
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.irregular "drive", "drives"
+end

@@ -23,8 +23,10 @@ beforeEach(() => {
     my_drive: { id: 9, folders: [folder(10, "下書き")] },
     group_drives: [folder(20, "営業部")],
     project_drives: [],
+    can_manage_group_drives: false,
     storage: { used_bytes: 0, limit_bytes: 1 },
   }
+  state.groupDriveSettingsOpen = false
   state.children.set(1, state.tree.shared_drive!.folders)
   state.children.set(9, state.tree.my_drive!.folders)
 })
@@ -110,6 +112,19 @@ test("グループドライブは区分の下にドライブを並べ、ドラ�
   const summaries = wrapper.findAll("details > summary").map((summary) => summary.text())
   expect(summaries).toEqual(["組織共有ドライブ", "マイドライブ", "グループドライブ"])
   expect(wrapper.find("a[href='/folders/20']").text()).toBe("営業部")
+  expect(wrapper.find("summary[aria-label='グループドライブの操作']").exists()).toBe(false)
+})
+
+test("設定できる人には、ドライブが無くても区分を出し、「⋮」から設定を開ける", async () => {
+  state.tree!.group_drives = []
+  state.tree!.can_manage_group_drives = true
+  const wrapper = await render()
+
+  expect(wrapper.text()).toContain("使っているグループドライブはありません")
+  await wrapper.find("summary[aria-label='グループドライブの操作']").trigger("click")
+  await wrapper.findAll("button").find((button) => button.text() === "使うグループを選ぶ")!.trigger("click")
+
+  expect(state.groupDriveSettingsOpen).toBe(true)
 })
 
 test("グループドライブのルートを開くと、区分を開いてそのドライブを選択中にする", async () => {

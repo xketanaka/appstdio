@@ -28,10 +28,13 @@ module Files
           end
         end
 
+        scope = GroupScope.new(current_tenant_user)
         setting = current_tenant.files_setting
         render json: {
           **roots.transform_values { |root| root && { id: root.id, folders: folders.fetch(root.id) } },
           group_drives: drive_entries.("department"),
+          # 部署のグループドライブを使うか設定できるか（Files::Api::GroupDrivesController）
+          can_manage_group_drives: scope.all? || Group.department.where(id: scope.ids).exists?,
           project_drives: drive_entries.("project"),
           storage: { used_bytes: setting.storage_used_bytes, limit_bytes: setting.storage_limit_bytes },
         }
