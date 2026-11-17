@@ -45,6 +45,22 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#user-groups a[href=?]", management_group_path(@sales)
   end
 
+  test "一覧の所属グループには、有効な部署だけを名前の順にカンマ区切りで出す" do
+    TenantContext.switch(tenant: @tenant) do
+      TenantSetting.find_by!(tenant: @tenant).update!(projects_enabled: true)
+      GroupMember.create!(tenant: @tenant, group: @dev, tenant_user: @sato)
+      project = Project.build(tenant: @tenant).tap { it.save_with(name: "新製品開発", label_names: []) }
+      GroupMember.create!(tenant: @tenant, group: project.group, tenant_user: @sato)
+    end
+    login(@admin)
+    get management_users_path
+
+    assert_select "#user-list thead th", text: "所属グループ"
+    # 停止中の旧企画部と、プロジェクトのグループは出さない
+    assert_equal({ "管理者さん" => "", "佐藤さん" => "営業部, 開発部" },
+      css_select("#user-list tbody tr").to_h { [it.at_css("a").text, it.css("td")[2].text.strip] })
+  end
+
   test "所属グループが無ければその旨を出す" do
     login(@admin)
     get management_user_path(@admin_member)
