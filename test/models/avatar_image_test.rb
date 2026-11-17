@@ -9,9 +9,10 @@ class AvatarImageTest < ActiveSupport::TestCase
     FileUtils.remove_entry(@dir)
   end
 
-  # 左半分が黒、右半分が白の画像
+  # 左半分が黒、右半分が白の画像。足し算の結果は float になり、libvips 8.18 は float の 255 を PNG に
+  # 白として書き出さない（1 になる）ので、uchar に戻す
   def write_image(name, width: 400, height: 200, orientation: nil)
-    image = Vips::Image.black(width / 2, height).join(Vips::Image.black(width / 2, height) + 255, :horizontal)
+    image = Vips::Image.black(width / 2, height).join((Vips::Image.black(width / 2, height) + 255).cast(:uchar), :horizontal)
     image = image.copy.tap { it.set_type(GObject::GINT_TYPE, "orientation", orientation) } if orientation
     File.join(@dir, name).tap { image.write_to_file(it) }
   end
