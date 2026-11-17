@@ -192,11 +192,13 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_select "#group-tree a[aria-current=page]", text: "営業本部"
     assert_select "#group-form" do
       assert_select "input[name=?][value=?]", "group[name]", "営業本部"
-      assert_select "#group-parent summary", text: /全社/
-      assert_select "select#group_parent_id option[selected]", text: "全社"
-      assert_select "select#group_parent_id option", text: /営業本部|第一営業部|第二営業部/, count: 0
-      assert_select "select#group_parent_id option", text: /開発部/
-      assert_select "select#group_parent_id option", text: /全員|旧企画部/, count: 0
+      assert_select "#group-parent [data-selected-path]", text: /全社/
+      assert_select "#parent-dialog label:has(input[checked])", text: "全社"
+      # 自分と下位は灰色で出して選べない。開いておくのは最上位と、選ばれている「全社」までの道筋
+      assert_equal %w[営業本部 第一営業部 第二営業部],
+        css_select("#parent-dialog label:has(input[disabled])").map { it.text.strip }
+      assert_select "#parent-dialog label:has(input:not([disabled]))", text: /開発部/
+      assert_select "#parent-dialog label", text: /全員|旧企画部/, count: 0
 
       assert_select "label-input" do |elements|
         assert_includes JSON.parse(elements.first["data-suggestions"]), "プロジェクト"
@@ -626,13 +628,17 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#group-form" do
       assert_select "input#group_name:not([value])"
-      assert_select "#group-parent summary", text: /全社\s*>\s*営業本部\s*>\s*第一営業部/
-      assert_select "select#group_parent_id option[selected]", text: /第一営業部/
+      assert_select "#group-parent [data-selected-path]", text: /全社\s*>\s*営業本部\s*>\s*第一営業部/
+      assert_select "#parent-dialog label:has(input[checked])", text: "第一営業部"
+      # 最上位と、選ばれているグループとその上位を開いておく（第一営業部は下位が無いので開閉しない）。開発本部は閉じておく
+      assert_equal %w[全社 営業本部],
+        css_select("#parent-dialog details[open] > summary label").map { it.text.strip }
       assert_select "label-input input#group_label_names[value='']"
     end
 
     get new_management_group_path
-    assert_select "#group-parent summary", text: /最上位/
+    assert_select "#group-parent [data-selected-path]", text: /最上位/
+    assert_select "#parent-dialog label:has(input[value=''][checked])", text: "最上位"
   end
 
   test "「全員」グループは読み取り専用で、所属している人数を出す" do
@@ -768,9 +774,9 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
   test "グループ管理者が自分のグループを編集するとき、範囲の外の今の上位はそのまま選ばれている" do
     login(sato)
     get edit_management_group_path(@sales)
-    assert_select "select#group_parent_id option[selected]", text: "全社"
-    assert_select "select#group_parent_id option[value='']", 0
-    assert_select "select#group_parent_id option", text: /開発/, count: 0
+    assert_select "#parent-dialog label:has(input[checked])", text: "全社"
+    assert_select "#parent-dialog input[value='']", 0
+    assert_select "#parent-dialog label", text: /開発/, count: 0
 
     patch management_group_path(@sales), params: { group: { name: "営業統括本部", parent_id: @company.id, label_names: "" } }
     assert_redirected_to management_group_path(@sales)

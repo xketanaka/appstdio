@@ -1,25 +1,50 @@
 <%# locals: (form:) %>
-<% path = @group.parent ? @group.parent.self_and_ancestors.reverse : [] %>
-<details id="group-parent" class="group mb-6" <%= "open" if @group.errors.include?(:parent) %>>
-  <summary class="list-none [&::-webkit-details-marker]:hidden">
-    <span class="mb-1.5 block text-sm font-semibold"><%= t(".label") %></span>
-    <span class="flex items-center justify-between gap-4">
-      <span class="min-w-0 truncate">
-        <% if path.empty? %>
-          <span><%= t(".no_parent") %></span>
-        <% else %>
-          <% path.each_with_index do |group, i| %>
-            <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
-            <span><%= group.name %></span>
-          <% end %>
+<%# 上位グループの欄。「変更」でツリーのダイアログを開いて選ぶ。ラジオボタンはダイアログの中にあり、そのままフォームで送る。
+    開閉・選んだものの表示は parent-picker（app/javascript/components/parent_picker.ts） %>
+<% choice = group_parent_choice(@group, @children) %>
+<%= tag.parent_picker id: "group-parent", class: "mb-6 block", data: { no_parent: t(".no_parent") } do %>
+  <span class="mb-1.5 block text-sm font-semibold"><%= t(".label") %></span>
+  <div class="flex items-center justify-between gap-4">
+    <span class="min-w-0 truncate" data-selected-path>
+      <% if choice[:path].empty? %>
+        <span><%= t(".no_parent") %></span>
+      <% else %>
+        <% choice[:path].each_with_index do |name, i| %>
+          <% if i.positive? %><span class="mx-1 text-slate-400" aria-hidden="true">&gt;</span><% end %>
+          <span><%= name %></span>
         <% end %>
-      </span>
-      <span class="btn btn-secondary btn-sm group-open:hidden"><%= t(".change") %></span>
+      <% end %>
     </span>
-  </summary>
-  <%= form.label :parent_id, t(".label"), class: "sr-only" %>
-  <%# グループ管理者は最上位に置けない。もともと最上位のグループは、そのままにはできる %>
-  <%= form.select :parent_id, group_parent_options(@group, @children),
-        { include_blank: (t(".no_parent") if group_scope.all? || (@group.persisted? && @group.parent_id_was.nil?)) },
-        class: "input mt-2" %>
-</details>
+    <%= button_tag t(".change"), type: "button", id: "change-parent", data: { open_dialog: true },
+          "aria-haspopup": "dialog", class: "btn btn-secondary btn-sm" %>
+  </div>
+
+  <dialog id="parent-dialog" aria-labelledby="parent-dialog-title"
+          class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40">
+    <h2 id="parent-dialog-title" class="text-lg font-medium"><%= t(".dialog.title") %></h2>
+    <fieldset class="mt-4 h-80 overflow-y-auto">
+      <legend class="sr-only"><%= t(".label") %></legend>
+      <ul>
+        <% if choice[:allow_top] %>
+          <li class="flex items-center">
+            <span class="size-6 shrink-0"></span>
+            <%= render "parent_option", value: "", name: t(".no_parent"), path: [], checked: choice[:selected].nil?, disabled: false %>
+          </li>
+        <% end %>
+        <% if choice[:outside] %>
+          <li class="flex items-center">
+            <span class="size-6 shrink-0"></span>
+            <%= render "parent_option", value: choice[:outside].id, name: choice[:outside].name,
+                  path: choice[:outside].self_and_ancestors.reverse.map(&:name),
+                  checked: choice[:selected]&.id == choice[:outside].id, disabled: false %>
+          </li>
+        <% end %>
+        <%= render "parent_tree", parent_id: nil, path: [], disabled: false, choice: %>
+      </ul>
+    </fieldset>
+    <div class="mt-6 flex justify-end gap-2">
+      <%= button_tag t(".dialog.cancel"), type: "button", data: { close_dialog: true }, class: "btn btn-secondary" %>
+      <%= button_tag t(".dialog.choose"), type: "button", data: { choose: true }, class: "btn btn-primary" %>
+    </div>
+  </dialog>
+<% end %>

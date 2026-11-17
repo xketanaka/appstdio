@@ -20,6 +20,9 @@ module E2eScenarios
       TenantUser.create!(tenant:, user: owner_user, display_name: "管理者さん", role: :owner, status: :active)
       company = Group.create!(tenant:, name: "全社")
       dev = Group.create!(tenant:, parent: company, name: "開発部")
+      platform = Group.create!(tenant:, parent: dev, name: "基盤チーム")
+      sales = Group.create!(tenant:, parent: company, name: "営業部")
+      Group.create!(tenant:, parent: sales, name: "東京チーム")
       tenant_user_ids = TenantUser.insert_all!(
         user_ids.each_with_index.map do |user_id, i|
           { tenant_id: tenant.id, user_id:, display_name: format("開発 %02d", i), role: "member", status: "active" }
@@ -28,7 +31,7 @@ module E2eScenarios
       ).rows.flatten
       GroupMember.insert_all!(tenant_user_ids.map { { tenant_id: tenant.id, group_id: dev.id, tenant_user_id: it } })
 
-      { owner: { email: owner_user.email, password: PASSWORD }, groups: { company: company.id } }
+      { owner: { email: owner_user.email, password: PASSWORD }, groups: { company: company.id, platform: platform.id } }
     end
   end
 

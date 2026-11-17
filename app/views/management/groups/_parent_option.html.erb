@@ -1,0 +1,6 @@
+<%# locals: (value:, name:, path:, checked:, disabled:) %>
+<%# 選んでいる行は nav-item-current と同じ見た目にする（クラスは :checked で切り替えられないので、中身を has-checked で書く） %>
+<label class="nav-item min-w-0 flex-1 cursor-pointer py-1.5 pl-2 has-checked:bg-primary-100 has-checked:font-semibold has-checked:text-primary-900 has-disabled:cursor-not-allowed has-disabled:text-slate-400 has-disabled:hover:bg-transparent">
+  <%= radio_button_tag "group[parent_id]", value, checked, disabled:, data: { path: path.to_json }, class: "shrink-0 accent-primary-700" %>
+  <span class="truncate"><%= name %></span>
+</label>
