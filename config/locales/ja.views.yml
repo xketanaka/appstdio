@@ -282,6 +282,10 @@ ja:
         label: "上位グループ"
         no_parent: "最上位"
         change: "変更"
+        dialog:
+          title: "上位グループを選ぶ"
+          cancel: "キャンセル"
+          choose: "決定"
       index:
         title: "グループ管理"
         heading: "グループ管理"

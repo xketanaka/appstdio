@@ -1,0 +1,23 @@
+<%# locals: (parent_id:, path:, disabled:, choice:) %>
+<%# 上位グループのダイアログのツリー。自分自身とその下位は、選べないよう灰色で出す %>
+<% @children.fetch(parent_id, []).each do |group| %>
+  <% names = path + [group.name] %>
+  <% off = disabled || (@group.persisted? && group.id == @group.id) %>
+  <% option = render("parent_option", value: group.id, name: group.name, path: names,
+                     checked: choice[:selected]&.id == group.id, disabled: off) %>
+  <li>
+    <% if @children.key?(group.id) %>
+      <details <%= "open" if parent_id.nil? || choice[:open_ids].include?(group.id) %>>
+        <summary class="flex list-none items-center [&::-webkit-details-marker]:hidden">
+          <span class="flex size-6 shrink-0 cursor-pointer items-center justify-center text-slate-400 transition-transform [[open]>summary>&]:rotate-90">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="size-3"><path d="M8 4l10 8-10 8V4Z" /></svg>
+          </span>
+          <%= option %>
+        </summary>
+        <ul class="pl-4"><%= render "parent_tree", parent_id: group.id, path: names, disabled: off, choice: %></ul>
+      </details>
+    <% else %>
+      <div class="flex items-center"><span class="size-6 shrink-0"></span><%= option %></div>
+    <% end %>
+  </li>
+<% end %>

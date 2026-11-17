@@ -156,7 +156,7 @@ class ManagementProjectsTest < ActionDispatch::IntegrationTest
     assert_select "#group-tree #project-groups a[href=?]", management_group_path(@project.group), text: "新製品開発"
     # 上位グループの候補には出さない
     get new_management_group_path
-    assert_select "select#group_parent_id option", text: /プロジェクト|新製品開発/, count: 0
+    assert_select "#parent-dialog label", text: /プロジェクト|新製品開発/, count: 0
   end
 
   test "「プロジェクト」は編集・削除・メンバーの編集ができない" do
