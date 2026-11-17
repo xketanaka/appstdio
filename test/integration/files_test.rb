@@ -759,6 +759,49 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_equal({ "used_bytes" => 1024, "limit_bytes" => 10.gigabytes }, json["storage"])
     end
 
+    test "所属するグループ（上位を含む）の、使っているグループドライブを返す" do
+      TenantContext.switch(tenant: @tenant) do
+        sales = Group.create!(tenant: @tenant, name: "営業部")
+        sales1 = Group.create!(tenant: @tenant, parent: sales, name: "営業1課")
+        general = Group.create!(tenant: @tenant, name: "総務部")
+        GroupMember.create!(tenant: @tenant, group: sales1, tenant_user: @member)
+        @sales_drive = Files::Drive.group_root(sales)
+        node(:folder, "見積", @sales_drive)
+        Files::Drive.group_root(general)
+        Files::Drive.group_root(sales1).drive.disable!(actor: @owner, trash: false)
+      end
+      login(@member_user)
+
+      get files_api_tree_path
+
+      assert_equal [{ "id" => @sales_drive.id, "name" => "営業部", "readable" => true, "has_children" => true }],
+        json["group_drives"]
+      assert_equal [], json["project_drives"]
+    end
+
+    test "プロジェクト機能を利用していれば、参加しているプロジェクトのドライブを作って返す" do
+      TenantContext.switch(tenant: @tenant) do
+        @project = Group.create!(tenant: @tenant, kind: :project, parent: Group.project_root_of!(@tenant), name: "基幹システム更改")
+        GroupMember.create!(tenant: @tenant, group: @project, tenant_user: @member)
+      end
+      login(@member_user)
+
+      get files_api_tree_path
+      assert_equal [], json["project_drives"], "利用しないあいだは出さない"
+
+      TenantContext.switch(tenant: @tenant) { @tenant.setting.update!(projects_enabled: true) }
+      get files_api_tree_path
+
+      root = TenantContext.switch(tenant: @tenant) { Files::Drive.find_by!(group: @project).root }
+      assert_equal [{ "id" => root.id, "name" => "基幹システム更改", "readable" => true, "has_children" => false }],
+        json["project_drives"]
+
+      get files_api_folder_path(root)
+      assert_equal "project_drives", json["section"]
+      assert_equal({ "id" => root.id, "label" => "基幹システム更改" }, json["folder"])
+      assert json["can_edit"]
+    end
+
     test "指定した親の直下のフォルダを返す。開けないフォルダの中は返さない" do
       TenantContext.switch(tenant: @tenant) { node(:folder, "面談", @hr) }
       login(@member_user)

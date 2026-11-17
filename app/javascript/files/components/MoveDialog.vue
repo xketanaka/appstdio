@@ -2,7 +2,7 @@
 import { computed, ref, shallowRef } from "vue"
 import { api, NotFoundError, type FolderLink, type FolderPayload, type FolderSource } from "../api"
 import { t } from "../i18n"
-import { moveItems, operationErrorMessages } from "../store"
+import { moveItems, operationErrorMessages, state } from "../store"
 import FileIcon from "./FileIcon.vue"
 
 type Item = { id: number, name: string }
@@ -24,6 +24,8 @@ const title = computed(() =>
     : t("move.title_other", { count: items.value.length }),
 )
 const folders = computed(() => location.value?.entries.filter((entry) => entry.kind === "folder") ?? [])
+// 左ペインと同じく、所属するグループのドライブも移動先に選べる
+const groupDrives = computed(() => [...(state.tree?.group_drives ?? []), ...(state.tree?.project_drives ?? [])])
 const moving = (id: number) => items.value.some((item) => item.id === id)
 const canSubmit = computed(() =>
   !busy.value && location.value !== null && location.value.can_edit && location.value.folder.id !== props.from.id,
@@ -145,6 +147,19 @@ defineExpose({ open })
           >
             <FileIcon folder />
             {{ t("sections.my_drive") }}
+          </button>
+        </li>
+        <li
+          v-for="drive in groupDrives"
+          :key="drive.id"
+        >
+          <button
+            type="button"
+            class="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm hover:bg-canvas"
+            @click="show({ id: String(drive.id) })"
+          >
+            <FileIcon folder />
+            <span class="truncate">{{ drive.name }}</span>
           </button>
         </li>
       </template>

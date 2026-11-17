@@ -117,6 +117,18 @@ class Group < ApplicationRecord
     end
   end
 
+  # 下位も含めて消す（children の dependent: :destroy）。グループドライブの中身は完全削除する。
+  # ファイルの共有設定は外部キーの ON DELETE CASCADE で消える
+  def destroy_with_files!
+    drives = Files::Drive.where(group_id: [id, *Group.descendant_ids_of(id)])
+    blob_ids = transaction do
+      purged = Files::Drive.purge_contents!(drives, tenant_id:)
+      destroy!
+      purged
+    end
+    ActiveStorage::Blob.unattached.where(id: blob_ids).find_each(&:purge_later)
+  end
+
   def suspended?
     suspended_at.present?
   end

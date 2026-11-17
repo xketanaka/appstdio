@@ -27,7 +27,7 @@ module Files
         permissions = access.effective_permissions(entries)
 
         # 場所は、フォルダの画面のパンくずと同じく、閲覧できる祖先だけを根元の側から並べる
-        ancestors = Node.where(id: entries.flat_map(&:ancestor_ids)).includes(drive: :owner).index_by(&:id)
+        ancestors = Node.where(id: entries.flat_map(&:ancestor_ids)).includes(drive: [:owner, :group]).index_by(&:id)
         ancestor_permissions = access.effective_permissions(ancestors.values)
 
         render json: {

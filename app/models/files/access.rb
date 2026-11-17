@@ -1,13 +1,20 @@
 module Files
   class Access
-    # 相関サブクエリ。外側のクエリの files_nodes の行ごとに評価される
+    # 相関サブクエリ。外側のクエリの files_nodes の行ごとに評価される。
+    # グループ管理者は、自分が管理するグループのドライブのルートに、本人=管理者の行があるものとして数える。
+    # 同じ位置に本人の行が実際にもあれば、強い方を採る
     NEAREST_SQL = <<~SQL.squish
       SELECT DISTINCT ON (p.group_id, p.tenant_user_id) p.role
-      FROM files_permissions p
+      FROM (
+        SELECT node_id, group_id, tenant_user_id, role FROM files_permissions
+        UNION ALL
+        SELECT unnest(ARRAY[:led_root_ids]::bigint[]), NULL, :tenant_user_id, 'manager'
+      ) p
       WHERE p.node_id = ANY(files_nodes.ancestor_ids || files_nodes.id)
         AND (p.tenant_user_id = :tenant_user_id OR p.group_id IN (:group_ids))
       ORDER BY p.group_id, p.tenant_user_id,
-        array_position(files_nodes.ancestor_ids || files_nodes.id, p.node_id) DESC
+        array_position(files_nodes.ancestor_ids || files_nodes.id, p.node_id) DESC,
+        array_position(ARRAY['viewer', 'editor', 'manager']::varchar[], p.role) DESC NULLS LAST
     SQL
 
     # privileged: 特権モード中か。管理者・オーナーでなければ true を渡しても効かない
@@ -22,13 +29,14 @@ module Files
     end
 
     # 複数ノードの権限。フォルダを開いたときの子の一覧のノードの判定等で使う
+    # 使わないにしたグループドライブなどの中は、特権モードでも権限なしにする
     def effective_permissions(nodes)
-      ids = nodes.map(&:id)
-      return EffectivePermission::Collection.new(ids.index_with("manager")) if @privileged
+      visible = Node.where(id: nodes.map(&:id)).where.not(drive_id: Drive.unavailable.select(:id))
+      return EffectivePermission::Collection.new(visible.ids.index_with("manager")) if @privileged
 
       ranked = EffectivePermission::RANKED_ROLES
       ranks = ranked.map { |role| "'#{role}'" }.join(",")
-      roles = Node.where(id: ids)
+      roles = visible
         .joins(ActiveRecord::Base.sanitize_sql(["CROSS JOIN LATERAL (#{NEAREST_SQL}) nearest", subjects]))
         .where("nearest.role <> 'none'")
         .group(:id)
@@ -39,6 +47,7 @@ module Files
 
     # 閲覧できるノードに絞ったスコープ。DB での検索など、ページングや他の条件と組み合わせるときに使う
     def readable(scope)
+      scope = scope.where.not(drive_id: Drive.unavailable.select(:id))
       return scope if @privileged
 
       scope.where("EXISTS (SELECT 1 FROM (#{NEAREST_SQL}) nearest WHERE nearest.role <> 'none')", subjects)
@@ -49,7 +58,8 @@ module Files
     def shared_items
       granted = Permission.where.not(role: "none")
         .where("tenant_user_id = :tenant_user_id OR group_id IN (:group_ids)", subjects)
-      candidates = Node.kept.where(id: granted.select(:node_id)).where.not(parent_id: nil).includes(:parent).to_a
+      candidates = Node.kept.where(id: granted.select(:node_id)).where.not(parent_id: nil)
+        .where.not(drive_id: Drive.unavailable.select(:id)).includes(:parent).to_a
       parents = Access.new(@tenant_user, privileged: false).effective_permissions(candidates.map(&:parent))
 
       candidates.reject { |node| parents[node.parent].readable? }
@@ -61,6 +71,11 @@ module Files
       parents = effective_permissions(roots.map(&:parent))
 
       roots.select { |node| parents[node.parent].editable? }
+    end
+
+    # 所属するグループ（上位と「全員」を含む）。停止中のグループは含まない
+    def belonging_group_ids
+      subjects[:group_ids].compact
     end
 
     private
@@ -81,7 +96,13 @@ module Files
           SELECT id FROM belonging
         SQL
         everyone = Group.everyone.where(tenant_id: @tenant_user.tenant_id).ids
-        { tenant_user_id: @tenant_user.id, group_ids: (belonging + everyone).presence || [nil] }
+        led_root_ids = Node.where(parent_id: nil, drive_id: Drive.group_drive
+          .where(group_id: GroupMember.leader.where(tenant_user_id: @tenant_user.id).select(:group_id)).select(:id)).ids
+        {
+          tenant_user_id: @tenant_user.id,
+          group_ids: (belonging + everyone).presence || [nil],
+          led_root_ids: led_root_ids.presence || [nil],
+        }
       end
     end
   end

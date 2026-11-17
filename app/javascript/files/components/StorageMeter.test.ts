@@ -7,7 +7,7 @@ import StorageMeter from "./StorageMeter.vue"
 const GB = 1024 ** 3
 
 const render = (used: number) => {
-  state.tree = { shared_drive: null, my_drive: null, storage: { used_bytes: used, limit_bytes: 10 * GB } }
+  state.tree = { shared_drive: null, my_drive: null, group_drives: [], project_drives: [], storage: { used_bytes: used, limit_bytes: 10 * GB } }
   return mount(StorageMeter)
 }
 

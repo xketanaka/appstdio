@@ -7,8 +7,11 @@ import { state } from "../store"
 import TreeFolderItem from "./TreeFolderItem.vue"
 import { useDropTargets } from "../dnd"
 
-// rootId は、そのドライブのルート（落とし先にできる）。マイドライブは初めて開くまで無い
-type Section = { key: SectionKey, to: { name: string }, folders?: TreeFolder[], rootId?: number }
+// rootId は、そのドライブのルート（落とし先にできる）。マイドライブは初めて開くまで無い。
+// drives は、グループドライブ・プロジェクトドライブの区分に並べるドライブのルート。区分そのものは開く画面を持たない
+type Section
+  = | { key: SectionKey, to: { name: string }, folders?: TreeFolder[], rootId?: number }
+    | { key: SectionKey, drives: TreeFolder[] }
 
 const sections = computed<Section[]>(() => [
   {
@@ -20,12 +23,17 @@ const sections = computed<Section[]>(() => [
     key: "my_drive", to: { name: "my_drive" },
     folders: state.tree?.my_drive?.folders ?? [], rootId: state.tree?.my_drive?.id,
   },
+  ...(["group_drives", "project_drives"] as const)
+    .map((key) => ({ key, drives: state.tree?.[key] ?? [] }))
+    .filter((section) => section.drives.length > 0),
   { key: "trash", to: { name: "trash" } },
 ])
 
 const { over, handlers } = useDropTargets()
 const dropTarget = (section: Section) =>
-  section.rootId === undefined ? {} : handlers({ id: section.rootId, label: t(`sections.${section.key}`) })
+  !("rootId" in section) || section.rootId === undefined
+    ? {}
+    : handlers({ id: section.rootId, label: t(`sections.${section.key}`) })
 
 // フォルダを開いているときは、区分ではなくそのフォルダを選択中として示す
 const current = (key: SectionKey) => key === state.section && state.currentFolderId === null
@@ -43,7 +51,32 @@ const toggle = (key: SectionKey, event: Event) => {
       :key="section.key"
     >
       <details
-        v-if="section.folders"
+        v-if="'drives' in section"
+        class="group"
+        :open="state.openSections.has(section.key)"
+        @toggle="toggle(section.key, $event)"
+      >
+        <summary class="nav-item cursor-pointer list-none pl-2.5 [&::-webkit-details-marker]:hidden">
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+            class="size-3 shrink-0 text-slate-400 transition-transform group-open:rotate-90"
+          >
+            <path d="M8 4l10 8-10 8V4Z" />
+          </svg>
+          <span class="truncate">{{ t(`sections.${section.key}`) }}</span>
+        </summary>
+
+        <TreeFolderItem
+          v-for="drive in section.drives"
+          :key="drive.id"
+          :folder="drive"
+          :depth="0"
+        />
+      </details>
+      <details
+        v-else-if="section.folders"
         class="group"
         :open="state.openSections.has(section.key)"
         @toggle="toggle(section.key, $event)"

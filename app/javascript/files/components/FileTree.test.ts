@@ -21,6 +21,8 @@ beforeEach(() => {
   state.tree = {
     shared_drive: { id: 1, folders: [folder(2, "営業", { has_children: true }), folder(3, "人事", { readable: false })] },
     my_drive: { id: 9, folders: [folder(10, "下書き")] },
+    group_drives: [folder(20, "営業部")],
+    project_drives: [],
     storage: { used_bytes: 0, limit_bytes: 1 },
   }
   state.children.set(1, state.tree.shared_drive!.folders)
@@ -98,6 +100,39 @@ test("利用者が開いた区分は、別の区分へ移っても閉じない",
   showSection("trash", "ゴミ箱")
   await nextTick()
 
-  expect(wrapper.findAll("details").map((details) => details.element.open)).toEqual([true, true])
+  expect(wrapper.findAll("details").map((details) => details.element.open)).toEqual([true, true, false])
   expect(wrapper.find("[aria-current=page]").text()).toBe("ゴミ箱")
+})
+
+test("グループドライブは区分の下にドライブを並べ、ドライブが無い区分は出さない", async () => {
+  const wrapper = await render()
+
+  const summaries = wrapper.findAll("details > summary").map((summary) => summary.text())
+  expect(summaries).toEqual(["組織共有ドライブ", "マイドライブ", "グループドライブ"])
+  expect(wrapper.find("a[href='/folders/20']").text()).toBe("営業部")
+})
+
+test("グループドライブのルートを開くと、区分を開いてそのドライブを選択中にする", async () => {
+  const wrapper = await render()
+
+  await showFolder(payload({ folder: { id: 20, label: "営業部" }, section: "group_drives", breadcrumbs: [] }))
+  await nextTick()
+
+  expect(wrapper.findAll("details")[2].element.open).toBe(true)
+  expect(wrapper.find("[aria-current=page]").text()).toBe("営業部")
+  expect(state.searchOrigin).toEqual({ key: "20", label: "営業部" })
+})
+
+test("グループドライブの中のフォルダを開くと、ドライブのルートから祖先を開く", async () => {
+  vi.mocked(api.treeChildren).mockResolvedValue({ 20: [folder(21, "見積")] })
+  const wrapper = await render()
+
+  await showFolder(payload({
+    folder: { id: 22, label: "2026" }, section: "group_drives",
+    breadcrumbs: [{ id: 20, label: "営業部" }, { id: 21, label: "見積" }],
+  }))
+  await flushPromises()
+
+  expect(api.treeChildren).toHaveBeenCalledWith([20, 21])
+  expect(wrapper.find("a[href='/folders/21']").text()).toBe("見積")
 })

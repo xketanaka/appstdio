@@ -189,14 +189,16 @@ export function setTitle(title: string) {
 
 // フォルダを開いたとき、左ペインでそこまでの祖先を開いて、そのフォルダを示す。
 // 祖先をたどれない（共有されたアイテムから開いた）ときは「共有されたアイテム」を示す
+// グループドライブ・プロジェクトドライブは、ルートもツリーの1行（区分の下に並ぶドライブ）なので、フォルダと同じに示す
 export async function showFolder(payload: FolderPayload) {
-  const root = payload.breadcrumbs.length === 0 && !payload.via_shared
+  const groupDrive = payload.section === "group_drives" || payload.section === "project_drives"
+  const root = !groupDrive && payload.breadcrumbs.length === 0 && !payload.via_shared
   showSection(payload.via_shared ? "shared_with_me" : payload.section, payload.folder.label)
   if (!root) state.searchOrigin = { key: String(payload.folder.id), label: payload.folder.label }
   if (root || payload.via_shared) return
 
   state.currentFolderId = payload.folder.id
-  const ancestors = payload.breadcrumbs.slice(1).map((crumb) => crumb.id)
+  const ancestors = payload.breadcrumbs.slice(groupDrive ? 0 : 1).map((crumb) => crumb.id)
   ancestors.forEach((id) => state.openFolders.add(id))
   await loadChildren(ancestors)
 }

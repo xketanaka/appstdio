@@ -1,6 +1,6 @@
 // サーバ（app/controllers/files/api）が返す JSON の形。Ruby 側を変えたら合わせること
 
-export type SectionKey = "shared_drive" | "shared_with_me" | "my_drive" | "trash"
+export type SectionKey = "shared_drive" | "shared_with_me" | "my_drive" | "group_drives" | "project_drives" | "trash"
 
 export type TreeFolder = { id: number, name: string, readable: boolean, has_children: boolean }
 
@@ -10,6 +10,9 @@ export type TreeRoot = { id: number, folders: TreeFolder[] }
 export type Tree = {
   shared_drive: TreeRoot | null
   my_drive: TreeRoot | null
+  // 所属するグループ（部署・プロジェクト）のドライブ。行はドライブのルートで、名前はグループの名前
+  group_drives: TreeFolder[]
+  project_drives: TreeFolder[]
   // テナント全体の使用量。ゴミ箱の中身と古い版も含む
   storage: { used_bytes: number, limit_bytes: number }
 }
