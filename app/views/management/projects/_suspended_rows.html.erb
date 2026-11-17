@@ -1,0 +1,12 @@
+<% @projects.each do |project| %>
+  <tr class="border-t border-slate-100 first:border-t-0 hover:bg-canvas">
+    <td class="px-3 py-2.5">
+      <%= link_to project.name, management_project_path(project), class: "text-primary-700 hover:underline" %>
+    </td>
+    <td class="px-3 py-2.5 whitespace-nowrap"><%= time_to_s(project.suspended_at) %></td>
+    <td class="hidden px-3 py-2.5 sm:table-cell"><%= project.suspended_by&.display_name %></td>
+  </tr>
+<% end %>
+<% if @next_page %>
+  <%= render "management/groups/load_more", colspan: 3, url: suspended_management_projects_path(q: @query.presence, page: @next_page) %>
+<% end %>

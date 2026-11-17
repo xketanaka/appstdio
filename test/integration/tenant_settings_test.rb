@@ -126,10 +126,23 @@ class TenantSettingsTest < ActionDispatch::IntegrationTest
     drawer = css_select("dialog[data-drawer] nav").first.text.split.first(3)
     assert_equal %w[プロジェクト 準備中 ファイル], drawer
     menu = css_select("#side-pane nav").first.text.split
-    assert_equal %w[利用者管理 グループ管理 プロジェクト管理 準備中 組織設定], menu
-    assert_select "#side-pane nav a", text: "プロジェクト管理", count: 0
+    assert_equal %w[利用者管理 グループ管理 プロジェクト管理 組織設定], menu
+    assert_select "#side-pane nav a[href=?]", management_projects_path, text: "プロジェクト管理"
+    TenantContext.switch(tenant: @tenant) { assert Group.project_root.exists? }
 
     patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, files_enabled: "1" }
+    assert_not_predicate setting, :projects_enabled?
+    # 利用しないに戻しても、「プロジェクト」グループは消さない
+    TenantContext.switch(tenant: @tenant) { assert Group.project_root.exists? }
+  end
+
+  test "最上位に「プロジェクト」という部署があると、プロジェクト機能を利用するにできない" do
+    TenantContext.switch(tenant: @tenant) { Group.create!(tenant: @tenant, name: "プロジェクト") }
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "" }, projects_enabled: "1", files_enabled: "1" }
+
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /同じ名前の最上位のグループの名前を変えてから/
     assert_not_predicate setting, :projects_enabled?
   end
 

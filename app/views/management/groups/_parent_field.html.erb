@@ -20,6 +20,6 @@
   <%= form.label :parent_id, t(".label"), class: "sr-only" %>
   <%# グループ管理者は最上位に置けない。もともと最上位のグループは、そのままにはできる %>
   <%= form.select :parent_id, group_parent_options(@group, @children),
-        { include_blank: (t(".no_parent") if @scope.all? || (@group.persisted? && @group.parent_id_was.nil?)) },
+        { include_blank: (t(".no_parent") if group_scope.all? || (@group.persisted? && @group.parent_id_was.nil?)) },
         class: "input mt-2" %>
 </details>

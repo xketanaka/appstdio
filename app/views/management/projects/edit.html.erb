@@ -1,0 +1,29 @@
+<% content_for :title do %><%= t(".title", name: @project.group.name_in_database) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <h2 class="mb-5 text-sm text-slate-500"><%= t(".detail") %></h2>
+
+    <%= render "partial/errors", object: @project %>
+
+    <%= form_with model: @project, url: management_project_path(@project), id: "project-form" do |f| %>
+      <%= render "fields", form: f %>
+
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
+        <div class="flex items-center gap-4">
+          <%= f.submit t("actions.save"), class: "btn btn-primary" %>
+          <%= link_to t(".cancel"), management_project_path(@project), class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <%= link_to t(".suspend"), confirm_suspend_management_project_path(@project), id: "suspend-project",
+                class: "btn btn-secondary" %>
+          <%= link_to t(".destroy"), confirm_destroy_management_project_path(@project), id: "destroy-project",
+                class: "btn btn-danger" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

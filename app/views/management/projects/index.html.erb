@@ -1,0 +1,39 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="flex shrink-0 items-center justify-between gap-4 px-6 pt-5 pb-3">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+  <%= link_to t(".new"), new_management_project_path, id: "new-project", class: "btn btn-primary btn-sm shrink-0" %>
+</div>
+
+<div class="min-h-0 flex-1 overflow-auto px-3">
+  <% if @projects.empty? %>
+    <p class="border-t border-slate-100 px-3 py-10 text-center text-sm text-slate-500"><%= t(".empty") %></p>
+  <% else %>
+    <table id="project-list" class="w-full">
+      <thead class="sticky top-0 bg-white text-xs text-slate-500">
+        <tr class="border-b border-slate-200">
+          <th class="px-3 py-2.5 text-left font-medium"><%= Project.human_attribute_name(:name) %></th>
+          <th class="hidden px-3 py-2.5 text-left font-medium sm:table-cell"><%= t(".columns.leaders") %></th>
+          <th class="px-3 py-2.5 text-right font-medium whitespace-nowrap"><%= t(".columns.members") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @projects.each do |project| %>
+          <tr class="border-b border-slate-100 hover:bg-canvas">
+            <td class="px-3 py-2.5">
+              <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <%= link_to project.name, management_project_path(project), class: "truncate text-primary-700 hover:underline" %>
+                <% project.labels.sort_by(&:name).each do |label| %>
+                  <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"><%= label.name %></span>
+                <% end %>
+              </span>
+            </td>
+            <td class="hidden px-3 py-2.5 text-sm sm:table-cell"><%= @leaders.fetch(project.group_id, []).join("、") %></td>
+            <td class="px-3 py-2.5 text-right text-sm"><%= t(".member_count", count: @member_counts.fetch(project.group_id, 0)) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <%= link_to t(".suspended"), suspended_management_projects_path, id: "suspended-projects",
+        class: "mx-3 my-4 inline-block text-sm text-primary-700 hover:underline" %>
+</div>

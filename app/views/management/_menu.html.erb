@@ -2,20 +2,12 @@
 <nav aria-label="<%= t(".label") %>">
   <%# グループ管理者（テナントの管理者でない）にはグループ管理だけを出す %>
   <% items = { users: management_users_path, groups: management_groups_path } %>
-  <%# プロジェクト管理の画面はまだ無いので、名前だけを出す %>
-  <% items[:projects] = nil if current_tenant.setting.projects_enabled? %>
+  <% items[:projects] = management_projects_path if current_tenant.setting.projects_enabled? %>
   <% items[:tenant_settings] = management_tenant_setting_path %>
   <% items = items.slice(:groups) unless current_tenant_user.admin_or_owner? %>
   <% items.each do |key, path| %>
-    <% if path %>
-      <% current = controller_name == key.to_s %>
-      <%= link_to t(".items.#{key}"), path,
-            "aria-current": (current ? "page" : nil), class: class_names("nav-item", "nav-item-current": current) %>
-    <% else %>
-      <span class="nav-item justify-between text-slate-400 hover:bg-transparent" aria-disabled="true">
-        <%= t(".items.#{key}") %>
-        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs"><%= t(".coming_soon") %></span>
-      </span>
-    <% end %>
+    <% current = controller_name == key.to_s %>
+    <%= link_to t(".items.#{key}"), path,
+          "aria-current": (current ? "page" : nil), class: class_names("nav-item", "nav-item-current": current) %>
   <% end %>
 </nav>

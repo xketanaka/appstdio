@@ -237,7 +237,7 @@ class ManagementGroupsTest < ActionDispatch::IntegrationTest
     group = TenantContext.switch(tenant: @tenant) { Group.find_by!(name: "第三営業部") }
     assert_redirected_to edit_members_management_group_path(group)
     follow_redirect!
-    assert_select "[role=status]", text: "登録しました。"
+    assert_select "[role=status]", text: /メンバーを追加してください/
     get management_group_path(group)
     assert_select "#group-parent-path", text: /全社\s*›\s*営業本部/
     assert_select "#group-labels li", text: /\A(営業|新設)\z/, count: 2

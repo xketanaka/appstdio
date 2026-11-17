@@ -1,0 +1,36 @@
+<%# locals: (key:, groups:) %>
+<%# 所属グループ（key: groups、部署）と参加プロジェクト（key: projects）の欄。どちらも tenant_user[group_ids][] で送る。
+    groups は [グループ, 最上位からの名前の並び] の配列 %>
+<%= tag.pick_list data: { candidates_url: group_candidates_management_users_path(kind: (key == :projects ? "project" : nil)),
+                          count_text: t(".#{key}.heading", count: "%{count}"),
+                          load_error: t(".load_error") } do %>
+  <section id="user-<%= key %>" class="mt-8 mb-6">
+    <div class="mb-2 flex items-center justify-between gap-4">
+      <h3 class="text-sm font-semibold" data-count><%= t(".#{key}.heading", count: groups.size) %></h3>
+      <%= button_tag t(".#{key}.add"), type: "button", id: "add-#{key}", data: { open_dialog: true },
+            class: "btn btn-secondary btn-sm" %>
+    </div>
+    <p class="border-t border-slate-200 py-4 text-sm text-slate-500" data-empty <%= "hidden" if groups.any? %>><%= t(".#{key}.empty") %></p>
+    <table class="w-full" <%= "hidden" if groups.empty? %>>
+      <tbody data-rows>
+        <% groups.each do |group, path| %>
+          <%= render "group_row", group_id: group.id, name: group.name, path: (group.project? ? [] : path) %>
+        <% end %>
+      </tbody>
+    </table>
+    <template data-row-template><%= render "group_row", group_id: "__ID__" %></template>
+  </section>
+
+  <dialog id="<%= key %>-dialog" aria-labelledby="<%= key %>-dialog-title"
+          class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/40">
+    <h2 id="<%= key %>-dialog-title" class="text-lg font-medium"><%= t(".#{key}.add") %></h2>
+    <label for="<%= key %>-search" class="sr-only"><%= t(".#{key}.search") %></label>
+    <input type="search" id="<%= key %>-search" autocomplete="off" data-search
+           placeholder="<%= t(".#{key}.search") %>" class="input mt-4">
+    <ul class="mt-3 h-80 overflow-y-auto" data-candidates aria-label="<%= t(".candidates") %>"></ul>
+    <div class="mt-6 flex justify-end gap-2">
+      <%= button_tag t(".cancel"), type: "button", data: { close_dialog: true }, class: "btn btn-secondary" %>
+      <%= button_tag t(".submit"), type: "button", data: { add: true }, class: "btn btn-primary" %>
+    </div>
+  </dialog>
+<% end %>
