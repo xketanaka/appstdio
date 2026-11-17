@@ -1,4 +1,4 @@
-FROM ruby:4.0.2
+FROM ruby:4.0.9
 
 RUN apt-get update
 RUN apt-get install -y locales
