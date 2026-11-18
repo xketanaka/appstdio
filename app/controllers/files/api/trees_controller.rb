@@ -11,10 +11,11 @@ module Files
         }
         folders = folders_under(roots.values.compact)
 
-        # 所属するグループ（下位のグループのメンバーは上位にも属する）のドライブ。部署は使うにしたものだけ。
-        # プロジェクトのドライブは、プロジェクト機能を利用していれば、初めて出すときに作る
+        # 所属するグループ（下位のグループのメンバーは上位にも属する）のドライブ。特権モードではすべてのグループ。
+        # 部署は使うにしたものだけ。プロジェクトのドライブは、プロジェクト機能を利用していれば、初めて出すときに作る
         kinds = current_tenant.setting.projects_enabled? ? %w[department project] : %w[department]
-        groups = Group.active.where(id: access.belonging_group_ids, kind: kinds)
+        groups = Group.active.where(kind: kinds)
+        groups = groups.where(id: access.belonging_group_ids) unless privileged_mode?
         groups.project.where.not(id: Drive.where.not(group_id: nil).select(:group_id)).find_each { Drive.group_root(it) }
         group_roots = Node.where(parent_id: nil)
           .joins(:drive).merge(Drive.group_drive.where(disabled_at: nil, group_id: groups.select(:id)))

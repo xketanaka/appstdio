@@ -679,6 +679,18 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert JSON.parse(css_select("#files-app").first["data-config"])["privileged"]
     end
 
+    test "特権モードでは、所属していないグループのグループドライブも左ペインに並ぶ" do
+      TenantContext.switch(tenant: @tenant) { Files::Drive.group_root(Group.create!(tenant: @tenant, name: "営業部")) }
+      login(@owner_user)
+
+      get files_api_tree_path
+      assert_empty json["group_drives"]
+
+      post files_api_privileged_mode_path
+      get files_api_tree_path
+      assert_equal %w[営業部], json["group_drives"].pluck("name")
+    end
+
     test "終えると付与された権限での表示に戻る" do
       login(@owner_user)
       post files_api_privileged_mode_path
