@@ -25,6 +25,8 @@ Rails.application.routes.draw do
 
     root to: redirect("/ops")
   else
+    mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
     get    "login"  => "sessions#new",     as: :login
     post   "login"  => "sessions#create"
     delete "logout" => "sessions#destroy", as: :logout
