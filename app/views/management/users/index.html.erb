@@ -10,6 +10,7 @@
       <tr class="border-b border-slate-200">
         <th class="px-3 py-2.5 text-left font-medium"><%= TenantUser.human_attribute_name(:display_name) %></th>
         <th class="hidden px-3 py-2.5 text-left font-medium lg:table-cell"><%= User.human_attribute_name(:email) %></th>
+        <th class="hidden px-3 py-2.5 text-left font-medium md:table-cell"><%= t(".groups") %></th>
         <th class="hidden px-3 py-2.5 text-left font-medium sm:table-cell"><%= TenantUser.human_attribute_name(:role) %></th>
         <th class="px-3 py-2.5 text-left font-medium"><%= TenantUser.human_attribute_name(:status) %></th>
       </tr>
@@ -36,6 +37,7 @@
             </div>
           </td>
           <td class="hidden px-3 py-2.5 text-sm lg:table-cell"><%= tenant_user.user.email %></td>
+          <td class="hidden px-3 py-2.5 text-sm md:table-cell"><%= @group_names.fetch(tenant_user.id, []).join(t(".groups_separator")) %></td>
           <td class="hidden px-3 py-2.5 text-sm sm:table-cell"><%= t("enums.tenant_user.role.#{tenant_user.role}") %></td>
           <td class="px-3 py-2.5 text-sm"><%= t("enums.tenant_user.status.#{tenant_user.status}") %></td>
         </tr>

@@ -85,6 +85,8 @@ ja:
         heading: "利用者管理"
         new: "利用者を追加"
         suspended: "利用停止中の利用者"
+        groups: "所属グループ"
+        groups_separator: ", "
       suspended:
         title: "利用停止中の利用者 - 利用者管理"
         heading: "利用停止中の利用者"
