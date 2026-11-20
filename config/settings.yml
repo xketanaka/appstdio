@@ -19,6 +19,9 @@ base: &base
 
 development:
   <<: *base
+  # メールに書く URL。docker-compose.yml の app の公開ポート（APP_LISTEN_PORT の既定）に合わせる
+  host_name: localhost:6000
+  protocol: http
 
 test:
   <<: *base

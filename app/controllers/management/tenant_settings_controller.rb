@@ -9,7 +9,7 @@ module Management
     end
 
     def update
-      attributes = params.expect(tenant_setting: [:title_label, :title_color, :logo])
+      attributes = params.expect(tenant_setting: [:title_label, :title_color, :logo, :invitation_expiry_days])
       attributes[:title_color] = nil if params[:use_default_color] == "1"
       attributes[:logo] = nil if params[:remove_logo] == "1"
       @setting.assign_attributes(attributes)

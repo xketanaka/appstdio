@@ -60,6 +60,15 @@ class ApplicationController < ActionController::Base
     redirect_to select_tenant_path
   end
 
+  # ログインさせる。ログインの画面と、招待を受ける画面で使う
+  def start_session(user)
+    return_to = session[:return_to]
+    reset_session # セッション固定化攻撃への対策
+    session[:current_user_id] = user.id
+    session[:return_to] = return_to if return_to.present?
+    user.update_column(:last_signed_in_at, Time.current)
+  end
+
   rescue_from ActiveRecord::RecordNotFound do |e|
     error_log(e, logger)
     render_error(404, e)

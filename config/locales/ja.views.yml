@@ -66,6 +66,34 @@ ja:
       title: "テナントの選択"
       heading: "テナントの選択"
 
+  invitations:
+    show:
+      title: "招待"
+      heading: "「%{tenant}」への招待"
+      expires_at: "招待の有効期限"
+      accept: "参加する"
+      signed_in: "このアカウントでログインしています。「参加する」を押すと利用を始められます。"
+      other_account: "別のアカウント（%{email}）でログインしています。招待されたアカウントで参加するには、ログアウトしてから、もう一度招待メールの URL を開いてください。"
+      new_account: "パスワードを決めて「参加する」を押すと、利用を始められます。"
+      password_hint: "8文字以上で決めてください。次からは、メールアドレスとこのパスワードでログインします。"
+      existing_account: "このメールアドレスのアカウントは、すでに他の組織で使われています。今のパスワードを入れて「参加する」を押してください。"
+    update:
+      done: "「%{tenant}」に参加しました。"
+      wrong_password: "パスワードが正しくありません。"
+    invalid:
+      title: "招待"
+      heading: "この招待は使えません"
+      message: "有効期限が切れたか、新しい招待メールが送られたか、すでに参加済みです。参加していなければ、招待した組織の管理者に招待メールの再送を頼んでください。"
+      login: "ログインの画面へ"
+
+  invitation_mailer:
+    invitation:
+      subject: "「%{tenant}」に招待されました"
+      body: "%{inviter}さんから、%{system} の「%{tenant}」に招待されました。"
+      action: "次の URL を開いて、参加の手続きをしてください。"
+      expires: "この URL は %{time} まで使えます。"
+      ignore: "心当たりがなければ、このメールは破棄してください。"
+
   management:
     labels_field:
       label: "ラベル"
@@ -140,6 +168,16 @@ ja:
           empty: "参加しているプロジェクトはありません。"
           leader: "プロジェクト管理者"
         edit: "編集"
+        invitation:
+          not_sent: "招待メールはまだ送っていません。"
+          sent: "%{time} に招待メールを送りました。"
+          expires: "有効期限は %{time} です。"
+          expired: "有効期限が切れています。"
+          resend: "招待メールを再送"
+      create:
+        done: "利用者を登録し、招待メールを送りました。"
+      resend_invitation:
+        done: "招待メールを送りました。前に送った招待メールの URL は使えなくなります。"
       edit:
         title: "%{name}の編集 - 利用者管理"
         heading: "利用者管理"
@@ -426,10 +464,12 @@ ja:
           basic: "基本情報"
           appearance: "表示"
           features: "機能"
+          users: "利用者"
         enabled:
           "true": "利用する"
           "false": "利用しない"
         version_retention_days: "最新でなくなってから %{count} 日"
+        invitation_expiry_days: "招待メールを送ってから %{count} 日"
         unlimited: "無制限"
       edit:
         title: "組織設定の編集"
@@ -444,6 +484,7 @@ ja:
         sections:
           appearance: "表示"
           features: "機能"
+          users: "利用者"
         hints:
           title_label: "画面左上に表示する名前です。空にすると %{title} を表示します（ロゴがあればロゴだけを表示します）。"
           title_color: "画面上部の背景色です。文字の色は背景の明るさに合わせて白か黒になります。"
@@ -451,6 +492,7 @@ ja:
           projects_enabled: "利用するにすると、メニューに「プロジェクト」が出ます。"
           files_enabled: "利用しないにすると、メニューから「ファイル」が消え、ファイルの画面を開けなくなります。保存されているファイルは削除されません。"
           version_retention_days: "ファイルの古い版の中身を残す日数です。新しい版ができて最新でなくなった日から数えます。最新の版は日数に関わらず残ります。空にすると無制限です。短くすると、すでに日数を過ぎた古い版は翌朝までに削除され、元に戻せません。"
+          invitation_expiry_days: "招待メールの URL を使える日数です（1〜30日）。招待メールを送った日時から数えます。変えると、送り済みの招待にも新しい日数が当てはまります。"
 
   ops:
     sessions:

@@ -46,6 +46,11 @@ group :development, :test do
   gem 'rubocop-shopify'
 end
 
+group :development do
+  # 開発環境で送ったメールを、送らずに /letter_opener で見る
+  gem "letter_opener_web", "~> 3.0"
+end
+
 group :test do
   # Code coverage analysis with branch/condition coverage
   gem "simplecov", require: false

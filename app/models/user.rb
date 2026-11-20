@@ -15,6 +15,11 @@ class User < ApplicationRecord
   # 上限 (72文字) は has_secure_password が検証する
   validates :password, length: { minimum: 8 }, allow_nil: true
 
+  # 招待で作られ、まだパスワードを決めていないアカウント（招待を受けるとログインするので、ログインしたことがあれば決めている）
+  def never_signed_in?
+    last_signed_in_at.nil?
+  end
+
   def email_verified?
     email_verified_at.present?
   end

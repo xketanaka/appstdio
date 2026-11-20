@@ -104,6 +104,19 @@ class TenantSettingsTest < ActionDispatch::IntegrationTest
     assert_nil files_setting.version_retention_days
   end
 
+  test "招待の有効期限は既定で3日、1〜30日の間で変えられる" do
+    get management_tenant_setting_path
+    assert_select "#tenant-users", text: /招待メールを送ってから 3 日/
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "", invitation_expiry_days: "14" } }
+    assert_equal 14, setting.invitation_expiry_days
+
+    patch management_tenant_setting_path, params: { tenant_setting: { title_label: "", invitation_expiry_days: "31" } }
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /招待の有効期限/
+    assert_equal 14, setting.invitation_expiry_days
+  end
+
   test "プロジェクト機能は既定では使わず、利用するにするとメニューのファイルの上と、管理メニューのグループ管理と組織設定の間に出す" do
     get management_tenant_setting_path
     assert_select "#tenant-features dt", text: "プロジェクト機能" do |dt|

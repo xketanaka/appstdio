@@ -25,9 +25,14 @@ Rails.application.routes.draw do
 
     root to: redirect("/ops")
   else
+    mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
     get    "login"  => "sessions#new",     as: :login
     post   "login"  => "sessions#create"
     delete "logout" => "sessions#destroy", as: :logout
+
+    get   "invitations/:token" => "invitations#show", as: :invitation
+    patch "invitations/:token" => "invitations#update"
 
     get  "select_tenant" => "tenant_selections#new", as: :select_tenant
     post "select_tenant" => "tenant_selections#create"
@@ -105,6 +110,7 @@ Rails.application.routes.draw do
           get :confirm_suspend
           post :suspend
           post :reactivate
+          post :resend_invitation
         end
         resource :avatar, only: :destroy, module: :users
       end

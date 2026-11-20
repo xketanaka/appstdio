@@ -37,6 +37,22 @@
       <%= render "suspension" %>
     <% end %>
 
+    <% if @tenant_user.invited? %>
+      <section id="invitation" class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p>
+          <% if @tenant_user.invitation_sent_at.nil? %>
+            <%= t(".invitation.not_sent") %>
+          <% else %>
+            <%= t(".invitation.sent", time: time_to_s(@tenant_user.invitation_sent_at)) %>
+            <% expires_at = @tenant_user.invitation_expires_at %>
+            <%= expires_at.future? ? t(".invitation.expires", time: time_to_s(expires_at)) : t(".invitation.expired") %>
+          <% end %>
+        </p>
+        <%= button_to t(".invitation.resend"), resend_invitation_management_user_path(@tenant_user), id: "resend-invitation",
+              class: "btn btn-secondary btn-sm shrink-0" %>
+      </section>
+    <% end %>
+
     <div id="user-detail">
       <dl class="mb-8 grid gap-x-4 gap-y-1 sm:grid-cols-[8rem_1fr]">
         <dt class="text-sm text-slate-500"><%= TenantUser.human_attribute_name(:role) %></dt>
