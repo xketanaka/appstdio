@@ -426,10 +426,12 @@ ja:
           basic: "基本情報"
           appearance: "表示"
           features: "機能"
+          users: "利用者"
         enabled:
           "true": "利用する"
           "false": "利用しない"
         version_retention_days: "最新でなくなってから %{count} 日"
+        invitation_expiry_days: "招待メールを送ってから %{count} 日"
         unlimited: "無制限"
       edit:
         title: "組織設定の編集"
@@ -444,6 +446,7 @@ ja:
         sections:
           appearance: "表示"
           features: "機能"
+          users: "利用者"
         hints:
           title_label: "画面左上に表示する名前です。空にすると %{title} を表示します（ロゴがあればロゴだけを表示します）。"
           title_color: "画面上部の背景色です。文字の色は背景の明るさに合わせて白か黒になります。"
@@ -451,6 +454,7 @@ ja:
           projects_enabled: "利用するにすると、メニューに「プロジェクト」が出ます。"
           files_enabled: "利用しないにすると、メニューから「ファイル」が消え、ファイルの画面を開けなくなります。保存されているファイルは削除されません。"
           version_retention_days: "ファイルの古い版の中身を残す日数です。新しい版ができて最新でなくなった日から数えます。最新の版は日数に関わらず残ります。空にすると無制限です。短くすると、すでに日数を過ぎた古い版は翌朝までに削除され、元に戻せません。"
+          invitation_expiry_days: "招待メールの URL を使える日数です（1〜30日）。招待メールを送った日時から数えます。変えると、送り済みの招待にも新しい日数が当てはまります。"
 
   ops:
     sessions:

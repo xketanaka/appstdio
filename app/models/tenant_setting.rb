@@ -14,6 +14,7 @@ class TenantSetting < ApplicationRecord
   validates :tenant_id, uniqueness: true
   validates :title_label, length: { maximum: 255 }
   validates :title_color, format: { with: /\A#[0-9a-f]{6}\z/ }, allow_nil: true
+  validates :invitation_expiry_days, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 30 }
   validate :logo_must_be_small_image
 
   # 組織設定の画面は、表示の設定とファイル管理の設定を一緒に保存する。どちらかが保存できなければ両方戻して false。
