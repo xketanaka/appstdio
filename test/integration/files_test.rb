@@ -292,6 +292,14 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_equal blob.byte_size, json["entries"].last["byte_size"]
     end
 
+    test "% や ? の入った名前もそのまま付け、同じ名前で上げると新しい版にする" do
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: uploaded_blob("1", "100%_達成?.txt", by: @member).signed_id }, as: :json
+      assert_equal ["100%_達成?.txt", nil], json.values_at("name", "version")
+
+      post upload_files_api_nodes_path, params: { parent_id: @sales.id, signed_blob_id: uploaded_blob("2", "100%_達成?.txt", by: @member).signed_id }, as: :json
+      assert_equal ["100%_達成?.txt", 2], json.values_at("name", "version")
+    end
+
     test "2段目で、中身が届いていない blob や、使い回しの blob は 404" do
       waiting = ActiveStorage::Blob.create_before_direct_upload!(
         filename: "a.txt", byte_size: 1, checksum: "AAAAAAAAAAAAAAAAAAAAAA==", content_type: "text/plain",
@@ -1037,8 +1045,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
 
     test "% や _ は、そのままの文字として探す" do
-      # 上げるときは Active Storage がファイル名の % を - に替えるので、名前の変更で付ける
-      TenantContext.switch(tenant: @tenant) { file("達成.txt", @root).rename!("100%_達成.txt", actor: @owner) }
+      TenantContext.switch(tenant: @tenant) { file("100%_達成.txt", @root) }
       login(@member_user)
 
       get files_api_search_path, params: { q: "0%_", all: "1" }
