@@ -22,8 +22,8 @@ class FilesTest < ActionDispatch::IntegrationTest
       @sales = node(:folder, "営業", @root)
       @estimates = node(:folder, "見積", @sales)
       @hr = node(:folder, "人事", @root)
-      @review = node(:file, "評価.xlsx", @hr)
-      @minutes = node(:file, "議事録.docx", @root, byte_size: 25_088)
+      @review = file("評価.xlsx", @hr)
+      @minutes = file("議事録.docx", @root, byte_size: 25_088)
       grant(@hr, @everyone, :none)
     end
   end
@@ -930,14 +930,15 @@ class FilesTest < ActionDispatch::IntegrationTest
     test "閲覧できないものの分は出さず、移動元・移動先も閲覧できなければ伏せる" do
       TenantContext.switch(tenant: @tenant) do
         @review.rename!("評価2026.xlsx", actor: @owner)
-        report = node(:file, "報告.txt", @hr)
+        report = file("報告.txt", @hr)
         Files::Node.move!([report], to: @sales, actor: @owner)
       end
       login(@member_user)
 
       get files_api_node_activities_path(@root)
 
-      assert_equal ["moved"], json["activities"].pluck("action"), "人事の中の名前の変更は出さない"
+      assert_not_includes json["activities"].pluck("action"), "renamed", "人事の中の名前の変更は出さない"
+      assert_equal "moved", json["activities"].first["action"]
       assert_equal({ "from" => nil, "to" => "営業" }, json["activities"].first["detail"])
       get files_api_node_activities_path(@hr)
       assert_response :not_found
@@ -966,7 +967,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_equal 51, json["activities"].first.dig("detail", "version")
 
       get files_api_node_activities_path(@minutes), params: { before: json["next_before"] }
-      assert_equal [1], json["activities"].map { it.dig("detail", "version") }
+      assert_equal [["updated", 1], ["created", nil]], json["activities"].map { [it["action"], it.dig("detail", "version")] }
       assert_nil json["next_before"]
     end
   end
@@ -974,9 +975,9 @@ class FilesTest < ActionDispatch::IntegrationTest
   describe "検索" do
     setup do
       TenantContext.switch(tenant: @tenant) do
-        @estimate = node(:file, "見積書.xlsx", @estimates)
-        node(:file, "見積の手順.md", @root)
-        node(:file, "見積評価.xlsx", @hr)
+        @estimate = file("見積書.xlsx", @estimates)
+        file("見積の手順.md", @root)
+        file("見積評価.xlsx", @hr)
       end
     end
 
@@ -1009,7 +1010,7 @@ class FilesTest < ActionDispatch::IntegrationTest
       TenantContext.switch(tenant: @tenant) do
         interview = node(:folder, "面談", @hr)
         grant(interview, @member, :viewer)
-        node(:file, "面談の見積.txt", interview)
+        file("面談の見積.txt", interview)
       end
       login(@member_user)
       get files_api_search_path, params: { q: "見積", in: "shared_with_me" }
@@ -1036,7 +1037,8 @@ class FilesTest < ActionDispatch::IntegrationTest
     end
 
     test "% や _ は、そのままの文字として探す" do
-      TenantContext.switch(tenant: @tenant) { node(:file, "100%_達成.txt", @root) }
+      # 上げるときは Active Storage がファイル名の % を - に替えるので、名前の変更で付ける
+      TenantContext.switch(tenant: @tenant) { file("達成.txt", @root).rename!("100%_達成.txt", actor: @owner) }
       login(@member_user)
 
       get files_api_search_path, params: { q: "0%_", all: "1" }
@@ -1057,7 +1059,7 @@ class FilesTest < ActionDispatch::IntegrationTest
     test "親フォルダの編集者には削除したものが、削除した人と一緒に出る" do
       TenantContext.switch(tenant: @tenant) do
         grant(@sales, @member, :editor)
-        trashed = node(:file, "古い見積.pdf", @sales, byte_size: 2048)
+        trashed = file("古い見積.pdf", @sales, byte_size: 2048)
         trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id, deleted_by: @owner)
       end
       login(@member_user)
@@ -1072,7 +1074,7 @@ class FilesTest < ActionDispatch::IntegrationTest
 
     test "閲覧者には出ない" do
       TenantContext.switch(tenant: @tenant) do
-        trashed = node(:file, "古い見積.pdf", @sales)
+        trashed = file("古い見積.pdf", @sales)
         trashed.update!(deleted_at: Time.current, deleted_root_id: trashed.id)
       end
       login(@member_user)
@@ -1112,11 +1114,14 @@ class FilesTest < ActionDispatch::IntegrationTest
     follow_redirect!
   end
 
-  def node(kind, name, parent, byte_size: 0)
-    Files::Node.create!(
-      tenant: @tenant, drive: parent.drive, parent: parent, kind: kind, name: name,
-      creator: @owner, byte_size: byte_size,
-    )
+  def node(kind, name, parent)
+    Files::Node.create!(tenant: @tenant, drive: parent.drive, parent: parent, kind: kind, name: name, creator: @owner)
+  end
+
+  # 画面から上げたものと同じく、版1と中身ごと作る
+  def file(name, parent, byte_size: 0)
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("a" * byte_size), filename: name)
+    Files::Node.create_file!(parent:, blob:, creator: @owner)
   end
 
   # ダイレクトアップロードの1段目で作られる blob と同じく、上げた人を付帯情報に持たせる
