@@ -43,6 +43,6 @@ class Project < ApplicationRecord
 
   # グループを消す。プロジェクトの行は外部キーの ON DELETE CASCADE で消える。ファイルの共有設定も同じ
   def destroy_with_group!
-    group.destroy_with_files!
+    group.destroy_with_cascades!
   end
 end

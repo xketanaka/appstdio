@@ -184,7 +184,7 @@ module Management
     end
 
     def destroy
-      @group.destroy_with_files!
+      @group.destroy_with_cascades!
       redirect_to (@group.parent ? management_group_path(@group.parent) : management_groups_path),
         notice: t("messages.deleted")
     end

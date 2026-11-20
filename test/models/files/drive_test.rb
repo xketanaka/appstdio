@@ -122,7 +122,7 @@ class Files::DriveTest < ActiveSupport::TestCase
       file = Files::Node.create_file!(parent: sales1_root, blob:, creator: @sub_member)
       folder = Files::Node.create_folder!(parent: sales_root, name: "見積", creator: @sub_member)
 
-      @sales.destroy_with_files!
+      @sales.destroy_with_cascades!
 
       assert_equal 0, @tenant.files_setting.reload.storage_used_bytes
       assert [file, folder, sales_root, sales1_root].all? { it.reload.purged_at }
