@@ -19,7 +19,7 @@ module Files
         folder_ids = activities.flat_map do |activity|
           [*activity.node.ancestor_ids, *activity.detail.values_at("from", "to").grep(Integer)]
         end
-        folders = Node.where(id: folder_ids).includes(drive: :owner).index_by(&:id)
+        folders = Node.where(id: folder_ids).includes(drive: [:owner, :group]).index_by(&:id)
         permissions = access.effective_permissions(folders.values)
         label = ->(id) { folders[id] && permissions[folders[id]].readable? ? node_label(folders[id]) : nil }
 

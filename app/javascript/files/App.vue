@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue"
 import { RouterView, useRoute, useRouter } from "vue-router"
 import { api } from "./api"
 import FileTree from "./components/FileTree.vue"
+import GroupDriveSettings from "./components/GroupDriveSettings.vue"
 import HistoryPanel from "./components/HistoryPanel.vue"
 import NoticeBar from "./components/NoticeBar.vue"
 import PrivilegedModeSwitch from "./components/PrivilegedModeSwitch.vue"
@@ -100,5 +101,6 @@ const leavePrivilegedMode = async () => {
     <UploadPanel />
     <HistoryPanel />
     <ShareDialog />
+    <GroupDriveSettings />
   </div>
 </template>

@@ -117,6 +117,19 @@ class Group < ApplicationRecord
     end
   end
 
+  # 下位も含めて消す（children の dependent: :destroy）。グループを消すのはこのメソッドだけにし、
+  # グループに付く各機能の後片付けはここから呼ぶ。行が消えれば済むもの（メンバー・共有設定・
+  # プロジェクトなど）は外部キーの ON DELETE CASCADE に任せ、ここには書かない
+  def destroy_with_cascades!
+    group_ids = [id, *Group.descendant_ids_of(id)]
+    blob_ids = transaction do
+      purged = Files::Drive.purge_contents!(Files::Drive.where(group_id: group_ids), tenant_id:)
+      destroy!
+      purged
+    end
+    ActiveStorage::Blob.unattached.where(id: blob_ids).find_each(&:purge_later)
+  end
+
   def suspended?
     suspended_at.present?
   end

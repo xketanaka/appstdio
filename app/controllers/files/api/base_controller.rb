@@ -74,6 +74,8 @@ module Files
 
         if node.drive.shared?
           t("files.drives.shared")
+        elsif node.drive.group_drive?
+          node.drive.group&.name.to_s
         elsif node.drive.owner_id == current_tenant_user.id
           t("files.drives.mine")
         else

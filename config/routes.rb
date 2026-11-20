@@ -84,6 +84,13 @@ Rails.application.routes.draw do
         get "trash" => "trash#index"
         get "search" => "searches#show"
         resource :privileged_mode, only: [:create, :destroy]
+        # id はグループの id
+        resources :group_drives, only: [:index] do
+          member do
+            post :enable
+            post :disable
+          end
+        end
       end
     end
 

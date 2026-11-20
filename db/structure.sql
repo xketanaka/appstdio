@@ -232,7 +232,9 @@ CREATE TABLE public.files_drives (
     owner_id bigint,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT files_drives_kind_check CHECK (((((kind)::text = 'shared'::text) AND (owner_id IS NULL)) OR (((kind)::text = 'personal'::text) AND (owner_id IS NOT NULL))))
+    group_id bigint,
+    disabled_at timestamp(6) without time zone,
+    CONSTRAINT files_drives_kind_check CHECK (((((kind)::text = 'shared'::text) AND (owner_id IS NULL) AND (group_id IS NULL) AND (disabled_at IS NULL)) OR (((kind)::text = 'personal'::text) AND (owner_id IS NOT NULL) AND (group_id IS NULL) AND (disabled_at IS NULL)) OR (((kind)::text = 'group'::text) AND (owner_id IS NULL))))
 );
 
 
@@ -1207,6 +1209,13 @@ CREATE INDEX index_files_activities_on_tenant_id_and_created_at ON public.files_
 
 
 --
+-- Name: index_files_drives_on_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_files_drives_on_group_id ON public.files_drives USING btree (group_id) WHERE (group_id IS NOT NULL);
+
+
+--
 -- Name: index_files_drives_on_owner_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1866,6 +1875,14 @@ ALTER TABLE ONLY public.files_permissions
 
 
 --
+-- Name: files_drives fk_rails_fdd0086ef6; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.files_drives
+    ADD CONSTRAINT fk_rails_fdd0086ef6 FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE SET NULL;
+
+
+--
 -- Name: files_activities; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -2388,6 +2405,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261118100000'),
 ('20261111100000'),
 ('20261110100000'),
 ('20261106120000'),

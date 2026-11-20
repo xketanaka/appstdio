@@ -20,6 +20,7 @@ module Files
 
         section =
           if folder.drive.shared? then :shared_drive
+          elsif folder.drive.group_drive? then folder.drive.group.project? ? :project_drives : :group_drives
           elsif folder.drive.owner_id == current_tenant_user.id then :my_drive
           else :shared_with_me
           end

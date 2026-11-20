@@ -679,6 +679,18 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert JSON.parse(css_select("#files-app").first["data-config"])["privileged"]
     end
 
+    test "特権モードでは、所属していないグループのグループドライブも左ペインに並ぶ" do
+      TenantContext.switch(tenant: @tenant) { Files::Drive.group_root(Group.create!(tenant: @tenant, name: "営業部")) }
+      login(@owner_user)
+
+      get files_api_tree_path
+      assert_empty json["group_drives"]
+
+      post files_api_privileged_mode_path
+      get files_api_tree_path
+      assert_equal %w[営業部], json["group_drives"].pluck("name")
+    end
+
     test "終えると付与された権限での表示に戻る" do
       login(@owner_user)
       post files_api_privileged_mode_path
@@ -759,6 +771,49 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_equal({ "used_bytes" => 1024, "limit_bytes" => 10.gigabytes }, json["storage"])
     end
 
+    test "所属するグループ（上位を含む）の、使っているグループドライブを返す" do
+      TenantContext.switch(tenant: @tenant) do
+        sales = Group.create!(tenant: @tenant, name: "営業部")
+        sales1 = Group.create!(tenant: @tenant, parent: sales, name: "営業1課")
+        general = Group.create!(tenant: @tenant, name: "総務部")
+        GroupMember.create!(tenant: @tenant, group: sales1, tenant_user: @member)
+        @sales_drive = Files::Drive.group_root(sales)
+        node(:folder, "見積", @sales_drive)
+        Files::Drive.group_root(general)
+        Files::Drive.group_root(sales1).drive.disable!(actor: @owner, trash: false)
+      end
+      login(@member_user)
+
+      get files_api_tree_path
+
+      assert_equal [{ "id" => @sales_drive.id, "name" => "営業部", "readable" => true, "has_children" => true }],
+        json["group_drives"]
+      assert_equal [], json["project_drives"]
+    end
+
+    test "プロジェクト機能を利用していれば、参加しているプロジェクトのドライブを作って返す" do
+      TenantContext.switch(tenant: @tenant) do
+        @project = Group.create!(tenant: @tenant, kind: :project, parent: Group.project_root_of!(@tenant), name: "基幹システム更改")
+        GroupMember.create!(tenant: @tenant, group: @project, tenant_user: @member)
+      end
+      login(@member_user)
+
+      get files_api_tree_path
+      assert_equal [], json["project_drives"], "利用しないあいだは出さない"
+
+      TenantContext.switch(tenant: @tenant) { @tenant.setting.update!(projects_enabled: true) }
+      get files_api_tree_path
+
+      root = TenantContext.switch(tenant: @tenant) { Files::Drive.find_by!(group: @project).root }
+      assert_equal [{ "id" => root.id, "name" => "基幹システム更改", "readable" => true, "has_children" => false }],
+        json["project_drives"]
+
+      get files_api_folder_path(root)
+      assert_equal "project_drives", json["section"]
+      assert_equal({ "id" => root.id, "label" => "基幹システム更改" }, json["folder"])
+      assert json["can_edit"]
+    end
+
     test "指定した親の直下のフォルダを返す。開けないフォルダの中は返さない" do
       TenantContext.switch(tenant: @tenant) { node(:folder, "面談", @hr) }
       login(@member_user)
@@ -767,6 +822,65 @@ class FilesTest < ActionDispatch::IntegrationTest
       assert_equal [@sales.id.to_s], json.keys
       assert_equal ["見積"], json[@sales.id.to_s].pluck("name")
       assert_not json[@sales.id.to_s].first["has_children"]
+    end
+  end
+
+  describe "グループドライブの設定" do
+    setup do
+      TenantContext.switch(tenant: @tenant) do
+        @company = Group.create!(tenant: @tenant, name: "全社")
+        @sales_group = Group.create!(tenant: @tenant, parent: @company, name: "営業部")
+        @sales1_group = Group.create!(tenant: @tenant, parent: @sales_group, name: "営業1課")
+        @general_group = Group.create!(tenant: @tenant, parent: @company, name: "総務部")
+        GroupMember.create!(tenant: @tenant, group: @sales_group, tenant_user: @member, role: :leader)
+        Files::Drive.group_root(@sales1_group)
+      end
+    end
+
+    test "グループ管理者には、管理する部署（下位を含む）を、使っているかと一緒に返す" do
+      login(@member_user)
+
+      get files_api_group_drives_path
+
+      assert_equal [
+        { "id" => @sales_group.id, "name" => "営業部", "path" => %w[全社 営業部], "enabled" => false },
+        { "id" => @sales1_group.id, "name" => "営業1課", "path" => %w[全社 営業部 営業1課], "enabled" => true },
+      ], json["groups"]
+      get files_api_tree_path
+      assert json["can_manage_group_drives"]
+    end
+
+    test "使うようにすると左ペインに出て、使わないにするときは中身をゴミ箱へ移すかを選べる" do
+      login(@member_user)
+
+      post enable_files_api_group_drive_path(@sales_group)
+      assert_response :no_content
+      # 営業1課のドライブは使っているが、営業部の人は下位の営業1課には属さないので並ばない
+      get files_api_tree_path
+      assert_equal %w[営業部], json["group_drives"].pluck("name")
+
+      root = TenantContext.switch(tenant: @tenant) do
+        Files::Drive.find_by!(group: @sales_group).root.tap { node(:folder, "見積", it) }
+      end
+      post disable_files_api_group_drive_path(@sales_group), params: { trash: true }, as: :json
+      assert_response :no_content
+
+      get files_api_tree_path
+      assert_empty json["group_drives"]
+      TenantContext.switch(tenant: @tenant) { assert root.children.first.deleted_at }
+    end
+
+    test "管理していない部署は設定できず、設定できるものが無ければ「⋮」も出さない" do
+      login(@member_user)
+
+      post enable_files_api_group_drive_path(@general_group)
+      assert_response :not_found
+
+      TenantContext.switch(tenant: @tenant) { GroupMember.where(tenant_user: @member).update_all(role: "member") }
+      get files_api_tree_path
+      assert_not json["can_manage_group_drives"]
+      get files_api_group_drives_path
+      assert_equal [], json["groups"]
     end
   end
 

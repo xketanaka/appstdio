@@ -11,7 +11,7 @@ module Files
         ActiveRecord::Associations::Preloader.new(records: inherited, associations: { tenant_user: :avatar_attachment }).call
         groups = (own.values + inherited).filter_map(&:group)
         @group_paths = Group.name_paths_of(groups)
-        sources = Node.where(id: inherited.map(&:node_id)).includes(drive: :owner).index_by(&:id)
+        sources = Node.where(id: inherited.map(&:node_id)).includes(drive: [:owner, :group]).index_by(&:id)
 
         render json: {
           inherited: inherited.sort_by { subject_sort_key(it) }.map do |setting|
