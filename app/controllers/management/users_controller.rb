@@ -63,7 +63,8 @@ module Management
         label_names: @label_names, display_name: attributes[:display_name], role: attributes[:role])
 
       if @tenant_user.errors.empty?
-        redirect_to management_user_path(@tenant_user), notice: t("messages.created")
+        @tenant_user.send_invitation!(by: current_tenant_user)
+        redirect_to management_user_path(@tenant_user), notice: t(".done")
       else
         load_groups(@group_ids)
         render :new, status: :unprocessable_entity
@@ -115,6 +116,14 @@ module Management
       @next_page = (page + 1 if candidates.size > PER_PAGE)
       @candidates = candidates.first(PER_PAGE)
       render partial: "group_candidates", layout: false
+    end
+
+    # 招待メールを送り直す。前に送った URL は使えなくなる
+    def resend_invitation
+      raise ActiveRecord::RecordNotFound unless @tenant_user.invited?
+
+      @tenant_user.send_invitation!(by: current_tenant_user)
+      redirect_to management_user_path(@tenant_user), notice: t(".done")
     end
 
     def confirm_suspend

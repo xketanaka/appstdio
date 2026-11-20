@@ -19,6 +19,12 @@ class TenantUser < ApplicationRecord
   # tenant_users の RLS は今のテナントの行しか見せないので、所有者の権限で動く関数から引く
   scope :own_memberships, -> { from("own_memberships() AS tenant_users").readonly }
 
+  # 招待の URL のトークン。招待を受ける画面はログイン前でテナントが決まっていないので、RLS のもとで所属を
+  # 探す前に切り替えられるよう、テナントの id も入れる。メールの URL に載せるので URL に使える文字にする
+  INVITATION_VERIFIER = ActiveSupport::MessageVerifier.new(
+    Rails.application.key_generator.generate_key("tenant_user_invitation"), digest: "SHA256", url_safe: true
+  )
+
   # 追加の画面の入力を持つだけで、保存しない（メールアドレスは users にある）
   attribute :email, :string
 
@@ -59,6 +65,51 @@ class TenantUser < ApplicationRecord
       raise ActiveRecord::Rollback
     end
     tenant_user
+  end
+
+  # 招待の URL のトークンから [テナントの id, 所属の id, 送った日時]。改ざん・壊れていれば nil
+  def self.decode_invitation_token(token)
+    INVITATION_VERIFIER.verified(token.to_s)
+  end
+
+  # まだ受けられる招待。招待されたテナントに切り替えた中で呼ぶ。招待中で、最後に送った招待の URL で、
+  # 期限内のものだけ（再送すると前の URL は使えない）
+  def self.open_invitation(id, sent_at)
+    tenant_user = invited.includes(:user, :tenant).find_by(id:)
+    tenant_user if tenant_user&.invitation_sent_at&.iso8601(6) == sent_at && tenant_user.invitation_expires_at.future?
+  end
+
+  # 招待の期限。送った日時から組織設定の日数。日数を変えると送り済みの招待にも効く
+  def invitation_expires_at
+    invitation_sent_at + tenant.setting.invitation_expiry_days.days
+  end
+
+  # 招待メールを送る（再送も同じ）。送った日時を今にするので、前に送った URL は使えなくなる。
+  # メールは後で送る。送るジョブはテナントの外で動くので、レコードではなく値で渡す
+  def send_invitation!(by:)
+    update!(invitation_sent_at: Time.current)
+    InvitationMailer.invitation(to: user.email, tenant_name: tenant.name, inviter_name: by.display_name,
+      token: INVITATION_VERIFIER.generate([tenant_id, id, invitation_sent_at.iso8601(6)]),
+      expires_at: invitation_expires_at).deliver_later
+  end
+
+  # 招待を受けて有効にする。メールを受け取れたので、メールアドレスを確かめたことにする。
+  # password を渡すと、それをアカウントのパスワードにする（一度もログインしていない人）。
+  # パスワードを決められなければ false で、user に誤りを持たせる
+  def accept_invitation(password: nil, password_confirmation: nil)
+    # 空のパスワードは has_secure_password が黙って捨てるので、ここで弾く
+    if password&.empty?
+      user.errors.add(:password, :blank)
+      return false
+    end
+    user.assign_attributes(password:, password_confirmation:) if password
+    user.email_verified_at ||= Time.current
+    transaction do
+      raise ActiveRecord::Rollback unless user.save
+
+      update!(status: :active)
+      true
+    end
   end
 
   # 利用者管理で、この人が他の人に付けられる権限。オーナーを付けられるのはオーナーだけ
