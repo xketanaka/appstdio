@@ -77,18 +77,14 @@ module Management
     end
 
     def update
-      attributes = params.expect(tenant_user: [:display_name, :role, :status, :label_names, group_ids: []])
-      # 変えられない権限・状態は画面に欄が無く、送られてこない
+      attributes = params.expect(tenant_user: [:display_name, :role, :label_names, group_ids: []])
+      # 変えられない権限は画面に欄が無く、送られてこない
       role = attributes[:role] || @tenant_user.role
-      status = attributes[:status] || @tenant_user.status
-      unless current_tenant_user.role_choices_for(@tenant_user).include?(role) &&
-          current_tenant_user.status_choices_for(@tenant_user).include?(status)
-        raise ActiveRecord::RecordNotFound
-      end
+      raise ActiveRecord::RecordNotFound unless current_tenant_user.role_choices_for(@tenant_user).include?(role)
 
       @group_ids = attributes.fetch(:group_ids, []).compact_blank.map(&:to_i).uniq
       @label_names = label_names_from(attributes[:label_names])
-      attributes = { display_name: attributes[:display_name], role:, status: }
+      attributes = { display_name: attributes[:display_name], role: }
       if @tenant_user.update_with(attributes, group_ids: @group_ids, label_names: @label_names)
         # 自分の権限をメンバーに下げると、管理の画面を開けなくなる
         if @tenant_user.id == current_tenant_user.id && !@tenant_user.admin_or_owner?

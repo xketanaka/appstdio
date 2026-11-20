@@ -244,9 +244,8 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert_select "#user-header", text: "sato@example.com"
     assert_select "#user-form input[name=?]", "tenant_user[email]", 0
     assert_equal %w[member admin], css_select("#role-choices input").map { it["value"] }
-    # 停止は「利用停止」の操作で行うので、有効な人の状態は選べない
-    assert_select "#status-choices input", 0
-    assert_select "#status-choices p", text: "有効"
+    # 状態は編集では変えない（停止は「利用停止」、有効にするのは招待を受けたとき）
+    assert_select "#user-form", text: /状態/, count: 0
     # 停止中の旧企画部の所属は出さない
     assert_equal ["全社", "営業部 全社"], css_select("#user-groups tbody tr").map { it.text.squish.delete_suffix(" 削除") }
     assert_select "#user-groups tbody tr[data-row=?] input[type=hidden][name=?][value=?]", @sales.id.to_s,
@@ -265,32 +264,28 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "招待中の人は、有効にできる" do
+  test "招待中の人は、編集では有効にできない（招待を受けたときだけ有効になる）" do
     invited = TenantContext.switch(tenant: @tenant) do
       TenantUser.create!(tenant: @tenant, user: User.create!(email: "new@example.com", password: PASSWORD),
         display_name: "新人さん", status: :invited)
     end
     login(@admin)
-    get edit_management_user_path(invited)
-    assert_equal %w[invited active], css_select("#status-choices input").map { it["value"] }
 
     patch management_user_path(invited), params: { tenant_user: { display_name: "新人さん", role: "member", status: "active", group_ids: [""] } }
-    assert TenantContext.switch(tenant: @tenant) { invited.reload.active? }
+    assert_redirected_to management_user_path(invited)
+    assert TenantContext.switch(tenant: @tenant) { invited.reload.invited? }
   end
 
-  test "管理者は、オーナーの権限・状態を変えられず、オーナーにもできない" do
+  test "管理者は、オーナーの権限を変えられず、オーナーにもできない" do
     owner = create_owner("owner@example.com", "オーナーさん")
     login(@admin)
 
     get edit_management_user_path(owner)
     assert_select "#role-choices input", 0
     assert_select "#role-choices p", text: "オーナー"
-    assert_select "#status-choices input", 0
 
-    [{ role: "admin" }, { status: "suspended" }].each do |change|
-      patch management_user_path(owner), params: { tenant_user: { display_name: "オーナーさん", group_ids: [""], **change } }
-      assert_response :not_found
-    end
+    patch management_user_path(owner), params: { tenant_user: { display_name: "オーナーさん", group_ids: [""], role: "admin" } }
+    assert_response :not_found
     patch management_user_path(@sato), params: { tenant_user: { display_name: "佐藤さん", role: "owner", status: "active", group_ids: [""] } }
     assert_response :not_found
     assert TenantContext.switch(tenant: @tenant) { owner.reload.owner? && !@sato.reload.owner? }
@@ -314,12 +309,11 @@ class ManagementUsersTest < ActionDispatch::IntegrationTest
     assert TenantContext.switch(tenant: @tenant) { owner.reload.owner? }
   end
 
-  test "自分の状態は変えられないが、権限は下げられる。メンバーに下げたら管理の画面を離れる" do
+  test "編集で状態を送っても変えない。自分の権限は下げられ、メンバーに下げたら管理の画面を離れる" do
     login(@admin)
-    get edit_management_user_path(@admin_member)
-    assert_select "#status-choices input", 0
     patch management_user_path(@admin_member), params: { tenant_user: { display_name: "管理者さん", status: "suspended", group_ids: [""] } }
-    assert_response :not_found
+    assert_redirected_to management_user_path(@admin_member)
+    assert TenantContext.switch(tenant: @tenant) { @admin_member.reload.active? }
 
     patch management_user_path(@admin_member), params: { tenant_user: { display_name: "管理者さん", role: "member", group_ids: [""] } }
     assert_redirected_to top_page_path

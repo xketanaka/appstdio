@@ -122,13 +122,7 @@ class TenantUser < ApplicationRecord
     target.owner? && !owner? ? [target.role] : assignable_roles
   end
 
-  # 利用者の編集で、この人が target に付けられる状態。停止は「利用停止」の操作で行うので、編集で変えられるのは
-  # 招待中の人を有効にすることだけ。オーナーの状態は、オーナーでなければ変えられない
-  def status_choices_for(target)
-    target.invited? && (!target.owner? || owner?) ? %w[invited active] : [target.status]
-  end
-
-  # 表示名・権限・状態を保存し、ラベルを名前で付け直し、Group.assignable_kinds の種類の有効なグループの中で所属を
+  # 表示名・権限などを保存し、ラベルを名前で付け直し、Group.assignable_kinds の種類の有効なグループの中で所属を
   # 付け直す。残すグループでは、グループ管理者の印をそのままにする。停止中のグループと、選べない種類のグループ
   # （プロジェクト機能を利用しないときのプロジェクト）の所属は、画面に出さないので触らない。
   # 有効なオーナーが1人もいなくなる変更は受け付けない。保存できなければ false で、誤りを持たせる。
