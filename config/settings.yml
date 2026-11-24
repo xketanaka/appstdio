@@ -1,3 +1,4 @@
+# ERB を通してから読む（app/models/settings.rb）。環境変数は <%%= ENV.fetch("NAME", "既定") %> で埋め込む
 base: &base
   system_title: AppStdio
   paginator:
@@ -19,8 +20,8 @@ base: &base
 
 development:
   <<: *base
-  # メールに書く URL。docker-compose.yml の app の公開ポート（APP_LISTEN_PORT の既定）に合わせる
-  host_name: localhost:6000
+  # メールに書く URL。docker-compose.yml の app の公開ポートに合わせる
+  host_name: localhost:<%= ENV.fetch("APP_LISTEN_PORT", "6000") %>
   protocol: http
 
 test:

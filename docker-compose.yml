@@ -40,6 +40,8 @@ services:
       BINDING: "0.0.0.0"
       # Prism は mmap でソースを読み、vboxsf ではホストで書き換えても古い内容が残る
       RUBYOPT: "-W:deprecated --parser=parse.y"
+      # 公開ポート。開発環境のメールに書く URL に使う（config/settings.yml）
+      APP_LISTEN_PORT: "${APP_LISTEN_PORT:-6000}"
       DB_HOST: "db"
       DB_PORT: "5432"
       # Vite の開発サーバ。Rails がアセットの要求をここへ中継する

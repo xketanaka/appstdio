@@ -11,7 +11,9 @@ class Settings
     end
   end
 
-  _settings = self.convert_to_struct(YAML.load_file("#{Rails.root}/config/settings.yml", aliases: true)[Rails.env])
+  # ERB を通すので、<%= ENV.fetch("NAME", "既定") %> で環境変数を埋め込める
+  _yaml = ERB.new(File.read(Rails.root.join("config/settings.yml"))).result
+  _settings = self.convert_to_struct(YAML.load(_yaml, aliases: true)[Rails.env])
   _settings.members.each do |member|
     define_singleton_method(member) do
       _settings[member]
