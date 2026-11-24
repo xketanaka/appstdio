@@ -18,8 +18,7 @@
     <%= render "partial/errors", object: @tenant_user %>
 
     <%= form_with model: @tenant_user, url: management_user_path(@tenant_user), id: "user-form" do |f| %>
-      <%= render "fields", form: f, roles: current_tenant_user.role_choices_for(@tenant_user),
-            statuses: current_tenant_user.status_choices_for(@tenant_user) %>
+      <%= render "fields", form: f, roles: current_tenant_user.role_choices_for(@tenant_user) %>
 
       <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
         <div class="flex items-center gap-4">

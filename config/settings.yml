@@ -1,3 +1,4 @@
+# ERB を通してから読む（app/models/settings.rb）。環境変数は <%%= ENV.fetch("NAME", "既定") %> で埋め込む
 base: &base
   system_title: AppStdio
   paginator:
@@ -9,19 +10,29 @@ base: &base
     address: 'localhost'
     port: '25'
     domain: 'localhost.localdomain'
-  mailer:
+  mailer: &mailer
     from_address: 'certs@example.com'
-  host_name: localhost:3000
+    # 送り方（ActionMailer の delivery_method）。空なら環境の設定のまま（本番は SMTP、テストは test）
+    delivery_method:
+  # ブラウザから見えるこのアプリの URL（スキーム・ホスト名・ポート。パスは付けない）。メールに書く URL に使う。
+  # 空のままメールに URL を書こうとすると、誤った URL を送らずに失敗する（config/initializers/mailer.rb）
+  app_url: <%= ENV["APP_URL"] %>
   files:
     # 1ファイルの大きさの上限。S3 に1回で送れるのが 5GB まで（ダイレクトアップロードは1回で送る）
     max_upload_bytes: 5368709120
-  protocol: https
 
 development:
   <<: *base
+  mailer:
+    <<: *mailer
+    # 送ったメールは送信せずに保存し、/letter_opener で見る
+    delivery_method: letter_opener_web
+  # docker-compose.yml が既定（http://localhost:<APP_LISTEN_PORT>）を渡す。こちらはコンテナの外で動かすときの既定
+  app_url: <%= ENV.fetch("APP_URL", "http://localhost:6000") %>
 
 test:
   <<: *base
+  app_url: http://example.com
 
 production:
   <<: *base

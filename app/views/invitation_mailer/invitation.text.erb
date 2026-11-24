@@ -1,0 +1,7 @@
+<%= t(".body", inviter: @inviter_name, tenant: @tenant_name, system: Settings.system_title) %>
+
+<%= t(".action") %>
+<%= @url %>
+
+<%= t(".expires", time: time_to_s(@expires_at)) %>
+<%= t(".ignore") %>

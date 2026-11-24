@@ -643,6 +643,8 @@ CREATE TABLE public.tenant_settings (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     projects_enabled boolean DEFAULT false NOT NULL,
+    invitation_expiry_days integer DEFAULT 3 NOT NULL,
+    CONSTRAINT tenant_settings_invitation_expiry_days_check CHECK (((invitation_expiry_days >= 1) AND (invitation_expiry_days <= 30))),
     CONSTRAINT tenant_settings_title_color_check CHECK (((title_color)::text ~ '^#[0-9a-f]{6}$'::text))
 );
 
@@ -746,6 +748,7 @@ CREATE TABLE public.tenant_users (
     updated_at timestamp(6) without time zone NOT NULL,
     suspended_at timestamp(6) without time zone,
     suspended_by_id bigint,
+    invitation_sent_at timestamp(6) without time zone,
     CONSTRAINT tenant_users_role_check CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'member'::character varying])::text[]))),
     CONSTRAINT tenant_users_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying, 'deleted'::character varying])::text[])))
 );
@@ -2405,6 +2408,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261120100000'),
 ('20261118100000'),
 ('20261111100000'),
 ('20261110100000'),
