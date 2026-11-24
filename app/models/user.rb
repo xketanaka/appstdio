@@ -24,12 +24,6 @@ class User < ApplicationRecord
     email_verified_at.present?
   end
 
-  def password_reset_token_valid?
-    password_reset_token.present? &&
-      password_reset_token_expires_at.present? &&
-      password_reset_token_expires_at.future?
-  end
-
   def email_verification_token_valid?
     email_verification_token.present? &&
       email_verification_token_expires_at.present? &&
