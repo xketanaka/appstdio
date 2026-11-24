@@ -13,6 +13,7 @@ ja:
     new:
       title: "ログイン"
       heading: "ログイン"
+      forgot_password: "パスワードを忘れた場合"
     index:
       title: "ホーム"
       heading: "ログインしています"
@@ -77,6 +78,7 @@ ja:
       new_account: "パスワードを決めて「参加する」を押すと、利用を始められます。"
       password_hint: "8文字以上で決めてください。次からは、メールアドレスとこのパスワードでログインします。"
       existing_account: "このメールアドレスのアカウントは、すでに他の組織で使われています。今のパスワードを入れて「参加する」を押してください。"
+      forgot_password: "パスワードを忘れた場合"
     update:
       done: "「%{tenant}」に参加しました。"
       wrong_password: "パスワードが正しくありません。"
@@ -85,6 +87,37 @@ ja:
       heading: "この招待は使えません"
       message: "有効期限が切れたか、新しい招待メールが送られたか、すでに参加済みです。参加していなければ、招待した組織の管理者に招待メールの再送を頼んでください。"
       login: "ログインの画面へ"
+
+  password_resets:
+    new:
+      title: "パスワードの再設定"
+      heading: "パスワードの再設定"
+      message: "ログインに使うメールアドレスを入れてください。新しいパスワードを決めるための URL をメールで送ります。"
+      submit: "メールを送る"
+      back: "ログインの画面へ戻る"
+    create:
+      sent: "入力したメールアドレスが登録されていれば、パスワードを再設定する URL を送りました。メールを確認してください。"
+    edit:
+      title: "パスワードの再設定"
+      heading: "新しいパスワードを決める"
+      password: "新しいパスワード"
+      password_hint: "8文字以上で決めてください。すべての組織で、このパスワードでログインします。"
+      submit: "保存してログイン"
+    update:
+      done: "パスワードを変更しました。"
+    invalid:
+      title: "パスワードの再設定"
+      heading: "この URL は使えません"
+      message: "有効期限が切れたか、すでにパスワードを変更済みです。もう一度、再設定のメールを送ってください。"
+      retry: "再設定のメールを送る"
+
+  password_reset_mailer:
+    reset:
+      subject: "%{system} のパスワードの再設定"
+      body: "%{system} のパスワードの再設定を受け付けました。"
+      action: "次の URL を開いて、新しいパスワードを決めてください。"
+      expires: "この URL は %{time} まで使えます。"
+      ignore: "心当たりがなければ、このメールは破棄してください。パスワードは変わりません。"
 
   invitation_mailer:
     invitation:

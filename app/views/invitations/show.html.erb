@@ -45,6 +45,8 @@
         </div>
         <%= f.submit t(".accept"), class: "btn btn-primary w-full" %>
       <% end %>
+      <%= link_to t(".forgot_password"), new_password_reset_path, id: "forgot-password",
+            class: "mt-5 inline-block text-sm text-primary-700 hover:underline" %>
     <% end %>
   </div>
 </div>

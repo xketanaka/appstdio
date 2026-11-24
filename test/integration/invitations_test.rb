@@ -88,6 +88,7 @@ class InvitationsTest < ActionDispatch::IntegrationTest
 
     get path
     assert_select "#invitation input[name=password_confirmation]", 0
+    assert_select "#forgot-password[href=?]", new_password_reset_path
     patch path, params: { password: "wrong-password" }
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: "パスワードが正しくありません。"
