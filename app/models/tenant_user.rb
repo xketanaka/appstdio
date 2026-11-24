@@ -74,7 +74,7 @@ class TenantUser < ApplicationRecord
 
   # まだ受けられる招待。招待されたテナントに切り替えた中で呼ぶ。招待中で、最後に送った招待の URL で、
   # 期限内のものだけ（再送すると前の URL は使えない）
-  def self.open_invitation(id, sent_at)
+  def self.find_acceptable_invitation(id, sent_at)
     tenant_user = invited.includes(:user, :tenant).find_by(id:)
     tenant_user if tenant_user&.invitation_sent_at&.iso8601(6) == sent_at && tenant_user.invitation_expires_at.future?
   end

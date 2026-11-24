@@ -45,7 +45,7 @@ class InvitationsController < ApplicationController
   # 使えない招待（改ざん・期限切れ・再送より前の URL・参加済み・削除済み）は、どれも同じ案内を出す
   def set_invitation
     tenant_id, id, sent_at = TenantUser.decode_invitation_token(params[:token])
-    @tenant_user = in_invited_tenant(tenant_id) { TenantUser.open_invitation(id, sent_at) } if tenant_id
+    @tenant_user = in_invited_tenant(tenant_id) { TenantUser.find_acceptable_invitation(id, sent_at) } if tenant_id
     if @tenant_user
       @expires_at = in_invited_tenant { @tenant_user.invitation_expires_at }
     else
