@@ -10,8 +10,10 @@ base: &base
     address: 'localhost'
     port: '25'
     domain: 'localhost.localdomain'
-  mailer:
+  mailer: &mailer
     from_address: 'certs@example.com'
+    # 送り方（ActionMailer の delivery_method）。空なら環境の設定のまま（本番は SMTP、テストは test）
+    delivery_method:
   host_name: localhost:3000
   files:
     # 1ファイルの大きさの上限。S3 に1回で送れるのが 5GB まで（ダイレクトアップロードは1回で送る）
@@ -20,6 +22,10 @@ base: &base
 
 development:
   <<: *base
+  mailer:
+    <<: *mailer
+    # 送ったメールは送信せずに保存し、/letter_opener で見る
+    delivery_method: letter_opener_web
   # メールに書く URL。docker-compose.yml の app の公開ポートに合わせる
   host_name: localhost:<%= ENV.fetch("APP_LISTEN_PORT", "6000") %>
   protocol: http
