@@ -20,6 +20,24 @@ docker-compose.override.yml を配置する。必要であればホスト側の�
 cp docker/files/docker-compose.override.yml.example docker-compose.override.yml
 ```
 
+## メールに書く URL（APP_URL）
+
+招待メールなどに書く URL は、`.env` の `APP_URL` で指定する。ブラウザのアドレスバーから見える
+このアプリの URL を、スキーム・ホスト名・ポートまで書く（パスは付けない）。
+
+```
+APP_URL=https://dev.example.jp
+```
+
+* 書かなければ `http://localhost:<APP_LISTEN_PORT>`（既定 `http://localhost:6000`）になる
+* docker-compose.override.yml でポートを変えたとき、別のホスト名やリバースプロキシ越しで使うときは書く。
+  アプリはブラウザからどう見えているかを知らないので、設定で教えるしかない
+* ホスト名が `localhost` でなければ、`RAILS_DEVELOPMENT_HOSTS` にも入れること。入れないと、メールの
+  URL を開いたときに Rails に拒まれる。`RAILS_DEVELOPMENT_HOSTS` は受け付けるホスト名の一覧（複数可）、
+  `APP_URL` はメールに書く1つの URL で、役割が違うので別に持つ
+* 変えたら `docker compose up -d app` でコンテナを作り直す
+* 開発環境で送ったメールは、送信せずに `<APP_URL>/letter_opener` で見られる
+
 ## セットアップ
 
 コンテナ作成,bundle install, rails serverを起動する
