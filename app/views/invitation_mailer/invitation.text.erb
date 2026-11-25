@@ -1,7 +1,13 @@
 <%= t(".body", inviter: @inviter_name, tenant: @tenant_name, system: Settings.system_title) %>
 
-<%= t(".action") %>
+<% if @new_account -%>
+<%= t(".new_account") %>
 <%= @url %>
 
 <%= t(".expires", time: time_to_s(@expires_at)) %>
+<% else -%>
+<%= t(".existing_account", tenant: @tenant_name) %>
+<%= @url %>
+
+<% end -%>
 <%= t(".ignore") %>

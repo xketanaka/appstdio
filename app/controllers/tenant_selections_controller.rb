@@ -1,16 +1,25 @@
+# 入るテナントを選ぶ。招待中のテナントも並べ、選ぶとその時点で参加する（招待メールの URL を開かなくてよい）
 class TenantSelectionsController < ApplicationController
   skip_before_action :tenant_required
 
   def new
     @tenant_users = sorted_memberships
 
-    select(@tenant_users.first) if session[:current_tenant_id].blank? && @tenant_users.one?
+    # 招待中なら選ぶことが参加になるので、自動では選ばない
+    select(@tenant_users.first) if session[:current_tenant_id].blank? && @tenant_users.one? && @tenant_users.first.active?
   end
 
   def create
     tenant_user = memberships.find_by(tenant_id: params[:tenant_id])
 
     if tenant_user
+      if tenant_user.invited?
+        # own_memberships の行は読み取り専用なので、そのテナントに切り替えて引き直す
+        TenantContext.switch(tenant: tenant_user.tenant_id, user: session[:current_user_id]) do
+          TenantUser.find(tenant_user.id).join!
+        end
+        flash[:notice] = t(".joined", tenant: tenant_user.tenant.name)
+      end
       select(tenant_user)
     else
       flash.now[:alert] = t("messages.tenant_not_available")
@@ -29,7 +38,7 @@ class TenantSelectionsController < ApplicationController
 
   # テナントをまたいで引くのはここだけ（TenantUser.own_memberships）
   def memberships
-    TenantUser.own_memberships.active
+    TenantUser.own_memberships.enrolled
   end
 
   def sorted_memberships

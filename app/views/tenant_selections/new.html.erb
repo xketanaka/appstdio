@@ -10,14 +10,19 @@
         <% @tenant_users.each do |tenant_user| %>
           <li class="flex items-center justify-between gap-4 py-4">
             <div class="min-w-0">
-              <div class="truncate font-semibold"><%= tenant_user.tenant.name %></div>
+              <div class="flex items-center gap-2">
+                <span class="truncate font-semibold"><%= tenant_user.tenant.name %></span>
+                <% if tenant_user.invited? %>
+                  <span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900"><%= t(".invited") %></span>
+                <% end %>
+              </div>
               <div class="truncate text-sm text-slate-500">
                 <%= t("enums.tenant_user.role.#{tenant_user.role}") %> / <%= tenant_user.display_name %>
               </div>
             </div>
-            <%= button_to t("actions.select"), select_tenant_path,
+            <%= button_to tenant_user.invited? ? t(".join") : t("actions.select"), select_tenant_path,
                   params: { tenant_id: tenant_user.tenant_id },
-                  class: "btn btn-primary btn-sm" %>
+                  class: "btn btn-primary btn-sm shrink-0" %>
           </li>
         <% end %>
       </ul>

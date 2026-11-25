@@ -35,7 +35,8 @@ class InvitationsTest < ActionDispatch::IntegrationTest
   end
 
   def url_in(mail)
-    URI(mail.text_part.body.decoded[%r{https?://\S+/invitations/\S+}]).path
+    url = mail.text_part.body.decoded[%r{https?://\S+/invitations/\S+}]
+    URI(url).path if url
   end
 
   def tenant_user_of(email)
@@ -79,49 +80,66 @@ class InvitationsTest < ActionDispatch::IntegrationTest
     assert_select "#invitation-invalid"
   end
 
-  test "他のテナントで使っているアカウントは、ログインしていなければ今のパスワードで参加する" do
+  test "パスワードのあるアカウントは、メールの URL を開かずに、ログインして組織の選択から参加する" do
     TenantContext.switch(tenant: @other_tenant) do
       TenantUser.create!(tenant: @other_tenant, user: User.create!(email: "b@example.com", password: PASSWORD,
         last_signed_in_at: 1.day.ago), display_name: "Bさん", role: :owner, status: :active)
     end
-    path = invite("b@example.com", display_name: "Bさん")
+    assert_nil invite("b@example.com", display_name: "Bさん")
+    body = ActionMailer::Base.deliveries.last.text_part.body.decoded
+    assert_includes body, "組織の選択で「テナントA」を選ぶと参加できます"
+    assert_includes body, "http://example.com/login"
 
-    get path
-    assert_select "#invitation input[name=password_confirmation]", 0
-    assert_select "#forgot-password[href=?]", new_password_reset_path
-    patch path, params: { password: "wrong-password" }
-    assert_response :unprocessable_entity
-    assert_select "[role=alert]", text: "パスワードが正しくありません。"
+    post login_path, params: { email: "b@example.com", password: PASSWORD }
+    follow_redirect!
+    assert_select "#tenant-list li", 2
+    assert_select "#tenant-list li", text: /テナントA\s*招待されています/
     assert tenant_user_of("b@example.com").invited?
 
-    patch path, params: { password: PASSWORD }
+    post select_tenant_path, params: { tenant_id: @tenant.id }
     assert_redirected_to top_page_path
     assert tenant_user_of("b@example.com").active?
+    follow_redirect!
+    assert_select "[role=status]", text: "「テナントA」に参加しました。"
+    assert_select "#site-header", text: /テナントA/
   end
 
-  test "招待された本人でログインしていれば「参加する」だけで参加し、別の人なら参加させない" do
-    TenantContext.switch(tenant: @other_tenant) do
-      TenantUser.create!(tenant: @other_tenant, user: User.create!(email: "b@example.com", password: PASSWORD),
-        display_name: "Bさん", role: :owner, status: :active)
-    end
-    path = invite("b@example.com", display_name: "Bさん")
+  test "所属が招待中の1つだけなら、自動では入らずに選ぶのを待つ" do
+    path = invite("new@example.com")
+    # 招待の URL の期限が切れても、パスワードを決めればログインして参加できる
+    travel 4.days
+    get path
+    assert_response :not_found
+    User.find_by!(email: "new@example.com").update!(password: "newpassword1", last_signed_in_at: Time.current)
+
+    post login_path, params: { email: "new@example.com", password: "newpassword1" }
+    follow_redirect!
+    assert_response :success
+    assert_select "#tenant-list li", 1
+    assert tenant_user_of("new@example.com").invited?
+
+    post select_tenant_path, params: { tenant_id: @tenant.id }
+    assert tenant_user_of("new@example.com").active?
+  end
+
+  test "パスワードを決めたあとに開いた URL と、別の人でログインして開いた URL では参加させない" do
+    path = invite("new@example.com")
 
     login("admin@example.com")
     get path
     assert_select "#other-account", text: /admin@example.com/
-    patch path
-    assert_response :unprocessable_entity
-    assert tenant_user_of("b@example.com").invited?
+    patch path, params: { password: "newpassword1", password_confirmation: "newpassword1" }
+    assert_redirected_to path
+    assert tenant_user_of("new@example.com").invited?
     delete logout_path
 
-    login("b@example.com")
+    User.find_by!(email: "new@example.com").update!(password: "newpassword1", last_signed_in_at: Time.current)
     get path
+    assert_select "#existing-account", text: /組織の選択で「テナントA」を選ぶと参加できます/
     assert_select "#invitation input[type=password]", 0
-    patch path
-    assert_redirected_to top_page_path
-    assert tenant_user_of("b@example.com").active?
-    follow_redirect!
-    assert_select "#site-header", text: /テナントA/
+    patch path, params: { password: "other-password", password_confirmation: "other-password" }
+    assert_redirected_to path
+    assert tenant_user_of("new@example.com").invited?
   end
 
   test "期限は組織設定の日数で、過ぎると使えない" do
