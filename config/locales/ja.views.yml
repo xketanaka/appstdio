@@ -125,8 +125,10 @@ ja:
 
   invitation_mailer:
     invitation:
-      subject: "「%{tenant}」に招待されました"
-      body: "%{inviter}さんから、%{platform} の「%{tenant}」に招待されました。"
+      subject: "%{target} に招待されました"
+      body: "%{inviter}さんから、%{target} に招待されました。"
+      target: "%{platform}(%{tenant})"
+      target_with_system: "%{platform}: %{system}(%{tenant})"
       new_account: "次の URL を開いて、パスワードを決めてください。決めると参加できます。"
       expires: "この URL は %{time} まで使えます。"
       existing_account: "いつものメールアドレスとパスワードでログインし、組織の選択で「%{tenant}」を選ぶと参加できます。"
