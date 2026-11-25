@@ -5,7 +5,7 @@ module Files
     def show
       @config = {
         messages: I18n.t("files_app"),
-        title_prefix: helpers.title_prefix(current_tenant.setting),
+        title_prefix: helpers.system_name(current_tenant.setting),
         admin_or_owner: current_tenant_user.admin_or_owner?,
         privileged: privileged_mode?,
         max_upload_bytes: Settings.files.max_upload_bytes,
