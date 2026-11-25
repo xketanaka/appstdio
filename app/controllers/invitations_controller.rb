@@ -43,6 +43,6 @@ class InvitationsController < ApplicationController
 
   # 招待されたテナントに切り替えて DB を触る。画面の描画はこの外で行う（画面の枠はログイン中のテナントの設定を読むので）
   def in_invited_tenant(tenant_id = @tenant_user.tenant_id, &)
-    TenantContext.switch(tenant: tenant_id, user: session[:current_user_id], &)
+    TenantContext.switch(tenant: tenant_id, user: current_user, &)
   end
 end

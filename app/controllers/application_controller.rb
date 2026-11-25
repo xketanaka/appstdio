@@ -64,7 +64,7 @@ class ApplicationController < ActionController::Base
   def start_session(user)
     return_to = session[:return_to]
     reset_session # セッション固定化攻撃への対策
-    session[:current_user_id] = user.id
+    session[:user_token] = user.generate_token_for(:session)
     session[:return_to] = return_to if return_to.present?
     user.update_column(:last_signed_in_at, Time.current)
   end

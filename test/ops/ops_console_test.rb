@@ -63,7 +63,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
-    assert_nil session[:current_operator_id]
+    assert_nil session[:operator_token]
   end
 
   test "同じメールアドレスの利用者がいても、運営者のパスワードでしか入れない" do
@@ -81,7 +81,25 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
 
     post ops_login_path, params: { email: @operator.email, password: PASSWORD }
     assert_response :unprocessable_entity
-    assert_nil session[:current_operator_id]
+    assert_nil session[:operator_token]
+  end
+
+  test "パスワードを変えると、他の端末のログインは切れる" do
+    login_as_operator
+    get ops_root_path
+    assert_response :success
+
+    @operator.update!(password: "newpassword1")
+    get ops_root_path
+    assert_redirected_to ops_login_path
+  end
+
+  test "ログイン中に停止すると入れなくなる" do
+    login_as_operator
+    @operator.update!(status: :suspended)
+
+    get ops_root_path
+    assert_redirected_to ops_login_path
   end
 
   test "ログイン前に見ようとしたページへ戻る" do
@@ -97,7 +115,7 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
 
     delete ops_logout_path
     assert_redirected_to ops_login_path
-    assert_nil session[:current_operator_id]
+    assert_nil session[:operator_token]
 
     get ops_root_path
     assert_redirected_to ops_login_path

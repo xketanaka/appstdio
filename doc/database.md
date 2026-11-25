@@ -47,7 +47,7 @@ Web リクエストでは `TenantContextFilter`（`ApplicationController` に in
 |---|---|
 | `current_tenant_user` | 現在のテナントでの所属情報（表示名・権限・状態）。リクエストごとに解決される |
 | `current_tenant` | 現在の `Tenant`（`current_tenant_user` から辿る） |
-| `current_user` | ログイン中の `User`。**参照されたときにだけ読み込む** |
+| `current_user` | ログイン中の `User`。セッションの印を確かめるときに読み込んだもの |
 
 いずれもテナント未選択・未ログインなら `nil`。
 
@@ -74,9 +74,13 @@ Web リクエストでは `TenantContextFilter`（`ApplicationController` に in
 テナントを設定した接続でクエリが走りうる。`TenantContext.apply` を使う処理を足すときも、
 接続を握った中で呼ぶこと（`TenantContext.switch` は自分で握る）。
 
-`users` は認証情報しか持たず、通常の画面で必要になることはほとんどないため、
-リクエストごとには読み込まない。所属情報はセッションの `current_user_id` と
-`current_tenant_id` から `tenant_users` を直接引いて解決している。
+セッションには利用者の id ではなく、ログインの印（`User` の `generates_token_for(:session)`）を持つ。
+印はパスワードの salt の一部を含めて署名してあり、リクエストごとに `users` を主キーで1回引いて
+今の salt と比べる。パスワードを変えると、それより前に発行した印はどの端末のものも合わなくなり、
+ログインしていない扱いになる（運営者も `Operator` の同じ印で同じ）。以前は `users` を
+リクエストごとには読まず、セッションの `current_user_id` から `tenant_users` を直接引いていたが、
+それではパスワードを変えても他の端末のログインが切れなかった。
+所属情報は、引いた利用者の id とセッションの `current_tenant_id` から `tenant_users` を引いて解決する。
 
 ジョブ・コンソール・テストなど、リクエスト外から DB を触る場合は `TenantContext` を使う。
 
