@@ -1,9 +1,14 @@
 module ApplicationHelper
   include FormatUtils
 
+  # 画面に出すシステム名。組織設定のタイトルラベルが無ければ（テナントに入る前も）プラットフォーム名
+  def system_name(setting)
+    setting&.title_label || Settings.platform_name
+  end
+
   # ブラウザのタイトルの、画面ごとに変わらない部分
   def title_prefix(setting)
-    [Settings.system_title, setting&.title_label].compact.join(" | ")
+    [Settings.platform_name, setting&.title_label].compact.join(" | ")
   end
 
   # アバターの画像の URL。未設定なら nil。一覧では includes(:avatar_attachment) で読んでおくこと
