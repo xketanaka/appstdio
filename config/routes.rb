@@ -31,6 +31,8 @@ Rails.application.routes.draw do
     post   "login"  => "sessions#create"
     delete "logout" => "sessions#destroy", as: :logout
 
+    resources :password_resets, only: [:new, :create, :edit, :update], param: :token
+
     get   "invitations/:token" => "invitations#show", as: :invitation
     patch "invitations/:token" => "invitations#update"
 

@@ -1,5 +1,8 @@
 class User < ApplicationRecord
-  has_secure_password
+  PASSWORD_RESET_EXPIRES_IN = 30.minutes
+
+  # 再設定のトークンはパスワードの salt を含めて署名するので、パスワードを変えると使えなくなる
+  has_secure_password reset_token: { expires_in: PASSWORD_RESET_EXPIRES_IN }
 
   has_many :tenant_users, dependent: :destroy
   has_many :tenants, through: :tenant_users
@@ -20,14 +23,26 @@ class User < ApplicationRecord
     last_signed_in_at.nil?
   end
 
-  def email_verified?
-    email_verified_at.present?
+  # パスワード再設定のメールを送る。メールは後で送る
+  def send_password_reset
+    PasswordResetMailer.reset(to: email, token: password_reset_token,
+      expires_at: PASSWORD_RESET_EXPIRES_IN.from_now).deliver_later
   end
 
-  def password_reset_token_valid?
-    password_reset_token.present? &&
-      password_reset_token_expires_at.present? &&
-      password_reset_token_expires_at.future?
+  # 再設定のメールの URL から新しいパスワードを決める。メールを受け取れたので、メールアドレスを確かめたことにする
+  def reset_password(password:, password_confirmation:)
+    # 空のパスワードは has_secure_password が黙って捨てるので、ここで弾く
+    if password.empty?
+      errors.add(:password, :blank)
+      return false
+    end
+    assign_attributes(password:, password_confirmation:)
+    self.email_verified_at ||= Time.current
+    save
+  end
+
+  def email_verified?
+    email_verified_at.present?
   end
 
   def email_verification_token_valid?

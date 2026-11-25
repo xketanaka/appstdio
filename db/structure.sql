@@ -811,8 +811,6 @@ CREATE TABLE public.users (
     email_verified_at timestamp(6) without time zone,
     email_verification_token character varying,
     email_verification_token_expires_at timestamp(6) without time zone,
-    password_reset_token character varying,
-    password_reset_token_expires_at timestamp(6) without time zone,
     last_signed_in_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
@@ -1510,13 +1508,6 @@ CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 --
 
 CREATE UNIQUE INDEX index_users_on_email_verification_token ON public.users USING btree (email_verification_token) WHERE (email_verification_token IS NOT NULL);
-
-
---
--- Name: index_users_on_password_reset_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_users_on_password_reset_token ON public.users USING btree (password_reset_token) WHERE (password_reset_token IS NOT NULL);
 
 
 --
@@ -2408,6 +2399,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261124100000'),
 ('20261120100000'),
 ('20261118100000'),
 ('20261111100000'),

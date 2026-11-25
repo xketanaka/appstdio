@@ -1,0 +1,15 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="min-h-0 flex-1 overflow-y-auto px-4 py-10">
+  <div id="password-reset" class="mx-auto max-w-md rounded-3xl bg-white px-6 pt-7 pb-8 sm:px-10 sm:pt-9 sm:pb-10">
+    <h1 class="mb-4 text-title"><%= t(".heading") %></h1>
+    <p class="mb-6 text-sm"><%= t(".message") %></p>
+    <%= form_with url: password_resets_path, method: :post do |f| %>
+      <div class="mb-5">
+        <%= f.label :email, User.human_attribute_name(:email), class: "mb-1.5 block text-sm font-semibold" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "username", required: true, class: "input" %>
+      </div>
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full" %>
+    <% end %>
+    <%= link_to t(".back"), login_path, class: "mt-5 inline-block text-sm text-primary-700 hover:underline" %>
+  </div>
+</div>
