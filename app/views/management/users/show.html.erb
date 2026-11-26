@@ -44,8 +44,12 @@
             <%= t(".invitation.not_sent") %>
           <% else %>
             <%= t(".invitation.sent", time: time_to_s(@tenant_user.invitation_sent_at)) %>
-            <% expires_at = @tenant_user.invitation_expires_at %>
-            <%= expires_at.future? ? t(".invitation.expires", time: time_to_s(expires_at)) : t(".invitation.expired") %>
+            <% if @tenant_user.user.never_signed_in? %>
+              <% expires_at = @tenant_user.invitation_expires_at %>
+              <%= expires_at.future? ? t(".invitation.expires", time: time_to_s(expires_at)) : t(".invitation.expired") %>
+            <% else %>
+              <%= t(".invitation.existing_account") %>
+            <% end %>
           <% end %>
         </p>
         <%= button_to t(".invitation.resend"), resend_invitation_management_user_path(@tenant_user), id: "resend-invitation",

@@ -1,3 +1,8 @@
 <p><%= t(".body", inviter: @inviter_name, tenant: @tenant_name, system: Settings.system_title) %></p>
-<p><%= t(".action") %><br><%= link_to @url, @url %></p>
-<p><%= t(".expires", time: time_to_s(@expires_at)) %><br><%= t(".ignore") %></p>
+<% if @new_account %>
+  <p><%= t(".new_account") %><br><%= link_to @url, @url %></p>
+  <p><%= t(".expires", time: time_to_s(@expires_at)) %><br><%= t(".ignore") %></p>
+<% else %>
+  <p><%= t(".existing_account", tenant: @tenant_name) %><br><%= link_to @url, @url %></p>
+  <p><%= t(".ignore") %></p>
+<% end %>

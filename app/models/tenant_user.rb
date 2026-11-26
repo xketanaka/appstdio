@@ -72,37 +72,45 @@ class TenantUser < ApplicationRecord
     INVITATION_VERIFIER.verified(token.to_s)
   end
 
-  # まだ受けられる招待。招待されたテナントに切り替えた中で呼ぶ。招待中で、最後に送った招待の URL で、
-  # 期限内のものだけ（再送すると前の URL は使えない）
+  # まだ使える招待の URL。招待されたテナントに切り替えた中で呼ぶ。招待中で、最後に送った招待の URL のものだけ
+  # （再送すると前の URL は使えない）。期限は、パスワードを決める URL（一度もログインしていない人）にだけ効かせる。
+  # 他の人は組織の選択から参加するので、URL はログインへの案内にしか使わない
   def self.find_acceptable_invitation(id, sent_at)
     tenant_user = invited.includes(:user, :tenant).find_by(id:)
-    tenant_user if tenant_user&.invitation_sent_at&.iso8601(6) == sent_at && tenant_user.invitation_expires_at.future?
+    return unless tenant_user&.invitation_sent_at&.iso8601(6) == sent_at
+
+    tenant_user if !tenant_user.user.never_signed_in? || tenant_user.invitation_expires_at.future?
   end
 
-  # 招待の期限。送った日時から組織設定の日数。日数を変えると送り済みの招待にも効く
+  # 招待の URL でパスワードを決める期限。送った日時から組織設定の日数。日数を変えると送り済みの招待にも効く
   def invitation_expires_at
     invitation_sent_at + tenant.setting.invitation_expiry_days.days
   end
 
   # 招待メールを送る（再送も同じ）。送った日時を今にするので、前に送った URL は使えなくなる。
+  # 一度もログインしていない人にはパスワードを決める URL を、他の人にはログインの URL を書く。
   # メールは後で送る。送るジョブはテナントの外で動くので、レコードではなく値で渡す
   def send_invitation!(by:)
     update!(invitation_sent_at: Time.current)
+    token = INVITATION_VERIFIER.generate([tenant_id, id, invitation_sent_at.iso8601(6)]) if user.never_signed_in?
     InvitationMailer.invitation(to: user.email, tenant_name: tenant.name, inviter_name: by.display_name,
-      token: INVITATION_VERIFIER.generate([tenant_id, id, invitation_sent_at.iso8601(6)]),
-      expires_at: invitation_expires_at).deliver_later
+      token:, expires_at: (invitation_expires_at if token)).deliver_later
   end
 
-  # 招待を受けて有効にする。メールを受け取れたので、メールアドレスを確かめたことにする。
-  # password を渡すと、それをアカウントのパスワードにする（一度もログインしていない人）。
-  # パスワードを決められなければ false で、user に誤りを持たせる
-  def accept_invitation(password: nil, password_confirmation: nil)
+  # 組織の選択で、招待されたテナントを選んで参加する。招待されたテナントに切り替えた中で呼ぶ
+  def join!
+    update!(status: :active)
+  end
+
+  # 招待の URL でパスワードを決めて参加する（一度もログインしていない人）。メールを受け取れたので、
+  # メールアドレスを確かめたことにする。パスワードを決められなければ false で、user に誤りを持たせる
+  def accept_invitation(password:, password_confirmation:)
     # 空のパスワードは has_secure_password が黙って捨てるので、ここで弾く
-    if password&.empty?
+    if password.empty?
       user.errors.add(:password, :blank)
       return false
     end
-    user.assign_attributes(password:, password_confirmation:) if password
+    user.assign_attributes(password:, password_confirmation:)
     user.email_verified_at ||= Time.current
     transaction do
       raise ActiveRecord::Rollback unless user.save

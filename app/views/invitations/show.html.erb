@@ -1,24 +1,25 @@
 <% content_for :title do %><%= t(".title") %><% end -%>
 <% user = @tenant_user.user %>
+<% new_account = user.never_signed_in? %>
 <div class="min-h-0 flex-1 overflow-y-auto px-4 py-10">
   <div id="invitation" class="mx-auto max-w-md rounded-3xl bg-white px-6 pt-7 pb-8 sm:px-10 sm:pt-9 sm:pb-10">
     <h1 class="mb-4 text-title"><%= t(".heading", tenant: @tenant_user.tenant.name) %></h1>
     <dl class="mb-6 text-sm">
       <dt class="text-slate-500"><%= User.human_attribute_name(:email) %></dt>
-      <dd class="mb-2 break-all"><%= user.email %></dd>
-      <dt class="text-slate-500"><%= t(".expires_at") %></dt>
-      <dd><%= time_to_s(@expires_at) %></dd>
+      <dd class="break-all"><%= user.email %></dd>
+      <% if new_account %>
+        <dt class="mt-2 text-slate-500"><%= t(".expires_at") %></dt>
+        <dd><%= time_to_s(@expires_at) %></dd>
+      <% end %>
     </dl>
 
     <% if session[:current_user_id] == user.id %>
-      <p class="mb-5 text-sm"><%= t(".signed_in") %></p>
-      <%= form_with url: invitation_path(params[:token]), method: :patch do |f| %>
-        <%= f.submit t(".accept"), class: "btn btn-primary w-full" %>
-      <% end %>
+      <p class="mb-5 text-sm"><%= t(".signed_in", tenant: @tenant_user.tenant.name) %></p>
+      <%= link_to t(".select_tenant"), select_tenant_path, class: "btn btn-primary w-full" %>
     <% elsif session[:current_user_id].present? %>
       <p id="other-account" class="mb-5 text-sm"><%= t(".other_account", email: current_user&.email) %></p>
       <%= button_to t("actions.logout"), logout_path, method: :delete, class: "btn btn-secondary w-full" %>
-    <% elsif user.never_signed_in? %>
+    <% elsif new_account %>
       <p class="mb-5 text-sm"><%= t(".new_account") %></p>
       <%= render "partial/errors", object: user %>
       <%= form_with url: invitation_path(params[:token]), method: :patch do |f| %>
@@ -36,17 +37,8 @@
         <%= f.submit t(".accept"), class: "btn btn-primary w-full" %>
       <% end %>
     <% else %>
-      <p class="mb-5 text-sm"><%= t(".existing_account") %></p>
-      <%= form_with url: invitation_path(params[:token]), method: :patch do |f| %>
-        <input type="email" name="username" value="<%= user.email %>" autocomplete="username" hidden>
-        <div class="mb-5">
-          <%= f.label :password, User.human_attribute_name(:password), class: "mb-1.5 block text-sm font-semibold" %>
-          <%= f.password_field :password, autofocus: true, autocomplete: "current-password", required: true, class: "input" %>
-        </div>
-        <%= f.submit t(".accept"), class: "btn btn-primary w-full" %>
-      <% end %>
-      <%= link_to t(".forgot_password"), new_password_reset_path, id: "forgot-password",
-            class: "mt-5 inline-block text-sm text-primary-700 hover:underline" %>
+      <p id="existing-account" class="mb-5 text-sm"><%= t(".existing_account", tenant: @tenant_user.tenant.name) %></p>
+      <%= link_to t(".login"), login_path, class: "btn btn-primary w-full" %>
     <% end %>
   </div>
 </div>

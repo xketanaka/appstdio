@@ -1,34 +1,22 @@
-# 招待を受ける画面。ログインしていなくても開ける。URL のトークンから招待されたテナントを決め、その中で所属を探す
+# 招待の URL を開いた画面。招待で作られた新しいアカウントが、パスワードを決めて参加する。ログインしていなくても開ける。
+# URL のトークンから招待されたテナントを決め、その中で所属を探す。
+# パスワードのあるアカウントは、ログインして組織の選択から参加する（TenantSelectionsController）ので、ここでは案内だけ出す
 class InvitationsController < ApplicationController
   skip_before_action :login_required
   skip_before_action :tenant_required
   before_action :set_invitation
-  # パスワードを当てようと繰り返すのを遅らせる
-  rate_limit to: 10, within: 3.minutes, only: :update
 
-  # 開いた人によって出し分ける（app/views/invitations/show.html.erb）。招待された本人でログインしている、
-  # 別の人でログインしている、ログインしていなくて一度もログインしたことがない（パスワードを決める）・ある（今のパスワードを入れる）
   def show
   end
 
   def update
     user = @tenant_user.user
-    accepted =
-      if session[:current_user_id] == user.id
-        in_invited_tenant { @tenant_user.accept_invitation }
-      elsif session[:current_user_id].present?
-        false
-      elsif user.never_signed_in?
-        in_invited_tenant do
-          @tenant_user.accept_invitation(password: params[:password].to_s,
-            password_confirmation: params[:password_confirmation].to_s)
-        end
-      elsif user.authenticate(params[:password].to_s)
-        in_invited_tenant { @tenant_user.accept_invitation }
-      else
-        flash.now[:alert] = t(".wrong_password")
-        false
-      end
+    return redirect_to invitation_path(params[:token]) if logged_in? || !user.never_signed_in?
+
+    accepted = in_invited_tenant do
+      @tenant_user.accept_invitation(password: params[:password].to_s,
+        password_confirmation: params[:password_confirmation].to_s)
+    end
 
     if accepted
       start_session(user)
