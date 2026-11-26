@@ -3,6 +3,8 @@ class User < ApplicationRecord
 
   # 再設定のトークンはパスワードの salt を含めて署名するので、パスワードを変えると使えなくなる
   has_secure_password reset_token: { expires_in: PASSWORD_RESET_EXPIRES_IN }
+  # ログインのセッションに入れる印。同じくパスワードの salt を含めるので、パスワードを変えると他の端末のログインも切れる
+  generates_token_for(:session) { password_salt&.last(10) }
 
   has_many :tenant_users, dependent: :destroy
   has_many :tenants, through: :tenant_users

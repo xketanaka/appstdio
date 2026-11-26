@@ -22,7 +22,13 @@ class PasswordResetsTest < ActionDispatch::IntegrationTest
     ActionMailer::Base.deliveries.last.text_part.body.decoded[%r{https?://\S+/password_resets/(\S+)/edit}, 1]
   end
 
-  test "ログインの画面から、メールの URL で新しいパスワードを決め、そのままログインする" do
+  test "ログインの画面から、メールの URL で新しいパスワードを決め、そのままログインする。他の端末のログインは切れる" do
+    other_device = open_session
+    other_device.post login_path, params: { email: @user.email, password: PASSWORD }
+    other_device.post select_tenant_path, params: { tenant_id: @tenant.id }
+    other_device.get top_page_path
+    other_device.assert_response :success
+
     get login_path
     assert_select "a[href=?]", new_password_reset_path
 
@@ -45,12 +51,17 @@ class PasswordResetsTest < ActionDispatch::IntegrationTest
 
     patch password_reset_path(token), params: { password: "newpassword1", password_confirmation: "newpassword1" }
     assert_redirected_to select_tenant_path
-    assert_equal @user.id, session[:current_user_id]
     follow_redirect!
     follow_redirect!
     assert_select "[role=status]", text: "パスワードを変更しました。"
     assert @user.reload.authenticate("newpassword1")
     assert @user.email_verified?
+
+    # 再設定した端末はログインしたまま、他の端末はログインの画面へ戻される
+    get top_page_path
+    assert_response :success
+    other_device.get top_page_path
+    other_device.assert_redirected_to login_path
 
     # パスワードを変えたあとは同じ URL は使えない
     delete logout_path

@@ -15,7 +15,7 @@ class TenantSelectionsController < ApplicationController
     if tenant_user
       if tenant_user.invited?
         # own_memberships の行は読み取り専用なので、そのテナントに切り替えて引き直す
-        TenantContext.switch(tenant: tenant_user.tenant_id, user: session[:current_user_id]) do
+        TenantContext.switch(tenant: tenant_user.tenant_id, user: current_user) do
           TenantUser.find(tenant_user.id).join!
         end
         flash[:notice] = t(".joined", tenant: tenant_user.tenant.name)

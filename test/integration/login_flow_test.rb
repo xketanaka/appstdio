@@ -71,7 +71,7 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_select "[role=alert]", text: /メールアドレスまたはパスワードが違います/
-    assert_nil session[:current_user_id]
+    assert_nil session[:user_token]
   end
 
   test "存在しないメールアドレスでもパスワード誤りと同じ応答になる" do
@@ -119,11 +119,11 @@ class LoginFlowTest < ActionDispatch::IntegrationTest
 
   test "ログアウトするとセッションが破棄される" do
     login_and_select
-    assert_equal @user.id, session[:current_user_id]
+    assert_equal @user, User.find_by_token_for(:session, session[:user_token])
 
     delete logout_path
     assert_redirected_to login_path
-    assert_nil session[:current_user_id]
+    assert_nil session[:user_token]
     assert_nil session[:current_tenant_id]
 
     get top_page_path
