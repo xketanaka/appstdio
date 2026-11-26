@@ -51,6 +51,11 @@ module Files
       end
     end
 
+    # 上げたファイルの名前。blob.filename.to_s は % や ? などを - に替えるので、元の名前を使う
+    def self.upload_name(blob)
+      blob[:filename].to_s.strip
+    end
+
     # アップロードしたファイルを登録する。容量を数え、版1を作り、作った人を管理者にして、
     # 操作履歴を残す。容量が足りなければ StorageFullError（何も残さない）
     def self.create_file!(parent:, blob:, creator:)
@@ -58,7 +63,7 @@ module Files
         reserve_storage!(parent.tenant_id, blob.byte_size)
         file = create!(
           tenant_id: parent.tenant_id, drive_id: parent.drive_id, parent:, kind: :file,
-          name: blob.filename.to_s, byte_size: blob.byte_size, creator:,
+          name: upload_name(blob), byte_size: blob.byte_size, creator:,
         )
         version = Version.create!(
           tenant_id: file.tenant_id, node: file, number: 1, byte_size: blob.byte_size,

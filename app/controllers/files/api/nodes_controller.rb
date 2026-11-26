@@ -74,7 +74,7 @@ module Files
         parent = editable_folder!(params[:parent_id])
         blob = uploaded_blob!(params[:signed_blob_id])
 
-        existing = parent.children.kept.file.find_by(name: blob.filename.to_s)
+        existing = parent.children.kept.file.find_by(name: Node.upload_name(blob))
         if existing
           unless access.effective_permission(existing).editable?
             blob.purge_later

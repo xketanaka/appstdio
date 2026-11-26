@@ -12,28 +12,21 @@
 `app` と `ops` は同じイメージ・同じコードで、環境変数だけが違う。なぜ分けているかは
 `doc/architecture.md` の「運営者画面」を参照。
 
-## アクセスするためのポート設定
+## 環境ごとの設定（.env）
 
-docker-compose.override.yml を配置する。必要であればホスト側のポート設定を変更する
+ポートなどを変えたいときは、リポジトリ直下の `.env` に `名前=値` で書く。どれも書かなければ既定のまま動く。
 
-```bash
-cp docker/files/docker-compose.override.yml.example docker-compose.override.yml
-```
+| 変数 | 説明 |
+|---|---|
+| `APP_LISTEN_PORT` | `app`（利用テナント側）をホストで開くポート。既定 6000 |
+| `OPS_LISTEN_PORT` | `ops`（運営者画面）をホストで開くポート。既定 6001 |
+| `VITE_LISTEN_PORT` | `vite` をホストで開くポート。既定 3036。同じマシンで複数のチェックアウトを動かすときは別の番号にする |
+| `APP_URL` | メールに書く URL。ブラウザのアドレスバーに出るとおりに書く。既定 `http://localhost:<APP_LISTEN_PORT>` |
+| `RAILS_DEVELOPMENT_HOSTS` | `localhost` 以外のホスト名で開くときに、そのホスト名をカンマ区切りで書く（Rails と Vite が受け付ける） |
+| `VITE_HMR_CLIENT_PORT` | リバースプロキシ越しに使うときの HMR のポート（「リバースプロキシ越しに使う場合」を参照） |
+| `COMMAND` | コンテナで動かす `bin/rails` のサブコマンド。既定 `server` |
 
-## APP_URL: メールに書くURL
-
-招待メールなどに書くURLは `.env` の `APP_URL` で指定する。
-ブラウザのアドレスバーから見えるこのアプリのURLを書く
-
-```
-APP_URL=https://dev.example.jp
-```
-
-* 書かなければ `http://localhost:<APP_LISTEN_PORT>`（既定 `http://localhost:6000`）になる
-* docker-compose.override.yml でポートを変えたとき、別のホスト名やリバースプロキシ越しで使うときは書く。
-* ホスト名が `localhost` でなければ、`RAILS_DEVELOPMENT_HOSTS` にも入れる必要がある。
-* 値を変更したときは `docker compose up -d app` でコンテナを作り直す
-* 開発環境で送ったメールは、`<APP_URL>/letter_opener` で参照できる
+値を変えたら `docker compose up -d` でコンテナを作り直す（`restart` では読み直さない）。
 
 ## セットアップ
 
@@ -71,7 +64,8 @@ RLS を迂回する必要がある操作（`db:seed`）は必ずこちらを使�
 ロールを分けている理由は `doc/database.md` の「テナント分離」を参照。
 
 以上でセットアップ完了。
-ブラウザで docker-compose.override.yml で指定したポートにアクセスすると画面が表示される
+ブラウザで `http://localhost:6000`（`APP_LISTEN_PORT` を変えたときはそのポート）を開くと画面が表示される。
+開発環境で送ったメールは `/letter_opener` で見られる
 
 ## DB (PostgreSQL) への接続
 
