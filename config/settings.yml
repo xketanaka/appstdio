@@ -1,6 +1,6 @@
 # ERB を通してから読む（app/models/settings.rb）。環境変数は <%%= ENV.fetch("NAME", "既定") %> で埋め込む
 base: &base
-  system_title: AppStdio
+  platform_name: AppStdio
   paginator:
     rows_per_page: 25
     max_pagination: 20

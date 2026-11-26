@@ -48,8 +48,8 @@ class InvitationsTest < ActionDispatch::IntegrationTest
 
     mail = ActionMailer::Base.deliveries.last
     assert_equal ["new@example.com"], mail.to
-    assert_equal "「テナントA」に招待されました", mail.subject
-    assert_includes mail.text_part.body.decoded, "管理者さんさんから"
+    assert_equal "AppStdio(テナントA) に招待されました", mail.subject
+    assert_includes mail.text_part.body.decoded, "管理者さんさんから、AppStdio(テナントA) に招待されました。"
     assert tenant_user_of("new@example.com").invited?
 
     get path
@@ -85,8 +85,12 @@ class InvitationsTest < ActionDispatch::IntegrationTest
       TenantUser.create!(tenant: @other_tenant, user: User.create!(email: "b@example.com", password: PASSWORD,
         last_signed_in_at: 1.day.ago), display_name: "Bさん", role: :owner, status: :active)
     end
+    # 組織設定のタイトルラベルがあれば、システム名として添える
+    TenantContext.switch(tenant: @tenant) { @tenant.setting.update!(title_label: "経費精算システム") }
     assert_nil invite("b@example.com", display_name: "Bさん")
-    body = ActionMailer::Base.deliveries.last.text_part.body.decoded
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal "AppStdio: 経費精算システム(テナントA) に招待されました", mail.subject
+    body = mail.text_part.body.decoded
     assert_includes body, "組織の選択で「テナントA」を選ぶと参加できます"
     assert_includes body, "http://example.com/login"
 

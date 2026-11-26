@@ -7,7 +7,7 @@ ja:
     ops:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
-      brand: "%{system_title} 運営者画面"
+      brand: "%{platform} 運営者画面"
 
   sessions:
     new:
@@ -117,16 +117,18 @@ ja:
 
   password_reset_mailer:
     reset:
-      subject: "%{system} のパスワードの再設定"
-      body: "%{system} のパスワードの再設定を受け付けました。"
+      subject: "%{platform} のパスワードの再設定"
+      body: "%{platform} のパスワードの再設定を受け付けました。"
       action: "次の URL を開いて、新しいパスワードを決めてください。"
       expires: "この URL は %{time} まで使えます。"
       ignore: "心当たりがなければ、このメールは破棄してください。パスワードは変わりません。"
 
   invitation_mailer:
     invitation:
-      subject: "「%{tenant}」に招待されました"
-      body: "%{inviter}さんから、%{system} の「%{tenant}」に招待されました。"
+      subject: "%{target} に招待されました"
+      body: "%{inviter}さんから、%{target} に招待されました。"
+      target: "%{platform}(%{tenant})"
+      target_with_system: "%{platform}: %{system}(%{tenant})"
       new_account: "次の URL を開いて、パスワードを決めてください。決めると参加できます。"
       expires: "この URL は %{time} まで使えます。"
       existing_account: "いつものメールアドレスとパスワードでログインし、組織の選択で「%{tenant}」を選ぶと参加できます。"

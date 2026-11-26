@@ -3,10 +3,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= [title_prefix(setting), content_for(:title)].compact_blank.join(" - ") %></title>
+    <title><%= [system_name(setting), content_for(:title)].compact_blank.join(" - ") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="AppStdio">
+    <meta name="application-name" content="<%= Settings.platform_name %>">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -44,7 +44,7 @@
               </svg>
             </button>
           <% end %>
-          <% title = setting&.title_label || Settings.system_title %>
+          <% title = system_name(setting) %>
           <div id="site-title" class="flex min-w-0 items-center gap-2.5">
             <% if setting&.logo&.attached? %>
               <%= image_tag rails_storage_proxy_path(setting.logo), alt: title, class: "h-8 w-auto shrink-0" %>

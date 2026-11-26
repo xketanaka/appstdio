@@ -31,7 +31,7 @@ class SiteHeaderTest < ActionDispatch::IntegrationTest
     login
     get top_page_path
 
-    assert_select "title", text: "AppStdio | サンプル株式会社 - ホーム"
+    assert_select "title", text: "サンプル株式会社 - ホーム"
     assert_select "#site-header[style=?]", "background-color: #1e40af"
     assert_select "#site-title", text: /\Aサ\s*サンプル株式会社\z/
   end

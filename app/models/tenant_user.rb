@@ -93,8 +93,8 @@ class TenantUser < ApplicationRecord
   def send_invitation!(by:)
     update!(invitation_sent_at: Time.current)
     token = INVITATION_VERIFIER.generate([tenant_id, id, invitation_sent_at.iso8601(6)]) if user.never_signed_in?
-    InvitationMailer.invitation(to: user.email, tenant_name: tenant.name, inviter_name: by.display_name,
-      token:, expires_at: (invitation_expires_at if token)).deliver_later
+    InvitationMailer.invitation(to: user.email, tenant_name: tenant.name, title_label: tenant.setting.title_label,
+      inviter_name: by.display_name, token:, expires_at: (invitation_expires_at if token)).deliver_later
   end
 
   # 組織の選択で、招待されたテナントを選んで参加する。招待されたテナントに切り替えた中で呼ぶ

@@ -1,4 +1,4 @@
-<p><%= t(".body", inviter: @inviter_name, tenant: @tenant_name, system: Settings.system_title) %></p>
+<p><%= t(".body", inviter: @inviter_name, target: @target) %></p>
 <% if @new_account %>
   <p><%= t(".new_account") %><br><%= link_to @url, @url %></p>
   <p><%= t(".expires", time: time_to_s(@expires_at)) %><br><%= t(".ignore") %></p>
