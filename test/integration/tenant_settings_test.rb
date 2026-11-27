@@ -136,8 +136,8 @@ class TenantSettingsTest < ActionDispatch::IntegrationTest
     assert_select "#tenant-features dt", text: "プロジェクト機能" do |dt|
       assert_equal "利用する", dt.first.next_element.text.strip
     end
-    drawer = css_select("dialog[data-drawer] nav").first.text.split.first(3)
-    assert_equal %w[プロジェクト 準備中 ファイル], drawer
+    drawer = css_select("dialog[data-drawer] nav").first.text.split.first(2)
+    assert_equal %w[プロジェクト ファイル], drawer
     menu = css_select("#side-pane nav").first.text.split
     assert_equal %w[利用者管理 グループ管理 プロジェクト管理 組織設定], menu
     assert_select "#side-pane nav a[href=?]", management_projects_path, text: "プロジェクト管理"

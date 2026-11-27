@@ -55,6 +55,9 @@
               <span class="truncate text-lg font-medium"><%= title %></span>
             <% end %>
           </div>
+          <% if content_for?(:header_context) %>
+            <div id="header-context" class="flex min-w-0 items-center gap-2"><%= yield :header_context %></div>
+          <% end %>
         </div>
         <% if logged_in? %>
           <div class="flex min-w-0 shrink-0 items-center gap-2 text-sm sm:gap-3">
@@ -83,7 +86,7 @@
       <% if logged_in? %>
         <%= render layout: "partial/drawer" do %>
           <% if current_tenant&.setting&.projects_enabled? %>
-            <%= render "partial/drawer_item", label: t("menus.projects"), path: nil %>
+            <%= render "partial/drawer_item", label: t("menus.projects"), path: projects_path %>
           <% end %>
           <% if current_tenant&.files_setting&.enabled? %>
             <%= render "partial/drawer_item", label: t("menus.files"), path: files_root_path %>

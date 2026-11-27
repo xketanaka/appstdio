@@ -1,0 +1,38 @@
+<% content_for :title do %><%= @project.name %><% end -%>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <header id="project-header" class="mb-6">
+      <h1 class="text-title break-words"><%= @project.name %></h1>
+      <% if @labels.present? %>
+        <ul id="project-labels" aria-label="<%= t(".labels") %>" class="mt-2 flex flex-wrap gap-1.5">
+          <% @labels.each do |label| %>
+            <li class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700"><%= label %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </header>
+
+    <section id="project-members">
+      <h2 class="mb-1 text-sm font-semibold"><%= t(".members.heading", count: @members.size) %></h2>
+      <table class="w-full">
+        <tbody>
+          <% @members.each do |member| %>
+            <tr class="border-t border-slate-200">
+              <td class="py-2">
+                <div class="flex items-center gap-3">
+                  <%= render "partial/avatar", tenant_user: member.tenant_user %>
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="truncate"><%= member.tenant_user.display_name %></span>
+                    <% if member.leader? %>
+                      <span class="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700"><%= t(".members.leader") %></span>
+                    <% end %>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>

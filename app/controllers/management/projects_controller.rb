@@ -12,10 +12,8 @@ module Management
 
     def index
       @projects = Project.active.includes(group: :labels).order("groups.name", "groups.id").to_a
-      group_ids = @projects.map(&:group_id)
-      @member_counts = GroupMember.without_suspended_users.where(group_id: group_ids).group(:group_id).count
-      @leaders = GroupMember.leader.without_suspended_users.where(group_id: group_ids).includes(:tenant_user)
-        .group_by(&:group_id).transform_values { |members| members.map { it.tenant_user.display_name }.sort }
+      @member_counts = Project.member_counts(@projects)
+      @leaders = Project.leader_names(@projects)
     end
 
     # 利用停止中のプロジェクトの一覧。新しく止めた順に30件ずつ出し、下までスクロールすると読み足す
@@ -34,7 +32,7 @@ module Management
 
     def show
       @labels = @project.labels.order(:name).pluck(:name)
-      @members = members_of(@project)
+      @members = @project.listed_members
       @reactivation_blocker = @project.reactivation_blocker if @project.suspended?
     end
 
@@ -70,7 +68,7 @@ module Management
     end
 
     def edit_members
-      @members = members_of(@project)
+      @members = @project.listed_members
     end
 
     def update_members
@@ -136,12 +134,6 @@ module Management
 
     def label_names_param
       params.dig(:project, :label_names).to_s.split(/[,、]/).map(&:strip).compact_blank.uniq
-    end
-
-    # プロジェクトの管理者（グループ管理者）を先に、それぞれ表示名の順に並べる。利用停止中の人は出さない
-    def members_of(project)
-      project.group.group_members.without_suspended_users.includes(tenant_user: [:user, :avatar_attachment]).to_a
-        .sort_by { |member| [member.leader? ? 0 : 1, member.tenant_user.display_name, member.id] }
     end
   end
 end

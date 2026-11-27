@@ -8,6 +8,11 @@ ja:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
       brand: "%{platform} 運営者画面"
+    project:
+      rail: "プロジェクトのメニュー"
+      switcher: "プロジェクトを切り替える"
+      recent: "最近開いたプロジェクト"
+      all: "すべてのプロジェクト"
 
   sessions:
     new:
@@ -40,6 +45,21 @@ ja:
       storage_full: "ファイルを保存する容量の上限を超えるため、アップロードできません。"
       name_conflict: "このフォルダに同じ名前のものができました。名前を変えてもう一度お試しください。"
       move_conflict: "移動先に同じ名前のものができました。もう一度お試しください。"
+
+  projects:
+    index:
+      title: "プロジェクト"
+      heading: "参加しているプロジェクト"
+      empty: "参加しているプロジェクトはありません。"
+      member_count: "%{count}人"
+      columns:
+        leaders: "プロジェクト管理者"
+        members: "メンバー"
+    show:
+      labels: "ラベル"
+      members:
+        heading: "メンバー（%{count}人）"
+        leader: "プロジェクト管理者"
 
   profiles:
     show:

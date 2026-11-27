@@ -73,6 +73,24 @@ module E2eScenarios
     end
   end
 
+  # プロジェクト機能を利用する。佐藤さんは「新製品開発」と「社内改善」に参加している
+  def projects
+    key = SecureRandom.hex(4)
+    tenant = Tenant.setup!(name: "E2E #{key}")
+    sato_user = User.create!(email: "sato-#{key}@example.com", password: PASSWORD)
+
+    TenantContext.switch(tenant: tenant) do
+      TenantSetting.find_by!(tenant:).update!(projects_enabled: true)
+      sato = TenantUser.create!(tenant:, user: sato_user, display_name: "佐藤さん", role: :member, status: :active)
+      %w[新製品開発 社内改善].each do |name|
+        project = Project.build(tenant:).tap { it.save_with(name:, label_names: []) }
+        GroupMember.create!(tenant:, group: project.group, tenant_user: sato)
+      end
+
+      { sato: { email: sato_user.email, password: PASSWORD } }
+    end
+  end
+
   # 組織共有ドライブ: 営業/見積、人事。オーナーと一般の利用者が1人ずつ。
   # 人事は一般さんが作って全員を打ち消してあり、オーナーは特権モードでないと開けない。
   # オーナーのマイドライブ: 下書き、メモ.txt、保管（ダイアログでの移動で使う）、

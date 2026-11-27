@@ -45,6 +45,8 @@ Rails.application.routes.draw do
     # version は画像の blob の id。差し替えると URL が変わるので、ブラウザに長くキャッシュさせられる
     get "avatars/:id/:version" => "avatars#show", as: :avatar
 
+    resources :projects, only: [:index, :show]
+
     namespace :files do
       # 画面はすべて同じ入れ物のページ。URL は app/javascript/files/router.ts と揃えること
       root "app#show"

@@ -1,0 +1,46 @@
+<%# プロジェクトの中の画面。左端の帯と本文のパネル。@project と @recent_projects はコントローラが用意する %>
+<% content_for :header_context do %>
+  <span aria-hidden="true" class="shrink-0 opacity-60">›</span>
+  <%= link_to @project.name, project_path(@project), id: "header-project", class: "truncate text-lg font-medium hover:underline" %>
+<% end %>
+<% content_for :content do %>
+  <div class="flex min-h-0 flex-1">
+    <nav id="project-rail" aria-label="<%= t(".rail") %>" class="flex w-18 shrink-0 flex-col items-center gap-3.5 pt-1.5">
+      <%# data-dropdown を外すと外側クリックと Esc で閉じなくなる（application.ts が拾っている） %>
+      <details class="group relative" data-dropdown>
+        <summary class="flex w-16 cursor-pointer list-none flex-col items-center gap-1 text-center text-xs leading-[1.3] text-slate-700 group-open:font-semibold group-open:text-primary-900 [&::-webkit-details-marker]:hidden"
+                 aria-label="<%= t(".switcher") %>">
+          <span class="flex h-8 w-14 items-center justify-center rounded-full group-open:bg-primary-100 hover:bg-slate-900/5 group-open:hover:bg-primary-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"
+                 class="size-5" aria-hidden="true">
+              <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+              <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+              <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+              <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+            </svg>
+          </span>
+          <span class="max-w-12" aria-hidden="true"><%= t("menus.projects") %></span>
+        </summary>
+
+        <div id="project-switcher" class="absolute top-0 left-full z-10 ml-1 w-72 rounded-2xl bg-white py-2 text-sm text-slate-800 shadow-lg ring-1 ring-slate-900/10">
+          <div class="px-4 pt-1 pb-1 text-xs text-slate-500"><%= t(".recent") %></div>
+          <ul>
+            <% @recent_projects.each do |project| %>
+              <li>
+                <%= link_to project.name, project_path(project),
+                      "aria-current": (project == @project ? "page" : nil),
+                      class: class_names("block truncate px-4 py-2 hover:bg-slate-100", "font-semibold text-primary-900": project == @project) %>
+              </li>
+            <% end %>
+          </ul>
+          <div class="mt-1 border-t border-slate-200 pt-1">
+            <%= link_to t(".all"), projects_path, id: "all-projects", class: "block px-4 py-2 text-primary-700 hover:bg-slate-100" %>
+          </div>
+        </div>
+      </details>
+    </nav>
+
+    <main class="mr-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white sm:mr-4 sm:mb-4"><%= yield %></main>
+  </div>
+<% end %>
+<%= render template: "layouts/application" %>
