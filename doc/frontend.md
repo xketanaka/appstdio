@@ -117,7 +117,9 @@ WebSocket だけは Rails を通せない（Rails の中継は WebSocket を扱�
 * vboxsf ではファイルの変更が通知されないので、Vite の監視はポーリング（1秒）にしている
 * `node_modules` は Docker の名前付きボリュームに置く。npm が作るシンボリックリンクを
   vboxsf では作れないため。その代わり、ホスト側からは `node_modules` が見えない
-* テストのときは、`vite_ruby` が初回にビルドする（`public/vite-test`）
+* テストのときは、`vite_ruby` が初回にビルドする（`public/vite-test`）。ERB とヘルパーだけを
+  変えたときもビルドし直すよう、`config/vite.json` の `watchAdditionalPaths` に入れてある
+  （Tailwind の `@source` と揃えること。外れていると、新しいクラスが E2E の CSS に出ない）
 
 開発サーバが動いていないとき（`vite` サービスを止めているときなど）は、`vite_ruby` が
 要求のたびに変更を確かめてビルドし直す（`autoBuild`）。表示は遅くなるが画面は崩れない。
