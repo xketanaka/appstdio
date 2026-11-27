@@ -11,6 +11,12 @@ class Settings
     end
   end
 
+  # app_url / ops_url を、URL を作るときの引数（protocol・host・port）にする。空なら空
+  def self.url_options(url)
+    uri = url.presence && URI(url)
+    uri ? { protocol: uri.scheme, host: uri.host, port: (uri.port unless uri.port == uri.default_port) }.compact : {}
+  end
+
   # ERB を通すので、<%= ENV.fetch("NAME", "既定") %> で環境変数を埋め込める
   _yaml = ERB.new(File.read(Rails.root.join("config/settings.yml"))).result
   _settings = self.convert_to_struct(YAML.load(_yaml, aliases: true)[Rails.env])
