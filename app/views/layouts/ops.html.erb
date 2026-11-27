@@ -58,7 +58,7 @@
       <% if current_operator %>
         <%= render layout: "partial/drawer" do %>
           <%= render "partial/drawer_item", label: t("menus.tenants"), path: ops_tenants_path %>
-          <%= render "partial/drawer_item", label: t("menus.operators"), path: nil %>
+          <%= render "partial/drawer_item", label: t("menus.operators"), path: ops_operators_path %>
         <% end %>
       <% end %>
 

@@ -1,0 +1,28 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="min-h-0 flex-1 overflow-y-auto px-4 py-10">
+  <div id="invitation" class="mx-auto max-w-md rounded-3xl bg-white px-6 pt-7 pb-8 sm:px-10 sm:pt-9 sm:pb-10">
+    <h1 class="mb-4 text-title"><%= t(".heading", console: t("layouts.ops.brand", platform: Settings.platform_name)) %></h1>
+    <dl class="mb-6 text-sm">
+      <dt class="text-slate-500"><%= Operator.human_attribute_name(:email) %></dt>
+      <dd class="break-all"><%= @operator.email %></dd>
+      <dt class="mt-2 text-slate-500"><%= t(".expires_at") %></dt>
+      <dd><%= time_to_s(@operator.invitation_expires_at) %></dd>
+    </dl>
+    <p class="mb-5 text-sm"><%= t(".message") %></p>
+    <%= render "partial/errors", object: @operator %>
+    <%= form_with url: ops_invitation_path(params[:token]), method: :patch do |f| %>
+      <%# パスワードの管理ソフトに、どのアカウントのパスワードかを伝える %>
+      <input type="email" name="username" value="<%= @operator.email %>" autocomplete="username" hidden>
+      <div class="mb-5">
+        <%= f.label :password, Operator.human_attribute_name(:password), class: "mb-1.5 block text-sm font-semibold" %>
+        <%= f.password_field :password, autofocus: true, autocomplete: "new-password", required: true, class: "input" %>
+        <p class="mt-1 text-xs text-slate-500"><%= t(".password_hint") %></p>
+      </div>
+      <div class="mb-5">
+        <%= f.label :password_confirmation, Operator.human_attribute_name(:password_confirmation), class: "mb-1.5 block text-sm font-semibold" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", required: true, class: "input" %>
+      </div>
+      <%= f.submit t(".submit"), class: "btn btn-primary w-full" %>
+    <% end %>
+  </div>
+</div>

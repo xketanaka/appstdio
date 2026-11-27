@@ -537,6 +537,12 @@ ja:
 
   operator_mailer:
     console: "%{platform} 運営者画面"
+    invitation:
+      subject: "%{console} に招待されました"
+      body: "%{inviter}さんから、%{console} の運営者に招待されました。"
+      action: "次の URL を開いて、パスワードを決めてください。決めると運営者画面を使えます。"
+      expires: "この URL は %{time} まで使えます。"
+      ignore: "心当たりがなければ、このメールは破棄してください。"
     password_reset:
       subject: "%{console} のパスワードの再設定"
       body: "%{console} のパスワードの再設定を受け付けました。"
@@ -572,6 +578,78 @@ ja:
         heading: "この URL は使えません"
         message: "有効期限が切れたか、すでにパスワードを変更済みです。もう一度、再設定のメールを送ってください。"
         retry: "再設定のメールを送る"
+    invitations:
+      show:
+        title: "運営者への招待"
+        heading: "%{console} への招待"
+        expires_at: "この URL の有効期限"
+        message: "パスワードを決めると、運営者画面を使えるようになります。"
+        password_hint: "8文字以上で決めてください。"
+        submit: "パスワードを決めてログイン"
+      update:
+        done: "パスワードを決めました。運営者画面を使えます。"
+      invalid:
+        title: "運営者への招待"
+        heading: "この招待は使えません"
+        message: "有効期限が切れたか、すでに使われたか、取り消された招待です。必要なら、ほかの運営者に招待メールの再送を頼んでください。"
+        login: "ログインの画面へ"
+    operators:
+      index:
+        title: "運営者"
+        heading: "運営者"
+        new: "運営者を追加"
+        never_signed_in: "未ログイン"
+      new:
+        title: "運営者の追加 - 運営者"
+        heading: "運営者"
+        detail: "運営者の追加"
+        invited_note: "追加すると招待中になり、パスワードを決める URL を招待メールで送ります。URL は %{days} 日間使えます。"
+        submit: "追加して招待メールを送る"
+        cancel: "キャンセル"
+      create:
+        done: "%{email} に招待メールを送りました。"
+      edit:
+        title: "%{name}の編集 - 運営者"
+        heading: "運営者"
+        back: "運営者の一覧へ戻る"
+        never_signed_in: "未ログイン"
+        cancel: "キャンセル"
+        suspend: "利用停止"
+        destroy: "招待を取り消す"
+        invitation:
+          sent: "%{time} に招待メールを送りました。"
+          expires: "URL の有効期限は %{time} です。"
+          expired: "URL の有効期限が切れています。"
+          resend: "招待メールを再送"
+        suspension:
+          status: "この運営者は利用停止中です。"
+          resume: "再開する"
+      confirm_suspend:
+        title: "%{name}の利用停止 - 運営者"
+        heading: "運営者"
+        detail: "運営者の利用停止"
+        message: "「%{name}」（%{email}）を利用停止にします。"
+        notes:
+          login: "運営者画面に入れなくなります。ログイン中の端末も、次の操作からログインの画面に戻ります。"
+          resume: "あとで再開すると、元のとおり使えるようになります。"
+        submit: "利用停止にする"
+        cancel: "キャンセル"
+      suspend:
+        done: "利用停止にしました。"
+      resume:
+        done: "再開しました。"
+      resend_invitation:
+        done: "招待メールを再送しました。前に送った URL は使えなくなりました。"
+      confirm_destroy:
+        title: "%{name}の招待の取り消し - 運営者"
+        heading: "運営者"
+        detail: "招待の取り消し"
+        message: "「%{name}」（%{email}）への招待を取り消し、運営者の一覧から消します。"
+        note: "送った招待メールの URL は使えなくなります。"
+        submit: "招待を取り消す"
+        cancel: "キャンセル"
+      destroy:
+        done: "招待を取り消しました。"
     tenants:
       index:
         title: "テナント一覧"
