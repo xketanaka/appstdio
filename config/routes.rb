@@ -24,6 +24,8 @@ Rails.application.routes.draw do
       get   "invitations/:token" => "invitations#show", as: :invitation
       patch "invitations/:token" => "invitations#update"
 
+      resource :password, only: [:edit, :update]
+
       resources :operators, only: [:index, :new, :create, :edit, :update, :destroy] do
         member do
           get  :confirm_suspend

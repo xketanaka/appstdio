@@ -56,6 +56,11 @@ class Operator < ApplicationRecord
     password_given?(password) && update(password:, password_confirmation:)
   end
 
+  # 本人が今のパスワードを入れて変える。今のパスワードは has_secure_password の password_challenge が確かめる
+  def change_password(current_password:, password:, password_confirmation:)
+    password_given?(password) && update(password:, password_confirmation:, password_challenge: current_password)
+  end
+
   private
 
   # 空のパスワードは has_secure_password が黙って捨てるので、ここで弾く

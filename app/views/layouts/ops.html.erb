@@ -48,6 +48,7 @@
                   locals: { label: t(".account_menu"),
                             name: current_operator.display_name,
                             email: current_operator.email } do %>
+              <%= link_to t("layouts.ops.change_password"), edit_ops_password_path, class: "block px-4 py-2 hover:bg-slate-100" %>
               <%= button_to t("actions.logout"), ops_logout_path, method: :delete,
                     class: "block w-full cursor-pointer px-4 py-2 text-left hover:bg-slate-100" %>
             <% end %>

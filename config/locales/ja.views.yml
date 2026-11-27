@@ -8,6 +8,7 @@ ja:
       account_menu: "アカウントメニュー"
       main_menu: "メニューを開く"
       brand: "%{platform} 運営者画面"
+      change_password: "パスワードの変更"
 
   sessions:
     new:
@@ -593,6 +594,17 @@ ja:
         heading: "この招待は使えません"
         message: "有効期限が切れたか、すでに使われたか、取り消された招待です。必要なら、ほかの運営者に招待メールの再送を頼んでください。"
         login: "ログインの画面へ"
+    passwords:
+      edit:
+        title: "パスワードの変更"
+        heading: "パスワードの変更"
+        message: "変えると、ほかの端末のログインは切れます。"
+        password: "新しいパスワード"
+        password_hint: "8文字以上で決めてください。"
+        submit: "変更する"
+        cancel: "キャンセル"
+      update:
+        done: "パスワードを変更しました。"
     operators:
       index:
         title: "運営者"
