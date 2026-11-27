@@ -591,6 +591,38 @@ ALTER SEQUENCE public.operators_id_seq OWNED BY public.operators.id;
 
 
 --
+-- Name: project_visits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_visits (
+    id bigint NOT NULL,
+    tenant_id uuid NOT NULL,
+    tenant_user_id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    visited_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: project_visits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_visits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_visits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_visits_id_seq OWNED BY public.project_visits.id;
+
+
+--
 -- Name: projects; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -935,6 +967,13 @@ ALTER TABLE ONLY public.operators ALTER COLUMN id SET DEFAULT nextval('public.op
 
 
 --
+-- Name: project_visits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_visits ALTER COLUMN id SET DEFAULT nextval('public.project_visits_id_seq'::regclass);
+
+
+--
 -- Name: projects id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1094,6 +1133,14 @@ ALTER TABLE ONLY public.groups
 
 ALTER TABLE ONLY public.operators
     ADD CONSTRAINT operators_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_visits project_visits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_visits
+    ADD CONSTRAINT project_visits_pkey PRIMARY KEY (id);
 
 
 --
@@ -1441,6 +1488,20 @@ CREATE UNIQUE INDEX index_operators_on_email ON public.operators USING btree (em
 
 
 --
+-- Name: index_project_visits_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_visits_on_project_id ON public.project_visits USING btree (project_id);
+
+
+--
+-- Name: index_project_visits_on_tenant_user_id_and_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_visits_on_tenant_user_id_and_project_id ON public.project_visits USING btree (tenant_user_id, project_id);
+
+
+--
 -- Name: index_projects_on_group_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1522,6 +1583,14 @@ CREATE TRIGGER files_nodes_cascade_ancestor_ids AFTER UPDATE OF parent_id, ances
 --
 
 CREATE TRIGGER files_nodes_set_ancestor_ids BEFORE INSERT OR UPDATE OF parent_id, ancestor_ids ON public.files_nodes FOR EACH ROW EXECUTE FUNCTION public.files_nodes_set_ancestor_ids();
+
+
+--
+-- Name: project_visits fk_rails_018317a639; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_visits
+    ADD CONSTRAINT fk_rails_018317a639 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -1682,6 +1751,22 @@ ALTER TABLE ONLY public.files_permissions
 
 ALTER TABLE ONLY public.files_activities
     ADD CONSTRAINT fk_rails_7dd9f8a06b FOREIGN KEY (actor_id) REFERENCES public.tenant_users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: project_visits fk_rails_7e0f737954; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_visits
+    ADD CONSTRAINT fk_rails_7e0f737954 FOREIGN KEY (tenant_user_id) REFERENCES public.tenant_users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_visits fk_rails_85de39d6b1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_visits
+    ADD CONSTRAINT fk_rails_85de39d6b1 FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE;
 
 
 --
@@ -2223,6 +2308,40 @@ CREATE POLICY groups_update ON public.groups FOR UPDATE TO appstdio_app USING ((
 ALTER TABLE public.operators ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: project_visits; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.project_visits ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: project_visits project_visits_delete; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY project_visits_delete ON public.project_visits FOR DELETE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: project_visits project_visits_insert; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY project_visits_insert ON public.project_visits FOR INSERT TO appstdio_app WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: project_visits project_visits_select; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY project_visits_select ON public.project_visits FOR SELECT TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
+-- Name: project_visits project_visits_update; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY project_visits_update ON public.project_visits FOR UPDATE TO appstdio_app USING ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)) WITH CHECK ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid));
+
+
+--
 -- Name: projects; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -2399,6 +2518,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261127100000'),
 ('20261124100000'),
 ('20261120100000'),
 ('20261118100000'),
