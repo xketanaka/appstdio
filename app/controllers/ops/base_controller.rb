@@ -22,6 +22,15 @@ module Ops
       @current_operator = Operator.active.find_by_token_for(:session, session[:operator_token]) if session[:operator_token]
     end
 
+    # ログインさせる。ログインの画面と、パスワードを決める画面で使う
+    def start_operator_session(operator)
+      return_to = session[:ops_return_to]
+      reset_session # セッション固定化攻撃への対策
+      session[:operator_token] = operator.generate_token_for(:session)
+      session[:ops_return_to] = return_to if return_to.present?
+      operator.update_column(:last_signed_in_at, Time.current)
+    end
+
     def operator_login_required
       return if @current_operator
 

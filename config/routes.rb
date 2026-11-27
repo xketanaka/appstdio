@@ -19,6 +19,8 @@ Rails.application.routes.draw do
       post   "login"  => "sessions#create"
       delete "logout" => "sessions#destroy", as: :logout
 
+      resources :password_resets, only: [:new, :create, :edit, :update], param: :token
+
       resources :tenants, only: [:index]
       root "tenants#index"
     end

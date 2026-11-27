@@ -535,11 +535,43 @@ ja:
           version_retention_days: "ファイルの古い版の中身を残す日数です。新しい版ができて最新でなくなった日から数えます。最新の版は日数に関わらず残ります。空にすると無制限です。短くすると、すでに日数を過ぎた古い版は翌朝までに削除され、元に戻せません。"
           invitation_expiry_days: "新しく加えた人が、招待メールの URL でパスワードを決められる日数です（1〜30日）。招待メールを送った日時から数えます。変えると、送り済みの招待にも新しい日数が当てはまります。他の組織ですでに使っている人は、期限なしで組織の選択から参加できます。"
 
+  operator_mailer:
+    console: "%{platform} 運営者画面"
+    password_reset:
+      subject: "%{console} のパスワードの再設定"
+      body: "%{console} のパスワードの再設定を受け付けました。"
+      action: "次の URL を開いて、新しいパスワードを決めてください。"
+      expires: "この URL は %{time} まで使えます。"
+      ignore: "心当たりがなければ、このメールは破棄してください。パスワードは変わりません。"
+
   ops:
     sessions:
       new:
         title: "運営者ログイン"
         heading: "運営者ログイン"
+        forgot_password: "パスワードを忘れた場合"
+    password_resets:
+      new:
+        title: "パスワードの再設定"
+        heading: "パスワードの再設定"
+        message: "ログインに使うメールアドレスを入れてください。新しいパスワードを決めるための URL をメールで送ります。"
+        submit: "メールを送る"
+        back: "ログインの画面へ戻る"
+      create:
+        sent: "入力したメールアドレスが登録されていれば、パスワードを再設定する URL を送りました。メールを確認してください。"
+      edit:
+        title: "パスワードの再設定"
+        heading: "新しいパスワードを決める"
+        password: "新しいパスワード"
+        password_hint: "8文字以上で決めてください。"
+        submit: "保存してログイン"
+      update:
+        done: "パスワードを変更しました。"
+      invalid:
+        title: "パスワードの再設定"
+        heading: "この URL は使えません"
+        message: "有効期限が切れたか、すでにパスワードを変更済みです。もう一度、再設定のメールを送ってください。"
+        retry: "再設定のメールを送る"
     tenants:
       index:
         title: "テナント一覧"
