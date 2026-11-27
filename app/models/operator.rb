@@ -3,7 +3,7 @@ class Operator < ApplicationRecord
   # ログインのセッションに入れる印。パスワードの salt を含めて署名するので、パスワードを変えると他の端末のログインも切れる
   generates_token_for(:session) { password_salt&.last(10) }
 
-  enum :status, { active: "active", suspended: "suspended" }, validate: true
+  enum :status, { invited: "invited", active: "active", suspended: "suspended" }, validate: true
 
   normalizes :email, with: ->(email) { email.to_s.strip }
 
