@@ -70,6 +70,25 @@ class OperatorsTest < ActionDispatch::IntegrationTest
     assert_redirected_to ops_root_path
   end
 
+  test "別の運営者でログインしたまま招待の URL を開くと、ログアウトするよう案内し、パスワードは決めさせない" do
+    login
+    path = URI(invite).path
+
+    get path
+    assert_select "#other-account", text: /operator@example.com/
+    assert_select "#invitation input[type=password]", 0
+    patch path, params: { password: "newpassword1", password_confirmation: "newpassword1" }
+    assert_redirected_to path
+    assert Operator.find_by!(email: "new@example.com").invited?
+    get ops_root_path
+    assert_response :success
+
+    delete ops_logout_path
+    get path
+    assert_select "#other-account", 0
+    assert_select "#invitation input[name=password]"
+  end
+
   test "同じメールアドレスの運営者は加えられない" do
     login
     post ops_operators_path, params: { operator: { email: "operator@example.com", display_name: "重複" } }

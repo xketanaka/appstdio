@@ -585,6 +585,7 @@ ja:
         heading: "%{console} への招待"
         expires_at: "この URL の有効期限"
         message: "パスワードを決めると、運営者画面を使えるようになります。"
+        other_account: "別の運営者（%{email}）でログインしています。招待されたアカウントでパスワードを決めるには、ログアウトしてから、もう一度招待メールの URL を開いてください。"
         password_hint: "8文字以上で決めてください。"
         submit: "パスワードを決めてログイン"
       update:

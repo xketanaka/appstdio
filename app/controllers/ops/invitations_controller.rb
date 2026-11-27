@@ -1,5 +1,6 @@
 module Ops
-  # 招待の URL を開いた画面。招待された運営者がパスワードを決めて有効になり、そのままログインする
+  # 招待の URL を開いた画面。招待された運営者がパスワードを決めて有効になり、そのままログインする。
+  # 招待中の人はログインできないので、ログイン中なら必ず別の運営者。ログアウトして開き直すよう案内する
   class InvitationsController < BaseController
     skip_before_action :operator_login_required
     before_action :set_operator
@@ -8,6 +9,9 @@ module Ops
     end
 
     def update
+      # 別の運営者でログインしたままでは決めさせない（利用者側の招待と同じ）
+      return redirect_to ops_invitation_path(params[:token]) if current_operator
+
       if @operator.accept_invitation(password: params[:password].to_s, password_confirmation: params[:password_confirmation].to_s)
         start_operator_session(@operator)
         session.delete(:ops_return_to)
