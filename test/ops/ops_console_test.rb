@@ -121,14 +121,15 @@ class OpsConsoleTest < ActionDispatch::IntegrationTest
     assert_redirected_to ops_login_path
   end
 
-  test "メニューからテナント一覧へ行ける" do
+  test "メニューからテナント一覧と運営者へ行ける" do
     login_as_operator
     get ops_root_path
 
     assert_select "button[data-drawer-open]"
     assert_select "dialog[data-drawer]" do
       assert_select "a[href=?]", ops_tenants_path
-      assert_select "span[aria-disabled=true]", 1
+      assert_select "a[href=?]", ops_operators_path
+      assert_select "span[aria-disabled=true]", 0
     end
   end
 

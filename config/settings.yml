@@ -17,6 +17,8 @@ base: &base
   # ブラウザから見えるこのアプリの URL（スキーム・ホスト名・ポート。パスは付けない）。メールに書く URL に使う。
   # 空のままメールに URL を書こうとすると、誤った URL を送らずに失敗する（config/initializers/mailer.rb）
   app_url: <%= ENV["APP_URL"] %>
+  # ブラウザから見える運営者画面の URL。運営者へのメール（招待・パスワードの再設定）に書く URL に使う
+  ops_url: <%= ENV["OPS_URL"] %>
   files:
     # 1ファイルの大きさの上限。S3 に1回で送れるのが 5GB まで（ダイレクトアップロードは1回で送る）
     max_upload_bytes: 5368709120
@@ -29,10 +31,12 @@ development:
     delivery_method: letter_opener_web
   # docker-compose.yml が既定（http://localhost:<APP_LISTEN_PORT>）を渡す。こちらはコンテナの外で動かすときの既定
   app_url: <%= ENV.fetch("APP_URL", "http://localhost:6000") %>
+  ops_url: <%= ENV.fetch("OPS_URL", "http://localhost:6001") %>
 
 test:
   <<: *base
   app_url: http://example.com
+  ops_url: http://ops.example.com
 
 production:
   <<: *base

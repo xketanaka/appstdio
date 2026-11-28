@@ -19,6 +19,23 @@ Rails.application.routes.draw do
       post   "login"  => "sessions#create"
       delete "logout" => "sessions#destroy", as: :logout
 
+      resources :password_resets, only: [:new, :create, :edit, :update], param: :token
+
+      get   "invitations/:token" => "invitations#show", as: :invitation
+      patch "invitations/:token" => "invitations#update"
+
+      resource :password, only: [:edit, :update]
+
+      resources :operators, only: [:index, :new, :create, :edit, :update, :destroy] do
+        member do
+          get  :confirm_suspend
+          post :suspend
+          post :resume
+          post :resend_invitation
+          get  :confirm_destroy
+        end
+      end
+
       resources :tenants, only: [:index]
       root "tenants#index"
     end

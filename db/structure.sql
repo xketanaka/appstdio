@@ -567,7 +567,8 @@ CREATE TABLE public.operators (
     last_signed_in_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT operators_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying])::text[])))
+    invitation_sent_at timestamp(6) without time zone,
+    CONSTRAINT operators_status_check CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'active'::character varying, 'suspended'::character varying])::text[])))
 );
 
 
@@ -2399,6 +2400,7 @@ CREATE POLICY tenant_users_update ON public.tenant_users FOR UPDATE TO appstdio_
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261127100000'),
 ('20261124100000'),
 ('20261120100000'),
 ('20261118100000'),

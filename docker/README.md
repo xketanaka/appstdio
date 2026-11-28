@@ -22,6 +22,7 @@
 | `OPS_LISTEN_PORT` | `ops`（運営者画面）をホストで開くポート。既定 6001 |
 | `VITE_LISTEN_PORT` | `vite` をホストで開くポート。既定 3036。同じマシンで複数のチェックアウトを動かすときは別の番号にする |
 | `APP_URL` | メールに書く URL。ブラウザのアドレスバーに出るとおりに書く。既定 `http://localhost:<APP_LISTEN_PORT>` |
+| `OPS_URL` | 運営者へのメールに書く運営者画面の URL。`APP_URL` と同じく書く。既定 `http://localhost:<OPS_LISTEN_PORT>` |
 | `RAILS_DEVELOPMENT_HOSTS` | `localhost` 以外のホスト名で開くときに、そのホスト名をカンマ区切りで書く（Rails と Vite が受け付ける） |
 | `VITE_HMR_CLIENT_PORT` | リバースプロキシ越しに使うときの HMR のポート（「リバースプロキシ越しに使う場合」を参照） |
 | `COMMAND` | コンテナで動かす `bin/rails` のサブコマンド。既定 `server` |

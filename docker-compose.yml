@@ -87,6 +87,8 @@ services:
       PLAYWRIGHT_BROWSERS_PATH: "0"
       E2E_OUTPUT_DIR: "/tmp/e2e-results"
       OPS_CONSOLE: "1"
+      # ブラウザから見える運営者画面の URL。運営者へのメールに書く URL に使う（config/settings.yml、docker/README.md）
+      OPS_URL: "${OPS_URL:-http://localhost:${OPS_LISTEN_PORT:-6001}}"
       RAILS_DEVELOPMENT_HOSTS: ${RAILS_DEVELOPMENT_HOSTS}
       DB_USER: "appstdio_owner"
       DB_PASSWORD: "owner_password"

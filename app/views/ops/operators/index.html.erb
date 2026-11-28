@@ -1,0 +1,31 @@
+<% content_for :title do %><%= t(".title") %><% end -%>
+<div class="flex shrink-0 items-center justify-between gap-4 px-6 pt-5 pb-3">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+  <%= link_to t(".new"), new_ops_operator_path, id: "new-operator", class: "btn btn-primary btn-sm shrink-0" %>
+</div>
+
+<div class="min-h-0 flex-1 overflow-auto px-3">
+  <table id="operator-list" class="w-full">
+    <thead class="sticky top-0 bg-white text-xs text-slate-500">
+      <tr class="border-b border-slate-200">
+        <th class="px-3 py-2.5 text-left font-medium"><%= Operator.human_attribute_name(:display_name) %></th>
+        <th class="hidden px-3 py-2.5 text-left font-medium md:table-cell"><%= Operator.human_attribute_name(:email) %></th>
+        <th class="px-3 py-2.5 text-left font-medium"><%= Operator.human_attribute_name(:status) %></th>
+        <th class="hidden px-3 py-2.5 text-left font-medium sm:table-cell"><%= Operator.human_attribute_name(:last_signed_in_at) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @operators.each do |operator| %>
+        <tr class="border-b border-slate-100 hover:bg-canvas">
+          <td class="px-3 py-2.5">
+            <%= link_to operator.display_name, edit_ops_operator_path(operator), class: "block truncate text-primary-700 hover:underline" %>
+            <span class="mt-0.5 block text-xs break-all text-slate-500 md:hidden"><%= operator.email %></span>
+          </td>
+          <td class="hidden px-3 py-2.5 text-sm break-all md:table-cell"><%= operator.email %></td>
+          <td class="px-3 py-2.5 text-sm"><%= t("enums.operator.status.#{operator.status}") %></td>
+          <td class="hidden px-3 py-2.5 text-sm sm:table-cell"><%= operator.last_signed_in_at ? time_to_s(operator.last_signed_in_at) : t(".never_signed_in") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

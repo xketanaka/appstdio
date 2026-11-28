@@ -1,0 +1,59 @@
+<% content_for :title do %><%= t(".title", name: @operator.display_name_was) %><% end -%>
+<div class="shrink-0 px-4 pt-5 pb-3 sm:px-6">
+  <h1 class="truncate text-title"><%= t(".heading") %></h1>
+</div>
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  <div class="w-full max-w-2xl px-4 py-4 sm:px-6">
+    <%= link_to t(".back"), ops_operators_path, class: "mb-3 inline-block text-sm text-primary-700 hover:underline" %>
+    <div id="operator-header" class="mb-6">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p class="text-lg break-all"><%= @operator.email %></p>
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"><%= t("enums.operator.status.#{@operator.status}") %></span>
+      </div>
+      <p class="text-sm text-slate-500">
+        <%= Operator.human_attribute_name(:last_signed_in_at) %>:
+        <%= @operator.last_signed_in_at ? time_to_s(@operator.last_signed_in_at) : t(".never_signed_in") %>
+      </p>
+    </div>
+
+    <% if @operator.invited? %>
+      <section id="invitation" class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p>
+          <%= t(".invitation.sent", time: time_to_s(@operator.invitation_sent_at)) %>
+          <% expires_at = @operator.invitation_expires_at %>
+          <%= expires_at.future? ? t(".invitation.expires", time: time_to_s(expires_at)) : t(".invitation.expired") %>
+        </p>
+        <%= button_to t(".invitation.resend"), resend_invitation_ops_operator_path(@operator), id: "resend-invitation",
+              class: "btn btn-secondary btn-sm shrink-0" %>
+      </section>
+    <% elsif @operator.suspended? %>
+      <section id="suspension" class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p><%= t(".suspension.status") %></p>
+        <%= button_to t(".suspension.resume"), resume_ops_operator_path(@operator), id: "resume-operator",
+              class: "btn btn-primary btn-sm shrink-0" %>
+      </section>
+    <% end %>
+
+    <%= render "partial/errors", object: @operator %>
+
+    <%= form_with model: @operator, url: ops_operator_path(@operator), id: "operator-form" do |f| %>
+      <div class="mb-5">
+        <%= f.label :display_name, class: "mb-1.5 block text-sm font-semibold" %>
+        <%= f.text_field :display_name, autocomplete: "off", required: true, class: "input" %>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-slate-200 pt-4">
+        <div class="flex items-center gap-4">
+          <%= f.submit t("actions.save"), class: "btn btn-primary" %>
+          <%= link_to t(".cancel"), ops_operators_path, class: "text-sm whitespace-nowrap text-slate-600 hover:underline" %>
+        </div>
+        <% if @operator.active? && @operator != current_operator %>
+          <%= link_to t(".suspend"), confirm_suspend_ops_operator_path(@operator), id: "suspend-operator", class: "btn btn-secondary" %>
+        <% elsif @operator.invited? %>
+          <%= link_to t(".destroy"), confirm_destroy_ops_operator_path(@operator), id: "destroy-operator", class: "btn btn-danger" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

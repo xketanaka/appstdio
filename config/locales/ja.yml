@@ -79,9 +79,11 @@ ja:
         email: "メールアドレス"
         password: "パスワード"
         password_confirmation: "パスワード（確認）"
+        password_challenge: "今のパスワード"
         display_name: "表示名"
         status: "状態"
         last_signed_in_at: "最終ログイン日時"
+        invitation_sent_at: "招待メールの送信日時"
         created_at: "作成日時"
         updated_at: "更新日時"
       tenant_setting:
@@ -123,6 +125,7 @@ ja:
   enums:
     operator:
       status:
+        invited: "招待中"
         active: "有効"
         suspended: "停止中"
     tenant:
