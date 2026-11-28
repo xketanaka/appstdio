@@ -21,8 +21,7 @@ module Ops
     def update
       if @operator.reset_password(password: params[:password].to_s, password_confirmation: params[:password_confirmation].to_s)
         start_operator_session(@operator)
-        session.delete(:ops_return_to)
-        redirect_to ops_root_path, notice: t(".done")
+        redirect_to(session.delete(:ops_return_to) || ops_root_path, notice: t(".done"))
       else
         render :edit, status: :unprocessable_entity
       end

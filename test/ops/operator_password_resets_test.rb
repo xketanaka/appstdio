@@ -70,6 +70,15 @@ class OperatorPasswordResetsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "ログイン前に見ようとしたページがあれば、パスワードを決めたあとそこへ戻る" do
+    get ops_tenants_path
+    assert_redirected_to ops_login_path
+
+    path = URI(request_reset).path.delete_suffix("/edit")
+    patch path, params: { password: "newpassword1", password_confirmation: "newpassword1" }
+    assert_redirected_to ops_tenants_path
+  end
+
   test "期限（30分）を過ぎた URL と、送ったあとに停止した運営者の URL は使えない" do
     path = URI(request_reset).path
 
